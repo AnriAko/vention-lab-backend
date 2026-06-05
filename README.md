@@ -1,2 +1,2 @@
 # vention-lab
-vention lab reposityry
+vention lab repository
