@@ -1,0 +1,44 @@
+services:
+    api:
+        image: vention-api
+        restart: always
+        env_file:
+            - .env.production.local
+        ports:
+            - '3000:3000'
+        depends_on:
+            - db
+            - redis
+            - rabbitmq
+        networks:
+            - backend
+    db:
+        image: postgres:17
+        restart: always
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: postgres
+            POSTGRES_DB: app_db
+        volumes:
+            - postgres-data:/var/lib/postgresql/data
+        networks:
+            - backend
+
+    redis:
+        image: redis:7
+        restart: always
+        networks:
+            - backend
+
+    rabbitmq:
+        image: rabbitmq:4-management
+        restart: always
+        networks:
+            - backend
+
+volumes:
+    postgres-data:
+
+networks:
+    backend:
+        driver: bridge
