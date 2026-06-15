@@ -1,6 +1,7 @@
 services:
     db:
         image: postgres:17
+        container_name: postgres_db
         restart: always
         environment:
             POSTGRES_USER: postgres
@@ -12,6 +13,7 @@ services:
             - postgres-data:/var/lib/postgresql/data
         networks:
             - backend
+    #REVIEW - check how pg admin works inside browser
     pgadmin:
         image: dpage/pgadmin4
         restart: always
@@ -26,7 +28,7 @@ services:
             - pgadmin-data:/var/lib/pgadmin
         networks:
             - backend
-
+    #TODO - add auth with redis
     redis:
         image: redis:7
         restart: always

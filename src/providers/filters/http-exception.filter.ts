@@ -1,0 +1,23 @@
+import { Catch, HttpException, ArgumentsHost, Logger } from '@nestjs/common';
+import { BaseExceptionFilter } from '@nestjs/core';
+import { ZodSerializationException } from 'nestjs-zod';
+import { ZodError } from 'zod';
+//REVIEW - review it later how it can be improved with my own winston logger
+@Catch(HttpException)
+export class HttpExceptionFilter extends BaseExceptionFilter {
+    private readonly logger = new Logger(HttpExceptionFilter.name);
+
+    catch(exception: HttpException, host: ArgumentsHost) {
+        if (exception instanceof ZodSerializationException) {
+            const zodError = exception.getZodError();
+
+            if (zodError instanceof ZodError) {
+                this.logger.error(
+                    `ZodSerializationException: ${String(zodError.message)}`
+                );
+            }
+        }
+
+        super.catch(exception, host);
+    }
+}

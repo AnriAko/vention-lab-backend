@@ -25,6 +25,6 @@
         "noFallthroughCasesInSwitch": false,
         "types": ["jest", "node"]
     },
-    "include": ["src/**/*"],
+    "include": ["src/**/*", "test/config"],
     "exclude": ["node_modules", "dist"]
 }
