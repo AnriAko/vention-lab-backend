@@ -8,5 +8,7 @@ compose.dev.yml
 compose.prod.yml
 dockerfile
 README.md
+changelog.md
 .env
 .env.*
+logs

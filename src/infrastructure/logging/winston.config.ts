@@ -1,6 +1,5 @@
 import * as winston from 'winston';
 
-//REVIEW - review it later
 export const winstonLogger = winston.createLogger({
     level: 'info',
     format: winston.format.combine(

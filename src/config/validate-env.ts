@@ -1,4 +1,5 @@
-import { envSchema, Env } from './env.schema';
+import type { Env } from './env.schema';
+import { envSchema } from './env.schema';
 
 /**
  * validateEnv

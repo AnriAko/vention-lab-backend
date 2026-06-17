@@ -1,23 +1,38 @@
-import { Catch, HttpException, ArgumentsHost, Logger } from '@nestjs/common';
-import { BaseExceptionFilter } from '@nestjs/core';
-import { ZodSerializationException } from 'nestjs-zod';
-import { ZodError } from 'zod';
-//REVIEW - review it later how it can be improved with my own winston logger
-@Catch(HttpException)
-export class HttpExceptionFilter extends BaseExceptionFilter {
-    private readonly logger = new Logger(HttpExceptionFilter.name);
+import {
+    Catch,
+    ExceptionFilter,
+    ArgumentsHost,
+    HttpException,
+    HttpStatus,
+} from '@nestjs/common';
+import { Request, Response } from 'express';
+import { LoggerService } from '~/infrastructure/logging/logger.service';
 
-    catch(exception: HttpException, host: ArgumentsHost) {
-        if (exception instanceof ZodSerializationException) {
-            const zodError = exception.getZodError();
+@Catch()
+export class HttpExceptionFilter implements ExceptionFilter {
+    constructor(private readonly logger: LoggerService) {}
 
-            if (zodError instanceof ZodError) {
-                this.logger.error(
-                    `ZodSerializationException: ${String(zodError.message)}`
-                );
-            }
-        }
+    catch(exception: unknown, host: ArgumentsHost) {
+        const ctx = host.switchToHttp();
+        const res = ctx.getResponse<Response>();
+        const req = ctx.getRequest<Request>();
 
-        super.catch(exception, host);
+        const status =
+            exception instanceof HttpException
+                ? exception.getStatus()
+                : HttpStatus.INTERNAL_SERVER_ERROR;
+
+        const message =
+            exception instanceof Error ? exception.message : 'Unknown error';
+
+        this.logger.error(
+            `[HTTP ERROR] ${req.method} ${req.originalUrl} ${status} ${message}`
+        );
+
+        res.status(status).json({
+            statusCode: status,
+            path: req.originalUrl,
+            message,
+        });
     }
 }

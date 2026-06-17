@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { winstonLogger } from './winston.config';
-// REVIEW - review it later
+
 @Injectable()
 export class LoggerService {
     log(message: string) {
@@ -8,7 +8,7 @@ export class LoggerService {
     }
 
     error(message: string, trace?: string) {
-        winstonLogger.error(trace ? `${message}\n${trace}` : message);
+        winstonLogger.error(message, { stack: trace });
     }
 
     warn(message: string) {

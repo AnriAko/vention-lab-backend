@@ -3,7 +3,7 @@ import { databaseConfig } from './configuration/database.config';
 import { redisConfig } from './configuration/redis.config';
 import { rabbitmqConfig } from './configuration/rabbitmq.config';
 import validateEnv from './validate-env';
-import {
+import type {
     envSchema,
     Env,
     AppConfig,
@@ -18,7 +18,7 @@ export const configLoaders = [
     redisConfig,
     rabbitmqConfig,
 ];
-//TODO - add auth env here
+
 export { appConfig, databaseConfig, redisConfig, rabbitmqConfig };
 export { validateEnv };
 export { envSchema };

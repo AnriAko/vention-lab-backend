@@ -1,6 +1,9 @@
 {
     "compilerOptions": {
         "module": "nodenext",
+        "moduleResolution": "NodeNext",
+        "isolatedModules": true,
+
         "esModuleInterop": true,
         "declaration": true,
         "removeComments": true,
@@ -23,8 +26,8 @@
         "noImplicitAny": false,
         "strictBindCallApply": false,
         "noFallthroughCasesInSwitch": false,
-        "types": ["jest", "node"]
+        "types": ["node", "jest"]
     },
-    "include": ["src/**/*", "test/config"],
+    "include": ["src/**/*"],
     "exclude": ["node_modules", "dist"]
 }
