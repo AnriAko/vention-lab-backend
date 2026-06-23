@@ -8,6 +8,7 @@ import { HealthModule } from '~/modules/health/health.module';
 import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
 import { LoggerModule } from '~/infrastructure/logging/logger.module';
 import { envFilePath } from '~/common/utils/env-file-path';
+import { AuthModule } from '~/modules/auth/auth.module';
 
 @Module({
     imports: [
@@ -20,10 +21,11 @@ import { envFilePath } from '~/common/utils/env-file-path';
             validate: validateEnv,
         }),
         GlobalModule,
-        UserModule,
         PrismaModule,
         HealthModule,
         LoggerModule,
+        AuthModule,
+        UserModule,
     ],
 })
 export class AppModule implements NestModule {
