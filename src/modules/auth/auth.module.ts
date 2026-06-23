@@ -9,11 +9,13 @@ import { UserModule } from '~/modules/user/user.module';
 
 import { AuthController } from '~/modules/auth/auth.controller';
 import { AuthService } from '~/modules/auth/auth.service';
+import { RedisModule } from '~/infrastructure/cache/redis.module';
 
 @Module({
     imports: [
         UserModule,
         Argon2Module,
+        RedisModule,
 
         NestJwtModule.registerAsync({
             imports: [ConfigModule],
