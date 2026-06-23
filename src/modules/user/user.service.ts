@@ -4,17 +4,29 @@ import { LoggerService } from '~/infrastructure/logging/logger.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
+import { UserRole } from '~/generated/prisma/enums';
 
 const userSelectSafe = {
     id: true,
     email: true,
     name: true,
     role: true,
-};
+} as const;
 
 const userSelectAuth = {
     ...userSelectSafe,
     password: true,
+} as const;
+
+type UserSafe = {
+    id: string;
+    email: string;
+    name: string;
+    role: UserRole;
+};
+
+type UserWithPassword = UserSafe & {
+    password: string;
 };
 
 @Injectable()
@@ -25,7 +37,7 @@ export class UserService {
         private readonly argon2Service: Argon2Service
     ) {}
 
-    async findAll() {
+    async findAll(): Promise<UserSafe[]> {
         const users = await this.prisma.user.findMany({
             select: userSelectSafe,
         });
@@ -37,7 +49,7 @@ export class UserService {
         return users;
     }
 
-    async findById(id: string) {
+    async findById(id: string): Promise<UserSafe | null> {
         const user = await this.prisma.user.findUnique({
             where: { id },
             select: userSelectSafe,
@@ -48,16 +60,14 @@ export class UserService {
         return user;
     }
 
-    async findByEmail(email: string) {
-        const user = await this.prisma.user.findUnique({
+    async findByEmail(email: string): Promise<UserSafe | null> {
+        return this.prisma.user.findUnique({
             where: { email },
             select: userSelectSafe,
         });
-
-        return user;
     }
 
-    async findByEmailForAuth(email: string) {
+    async findByEmailForAuth(email: string): Promise<UserWithPassword | null> {
         const user = await this.prisma.user.findUnique({
             where: { email },
             select: userSelectAuth,
@@ -66,13 +76,12 @@ export class UserService {
         return user;
     }
 
-    async create(dto: CreateUserDto) {
-        const userWithHashedPassword = {
-            ...dto,
-            password: await this.argon2Service.hashPassword(dto.password),
-        };
+    async create(dto: CreateUserDto): Promise<UserSafe> {
         const user = await this.prisma.user.create({
-            data: userWithHashedPassword,
+            data: {
+                ...dto,
+                password: await this.argon2Service.hashPassword(dto.password),
+            },
             select: userSelectSafe,
         });
 
@@ -81,7 +90,7 @@ export class UserService {
         return user;
     }
 
-    async update(id: string, dto: UpdateUserDto) {
+    async update(id: string, dto: UpdateUserDto): Promise<UserSafe> {
         const user = await this.prisma.user.update({
             where: { id },
             data: dto,
@@ -93,7 +102,7 @@ export class UserService {
         return user;
     }
 
-    async delete(id: string) {
+    async delete(id: string): Promise<UserSafe> {
         const user = await this.prisma.user.delete({
             where: { id },
             select: userSelectSafe,

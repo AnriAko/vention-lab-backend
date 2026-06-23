@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule as NestJwtModule } from '@nestjs/jwt';
 
-import { ConfigModule, ConfigType } from '@nestjs/config';
+import { ConfigType } from '@nestjs/config';
 import { jwtConfig } from '~/config';
 
 import { Argon2Module } from '~/infrastructure/hashing/argon2.module';
@@ -18,7 +18,8 @@ import { RedisModule } from '~/infrastructure/cache/redis.module';
         RedisModule,
 
         NestJwtModule.registerAsync({
-            imports: [ConfigModule],
+            global: true,
+
             inject: [jwtConfig.KEY],
 
             useFactory: (config: ConfigType<typeof jwtConfig>) => ({

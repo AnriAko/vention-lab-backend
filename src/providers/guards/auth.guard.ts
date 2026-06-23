@@ -18,10 +18,11 @@ import {
 import { jwtConfig } from '~/config';
 import { IS_PUBLIC_KEY } from '~/common/decorators/public.decorator';
 import { AuthRequest } from '~/common/types/auth-request.type';
+import { UserRole } from '~/generated/prisma/enums';
 
 type JwtPayload = {
     sub: string;
-    role: 'user' | 'admin';
+    role: UserRole;
 };
 
 @Injectable()

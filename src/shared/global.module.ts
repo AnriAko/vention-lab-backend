@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, APP_GUARD } from '@nestjs/core';
 
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
+import { RedisModule } from '~/infrastructure/cache/redis.module';
 import { LoggerInterceptor } from '~/infrastructure/logging/logger.interceptor';
 import { HttpExceptionFilter } from '~/providers/filters/http-exception.filter';
 import { PrismaExceptionFilter } from '~/providers/filters/prisma-exception.filter';
@@ -52,5 +53,6 @@ import { RolesGuard } from '~/providers/guards/roles.guard';
             useClass: RolesGuard,
         },
     ],
+    imports: [RedisModule],
 })
 export class GlobalModule {}
