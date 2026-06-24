@@ -1,15 +1,19 @@
-import { appConfig } from './configuration/app.config';
-import { databaseConfig } from './configuration/database.config';
-import { redisConfig } from './configuration/redis.config';
-import { rabbitmqConfig } from './configuration/rabbitmq.config';
+import { appConfig } from '~/config/configuration/app.config';
+import { databaseConfig } from '~/config/configuration/database.config';
+import { redisConfig } from '~/config/configuration/redis.config';
+import { rabbitmqConfig } from '~/config/configuration/rabbitmq.config';
+import { jwtConfig } from '~/config/configuration/jwt.config';
+import { argon2Config } from '~/config/configuration/argon2.config';
+
 import validateEnv from './validate-env';
 import type {
-    envSchema,
     Env,
     AppConfig,
     DatabaseConfig,
     RedisConfig,
     RabbitMQConfig,
+    JwtConfig,
+    Argon2Config,
 } from './env.schema';
 
 export const configLoaders = [
@@ -17,12 +21,30 @@ export const configLoaders = [
     databaseConfig,
     redisConfig,
     rabbitmqConfig,
+    jwtConfig,
+    argon2Config,
 ];
 
-export { appConfig, databaseConfig, redisConfig, rabbitmqConfig };
+export {
+    appConfig,
+    databaseConfig,
+    redisConfig,
+    rabbitmqConfig,
+    jwtConfig,
+    argon2Config,
+};
+
 export { validateEnv };
-export { envSchema };
-export type { Env, AppConfig, DatabaseConfig, RedisConfig, RabbitMQConfig };
+
+export type {
+    Env,
+    AppConfig,
+    DatabaseConfig,
+    RedisConfig,
+    RabbitMQConfig,
+    JwtConfig,
+    Argon2Config,
+};
 
 export default {
     configLoaders,

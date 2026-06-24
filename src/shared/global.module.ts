@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, APP_GUARD } from '@nestjs/core';
+
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
+import { RedisModule } from '~/infrastructure/cache/redis.module';
 import { LoggerInterceptor } from '~/infrastructure/logging/logger.interceptor';
 import { HttpExceptionFilter } from '~/providers/filters/http-exception.filter';
 import { PrismaExceptionFilter } from '~/providers/filters/prisma-exception.filter';
+import { AuthGuard } from '~/providers/guards/auth.guard';
+import { RolesGuard } from '~/providers/guards/roles.guard';
 
 @Module({
     providers: [
@@ -19,23 +23,36 @@ import { PrismaExceptionFilter } from '~/providers/filters/prisma-exception.filt
             useClass: ZodSerializerInterceptor,
         },
 
-        // 3. Logging (main interceptor)
+        // 3. Logging
         {
             provide: APP_INTERCEPTOR,
             useClass: LoggerInterceptor,
         },
 
-        // 4. HTTP exceptions (HttpException, BadRequest etc.)
+        // 4. HTTP exceptions
         {
             provide: APP_FILTER,
             useClass: HttpExceptionFilter,
         },
 
-        // 5. Prisma DB exceptions (P2002, P2025 etc.)
+        // 5. Prisma exceptions
         {
             provide: APP_FILTER,
             useClass: PrismaExceptionFilter,
         },
+
+        // 6. Auth guard
+        {
+            provide: APP_GUARD,
+            useClass: AuthGuard,
+        },
+
+        // 7. Roles guard
+        {
+            provide: APP_GUARD,
+            useClass: RolesGuard,
+        },
     ],
+    imports: [RedisModule],
 })
 export class GlobalModule {}

@@ -11,16 +11,22 @@ import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserIdDto } from './dto/user-id.dto';
+import { Roles } from '~/common/decorators/roles.decorator';
+import { UserRole } from '~/generated/prisma/enums';
+import { PublicRoute } from '~/common/decorators/public.decorator';
 
+@Roles(UserRole.ADMIN)
 @Controller('user')
 export class UserController {
     constructor(private readonly userService: UserService) {}
 
+    @PublicRoute()
     @Get()
     findAll() {
         return this.userService.findAll();
     }
 
+    @Roles(UserRole.USER)
     @Get(':id')
     findById(@Param() dto: UserIdDto) {
         return this.userService.findById(dto.id);
