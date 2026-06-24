@@ -1,8 +1,8 @@
 import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { IS_PUBLIC_KEY } from '~/common/decorators/public.decorator';
-import { ROLES_KEY } from '~/common/decorators/roles.decorator';
-import { AuthRequest } from '~/common/types/auth-request.type';
+import { IS_PUBLIC_KEY, ROLES_KEY } from '~/common/decorators/constants';
+
+import { AuthRequest } from '~/common/types/auth.types';
 import { UserRole } from '~/generated/prisma/enums';
 
 @Injectable()

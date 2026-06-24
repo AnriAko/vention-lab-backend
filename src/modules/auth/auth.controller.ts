@@ -12,7 +12,7 @@ import type { Response } from 'express';
 
 import { AuthService } from '~/modules/auth/auth.service';
 import { SignInDto } from '~/modules/auth/dto/sign-in.dto';
-import type { AuthRequest } from '~/common/types/auth-request.type';
+import type { AuthRequest } from '~/common/types/auth.types';
 import { PublicRoute } from '~/common/decorators/public.decorator';
 
 @Controller('auth')

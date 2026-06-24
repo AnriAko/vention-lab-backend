@@ -1,8 +1,9 @@
 import { registerAs } from '@nestjs/config';
+import { ConfigKeys } from '~/config/config.keys';
 import type { Argon2Config } from '~/config/env.schema';
 
 export const argon2Config = registerAs(
-    'argon2',
+    ConfigKeys.ARGON2,
     (): Argon2Config => ({
         password: {
             memoryCost: Number(process.env.ARGON2_PASSWORD_MEMORY_COST),

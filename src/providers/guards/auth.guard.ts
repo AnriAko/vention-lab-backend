@@ -5,25 +5,22 @@ import {
     UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import type { Request } from 'express';
 import { Inject } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 
-import {
-    RedisService,
-    RedisPrefix,
-} from '~/infrastructure/cache/redis.service';
+import { RedisService } from '~/infrastructure/cache/redis.service';
 
 import { jwtConfig } from '~/config';
-import { IS_PUBLIC_KEY } from '~/common/decorators/public.decorator';
-import { AuthRequest } from '~/common/types/auth-request.type';
-import { UserRole } from '~/generated/prisma/enums';
-
-type JwtPayload = {
-    sub: string;
-    role: UserRole;
-};
+import {
+    AUTH_HEADER,
+    AUTH_SCHEME,
+    AuthRequest,
+    JwtPayload,
+} from '~/common/types/auth.types';
+import { IS_PUBLIC_KEY } from '~/common/decorators/constants';
+import { RedisPrefix } from '~/common/types/redis.types';
+import { parseHeader } from '~/common/utils/parse-header';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -48,7 +45,7 @@ export class AuthGuard implements CanActivate {
 
         const request = context.switchToHttp().getRequest<AuthRequest>();
 
-        const token = this.extractTokenFromHeader(request);
+        const token = this.extractToken(request);
 
         if (!token) {
             throw new UnauthorizedException('Missing access token');
@@ -85,10 +82,9 @@ export class AuthGuard implements CanActivate {
             throw new UnauthorizedException('Invalid or expired token');
         }
     }
+    private extractToken(request: AuthRequest): string | undefined {
+        const parsed = parseHeader(request, AUTH_HEADER.AUTHORIZATION);
 
-    private extractTokenFromHeader(request: Request): string | undefined {
-        const [type, token] = request.headers.authorization?.split(' ') ?? [];
-
-        return type === 'Bearer' ? token : undefined;
+        return parsed?.type === AUTH_SCHEME.BEARER ? parsed.value : undefined;
     }
 }

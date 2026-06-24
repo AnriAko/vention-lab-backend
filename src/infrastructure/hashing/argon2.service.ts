@@ -4,12 +4,7 @@ import { Inject } from '@nestjs/common';
 import argon2 from 'argon2';
 
 import { argon2Config } from '~/config';
-
-type HashOptions = {
-    memoryCost: number;
-    timeCost: number;
-    parallelism: number;
-};
+import { HashOptions } from '~/common/types/argon2.types';
 
 @Injectable()
 export class Argon2Service {
@@ -26,11 +21,11 @@ export class Argon2Service {
         return this.config.token;
     }
 
-    async hashPassword(password: string): Promise<string> {
+    hashPassword(password: string): Promise<string> {
         return argon2.hash(password, this.passwordOptions);
     }
 
-    async hashToken(token: string): Promise<string> {
+    hashToken(token: string): Promise<string> {
         return argon2.hash(token, this.tokenOptions);
     }
 

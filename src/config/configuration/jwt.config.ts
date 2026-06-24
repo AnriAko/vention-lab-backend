@@ -1,8 +1,9 @@
 import { registerAs } from '@nestjs/config';
+import { ConfigKeys } from '~/config/config.keys';
 import type { JwtConfig } from '~/config/env.schema';
 
 export const jwtConfig = registerAs(
-    'jwt',
+    ConfigKeys.JWT,
     (): JwtConfig => ({
         secret: process.env.JWT_SECRET!,
         accessExpiresIn: process.env

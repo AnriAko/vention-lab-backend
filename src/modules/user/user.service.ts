@@ -4,30 +4,12 @@ import { LoggerService } from '~/infrastructure/logging/logger.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
-import { UserRole } from '~/generated/prisma/enums';
-
-const userSelectSafe = {
-    id: true,
-    email: true,
-    name: true,
-    role: true,
-} as const;
-
-const userSelectAuth = {
-    ...userSelectSafe,
-    password: true,
-} as const;
-
-type UserSafe = {
-    id: string;
-    email: string;
-    name: string;
-    role: UserRole;
-};
-
-type UserWithPassword = UserSafe & {
-    password: string;
-};
+import {
+    UserSafe,
+    userSelectAuth,
+    userSelectSafe,
+    UserWithPassword,
+} from '~/common/types/user.types';
 
 @Injectable()
 export class UserService {
@@ -60,7 +42,7 @@ export class UserService {
         return user;
     }
 
-    async findByEmail(email: string): Promise<UserSafe | null> {
+    findByEmail(email: string): Promise<UserSafe | null> {
         return this.prisma.user.findUnique({
             where: { email },
             select: userSelectSafe,

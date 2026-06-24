@@ -6,14 +6,9 @@ import {
 } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import Redis from 'ioredis';
+import { RedisPrefix } from '~/common/types/redis.types';
 import { redisConfig } from '~/config';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
-
-export enum RedisPrefix {
-    REFRESH_TOKEN = 'refresh-token',
-    INVALID_TOKEN = 'invalid-token',
-    CACHE = 'cache',
-}
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {
@@ -27,6 +22,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         this.client = new Redis({
             host: this.config.host,
             port: this.config.port,
+            maxRetriesPerRequest: 5,
         });
 
         this.client.on('error', (error) => {
@@ -49,11 +45,11 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         return `${prefix}:${key}`;
     }
 
-    async ping(): Promise<string> {
+    ping(): Promise<string> {
         return this.client.ping();
     }
 
-    async get(prefix: RedisPrefix, key: string): Promise<string | null> {
+    get(prefix: RedisPrefix, key: string): Promise<string | null> {
         return this.client.get(this.buildKey(prefix, key));
     }
 
@@ -78,7 +74,7 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
         return (await this.client.exists(this.buildKey(prefix, key))) === 1;
     }
 
-    async ttl(prefix: RedisPrefix, key: string): Promise<number> {
+    ttl(prefix: RedisPrefix, key: string): Promise<number> {
         return this.client.ttl(this.buildKey(prefix, key));
     }
 

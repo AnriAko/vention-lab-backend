@@ -10,6 +10,7 @@ import { UserModule } from '~/modules/user/user.module';
 import { AuthController } from '~/modules/auth/auth.controller';
 import { AuthService } from '~/modules/auth/auth.service';
 import { RedisModule } from '~/infrastructure/cache/redis.module';
+import { AuthCookieService } from '~/modules/auth/auth-cookie.service';
 
 @Module({
     imports: [
@@ -32,6 +33,6 @@ import { RedisModule } from '~/infrastructure/cache/redis.module';
     ],
 
     controllers: [AuthController],
-    providers: [AuthService],
+    providers: [AuthService, AuthCookieService],
 })
 export class AuthModule {}

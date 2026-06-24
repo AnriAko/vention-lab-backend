@@ -4,29 +4,28 @@ import type { ConfigType } from '@nestjs/config';
 import { Response } from 'express';
 import ms from 'ms';
 
-import {
-    RedisService,
-    RedisPrefix,
-} from '~/infrastructure/cache/redis.service';
+import { RedisService } from '~/infrastructure/cache/redis.service';
 import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
 import { UserService } from '~/modules/user/user.service';
 import { SignInDto } from '~/modules/auth/dto/sign-in.dto';
 
 import { jwtConfig } from '~/config';
 import { AuthCookie } from './auth.constants';
-import { AuthRequest } from '~/common/types/auth-request.type';
+import { AuthRequest } from '~/common/types/auth.types';
+import { RedisPrefix } from '~/common/types/redis.types';
+import { AuthCookieService } from '~/modules/auth/auth-cookie.service';
 
 @Injectable()
 export class AuthService {
     private readonly accessTokenTtlSeconds: number;
     private readonly refreshTokenTtlSeconds: number;
-    private readonly isProduction: boolean;
 
     constructor(
         private usersService: UserService,
         private jwtService: JwtService,
         private argon2Service: Argon2Service,
         private redisService: RedisService,
+        private authCookieService: AuthCookieService,
 
         @Inject(jwtConfig.KEY)
         private readonly jwtConf: ConfigType<typeof jwtConfig>
@@ -38,8 +37,6 @@ export class AuthService {
         this.refreshTokenTtlSeconds = Math.floor(
             ms(this.jwtConf.refreshExpiresIn) / 1000
         );
-
-        this.isProduction = process.env.NODE_ENV === 'production';
     }
 
     async signIn(signInDto: SignInDto, res: Response) {
@@ -75,7 +72,6 @@ export class AuthService {
             expiresIn: this.jwtConf.refreshExpiresIn,
         });
 
-        // Redis (1 user = 1 refresh token)
         await this.redisService.setWithExpiry(
             RedisPrefix.REFRESH_TOKEN,
             user.id,
@@ -85,19 +81,18 @@ export class AuthService {
 
         const { password: _password, ...safeUser } = user;
 
-        res.cookie(AuthCookie.REFRESH_TOKEN, refreshToken, {
-            httpOnly: true,
-            secure: this.isProduction,
-            sameSite: this.isProduction ? 'strict' : 'lax',
-            path: '/',
-            maxAge: this.refreshTokenTtlSeconds * 1000,
-        });
+        this.authCookieService.setRefreshToken(
+            res,
+            refreshToken,
+            this.refreshTokenTtlSeconds * 1000
+        );
 
         return {
             accessToken,
             user: safeUser,
         };
     }
+
     async refresh(req: AuthRequest, res: Response) {
         const refreshToken = req.cookies?.[AuthCookie.REFRESH_TOKEN];
 
@@ -155,13 +150,11 @@ export class AuthService {
                 this.refreshTokenTtlSeconds
             );
 
-            res.cookie(AuthCookie.REFRESH_TOKEN, newRefreshToken, {
-                httpOnly: true,
-                secure: this.isProduction,
-                sameSite: this.isProduction ? 'strict' : 'lax',
-                path: '/',
-                maxAge: this.refreshTokenTtlSeconds * 1000,
-            });
+            this.authCookieService.setRefreshToken(
+                res,
+                newRefreshToken,
+                this.refreshTokenTtlSeconds * 1000
+            );
 
             return {
                 accessToken: newAccessToken,
@@ -174,12 +167,7 @@ export class AuthService {
     async logout(req: AuthRequest, res: Response) {
         const accessToken = req.headers.authorization?.split(' ')[1];
 
-        res.clearCookie(AuthCookie.REFRESH_TOKEN, {
-            httpOnly: true,
-            secure: this.isProduction,
-            sameSite: this.isProduction ? 'strict' : 'lax',
-            path: '/',
-        });
+        this.authCookieService.clearRefreshToken(res);
 
         if (!accessToken) {
             return { message: 'Logged out' };
