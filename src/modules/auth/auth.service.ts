@@ -1,4 +1,4 @@
-import { Injectable, Inject } from '@nestjs/common';
+import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { ConfigType } from '@nestjs/config';
 import { Response } from 'express';
@@ -6,7 +6,7 @@ import ms from 'ms';
 
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
-import { UserService } from '~/modules/user/user.service';
+import { UsersService } from '~/modules/user/user.service';
 import { SignInDto } from '~/modules/auth/dto/sign-in.dto';
 
 import { jwtConfig } from '~/config';
@@ -14,6 +14,8 @@ import { AuthCookie } from './auth.constants';
 import { AuthRequest } from '~/common/types/auth.types';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { AuthCookieService } from '~/modules/auth/auth-cookie.service';
+import { User } from '~/generated/prisma/client';
+import { AuthResponseDto } from '~/modules/auth/dto/auth.response.dto';
 
 @Injectable()
 export class AuthService {
@@ -21,7 +23,7 @@ export class AuthService {
     private readonly refreshTokenTtlSeconds: number;
 
     constructor(
-        private usersService: UserService,
+        private usersService: UsersService,
         private jwtService: JwtService,
         private argon2Service: Argon2Service,
         private redisService: RedisService,
@@ -45,7 +47,7 @@ export class AuthService {
         );
 
         if (!user) {
-            return 'Invalid email or password';
+            throw new UnauthorizedException('Invalid email or password');
         }
 
         const isValid = await this.argon2Service.verify(
@@ -54,7 +56,7 @@ export class AuthService {
         );
 
         if (!isValid) {
-            return 'Invalid email or password';
+            throw new UnauthorizedException('Invalid email or password');
         }
 
         const payload = {
@@ -79,18 +81,13 @@ export class AuthService {
             this.refreshTokenTtlSeconds
         );
 
-        const { password: _password, ...safeUser } = user;
-
         this.authCookieService.setRefreshToken(
             res,
             refreshToken,
             this.refreshTokenTtlSeconds * 1000
         );
 
-        return {
-            accessToken,
-            user: safeUser,
-        };
+        return this.buildAuthResponse(accessToken, user);
     }
 
     async refresh(req: AuthRequest, res: Response) {
@@ -188,5 +185,16 @@ export class AuthService {
         }
 
         return { message: 'Successfully logged out' };
+    }
+    private buildAuthResponse(
+        accessToken: string,
+        user: User
+    ): AuthResponseDto {
+        const { password: _password, ...safeUser } = user;
+
+        return {
+            ...safeUser,
+            accessToken,
+        };
     }
 }

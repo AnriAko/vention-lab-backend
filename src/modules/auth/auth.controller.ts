@@ -19,7 +19,7 @@ import { PublicRoute } from '~/common/decorators/public.decorator';
 export class AuthController {
     constructor(private authService: AuthService) {}
     @PublicRoute()
-    @Post('sign-in')
+    @Post('login')
     @HttpCode(HttpStatus.OK)
     signIn(
         @Body() signInDto: SignInDto,

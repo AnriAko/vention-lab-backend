@@ -12,7 +12,7 @@ import {
 } from '~/common/types/user.types';
 
 @Injectable()
-export class UserService {
+export class UsersService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly logger: LoggerService,

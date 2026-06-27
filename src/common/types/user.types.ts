@@ -5,6 +5,7 @@ export const userSelectSafe = {
     email: true,
     name: true,
     role: true,
+    image: true,
 } as const;
 
 export const userSelectAuth = {
@@ -17,6 +18,7 @@ export type UserSafe = {
     email: string;
     name: string;
     role: UserRole;
+    image: string;
 };
 
 export type UserWithPassword = UserSafe & {

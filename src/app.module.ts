@@ -2,7 +2,7 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { configLoaders, validateEnv } from './config';
 import { GlobalModule } from './shared/global.module';
-import { UserModule } from '~/modules/user/user.module';
+import { UsersModule } from '~/modules/user/user.module';
 import { PrismaModule } from '~/infrastructure/database/prisma.module';
 import { HealthModule } from '~/modules/health/health.module';
 import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
@@ -25,7 +25,7 @@ import { AuthModule } from '~/modules/auth/auth.module';
         HealthModule,
         LoggerModule,
         AuthModule,
-        UserModule,
+        UsersModule,
     ],
 })
 export class AppModule implements NestModule {
