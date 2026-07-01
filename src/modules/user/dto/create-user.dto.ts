@@ -4,6 +4,7 @@ import z from 'zod';
 const CreateUserSchema = z.object({
     email: z.email(),
     name: z.string().min(1),
+    organizationId: z.uuid(),
     password: z.string().min(8),
 });
 
