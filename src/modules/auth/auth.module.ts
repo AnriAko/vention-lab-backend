@@ -5,7 +5,7 @@ import { ConfigType } from '@nestjs/config';
 import { jwtConfig } from '~/config';
 
 import { Argon2Module } from '~/infrastructure/hashing/argon2.module';
-import { UserModule } from '~/modules/user/user.module';
+import { UsersModule } from '~/modules/user/user.module';
 
 import { AuthController } from '~/modules/auth/auth.controller';
 import { AuthService } from '~/modules/auth/auth.service';
@@ -14,7 +14,7 @@ import { AuthCookieService } from '~/modules/auth/auth-cookie.service';
 
 @Module({
     imports: [
-        UserModule,
+        UsersModule,
         Argon2Module,
         RedisModule,
 

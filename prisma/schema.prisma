@@ -20,9 +20,11 @@ model User{
     name String
     password String
     role UserRole @default(USER)
+    image String @default("")
 }
 
 enum UserRole {
     USER
     ADMIN
+    OWNER
 }
