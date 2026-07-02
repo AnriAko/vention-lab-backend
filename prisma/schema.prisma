@@ -4,82 +4,100 @@
 // Get a free hosted Postgres database in seconds: `npx create-db`
 
 generator client {
-  provider        = "prisma-client"
-  output          = "../src/generated/prisma"
-  moduleFormat    = "cjs"
-  runtime         = "nodejs"
+    provider     = "prisma-client"
+    output       = "../src/generated/prisma"
+    moduleFormat = "cjs"
+    runtime      = "nodejs"
 }
 
 datasource db {
-  provider = "postgresql"
+    provider = "postgresql"
 }
 
-model User{
-    id String @id @default(uuid())
-    organization Organization @relation(fields:[organizationId], references:[id])
-    organizationId String
-    email String @unique
-    name String
-    password String
-    role UserRole @default(USER)
-    image String @default("")
-    files File[]
-    chats UsersChats[]
-    messages Message[]
-    isDeleted Boolean @default(false)
+model User {
+    id           String   @id @default(uuid())
+    email        String   @unique
+    name         String
+    password     String
+    role         UserRole @default(USER)
+    image        String   @default("")
+    isDeleted    Boolean  @default(false)
+
+    organizations UsersOrganizations[]
+    files         File[]
+    chats         UsersChats[]
+    messages      Message[]
 }
 
 model Organization {
-    id String @id @default(uuid())
-    name String
+    id        String   @id @default(uuid())
+    name      String
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
-    users User[]
+    isDeleted Boolean  @default(false)
+
+    users UsersOrganizations[]
     files File[]
-    isDeleted Boolean @default(false)
 }
 
-model File{
-    id String @id @default(uuid())
-    owner User @relation(fields:[ownerId], references:[id])
-    ownerId String
-    organization Organization @relation(fields:[organizationId], references:[id])
+model UsersOrganizations {
+    userId         String
     organizationId String
-    filename String
-    size Int
-    status String
-    contentType String 
-    storageKey String
-    application String?
+
+    user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+    organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    role UserRole @default(USER)
+
+    @@id([userId, organizationId])
+}
+
+model File {
+    id             String   @id @default(uuid())
+    ownerId        String
+    organizationId String
+
+    owner        User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+    organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
+    filename        String
+    size            Int
+    status          String
+    contentType     String
+    storageKey      String
+    application     String?
     processingError String?
+
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 }
 
 model Chat {
-    id String @id @default(uuid())
-    users UsersChats[]
+    id       String       @id @default(uuid())
+    users    UsersChats[]
     messages Message[]
 }
 
 model UsersChats {
-    user User @relation(fields:[userId], references: [id])
     userId String
-    chat Chat @relation(fields:[chatId], references: [id])
     chatId String
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+
     @@id([userId, chatId])
 }
 
 model Message {
-    id String @id @default(uuid())
-    chat Chat @relation(fields:[chatId], references: [id])
-    chatId String
-    content String
-    sender User @relation(fields: [senderId], references: [id])
-    senderId String
+    id        String   @id @default(uuid())
+    chatId    String
+    senderId  String
+    content   String
     createdAt DateTime @default(now())
-}
 
+    chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
+    sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+}
 
 enum UserRole {
     USER
