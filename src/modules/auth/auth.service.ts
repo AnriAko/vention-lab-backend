@@ -46,7 +46,7 @@ export class AuthService {
             signInDto.email
         );
 
-        if (!user) {
+        if (!user || user.isDeleted) {
             throw new UnauthorizedException('Invalid email or password');
         }
 

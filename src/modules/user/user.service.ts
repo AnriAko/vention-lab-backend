@@ -1,28 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '~/infrastructure/database/prisma.service';
+
 import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
+import { RedisService } from '~/infrastructure/cache/redis.service';
+
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
-import {
-    UserSafe,
-    userSelectAuth,
-    userSelectSafe,
-    UserWithPassword,
-} from '~/common/types/user.types';
+import { UserSafe, UserWithPassword } from '~/common/types/user.types';
+import { RedisPrefix } from '~/common/types/redis.types';
+import { UsersRepository } from '~/modules/user/user.repository';
 
 @Injectable()
 export class UsersService {
     constructor(
-        private readonly prisma: PrismaService,
+        private readonly userRepository: UsersRepository,
         private readonly logger: LoggerService,
-        private readonly argon2Service: Argon2Service
+        private readonly argon2Service: Argon2Service,
+        private readonly redisService: RedisService
     ) {}
 
     async findAll(): Promise<UserSafe[]> {
-        const users = await this.prisma.user.findMany({
-            select: userSelectSafe,
-        });
+        const users = await this.userRepository.findAll();
 
         this.logger.log(
             `[UserService] fetched all users count=${users.length}`
@@ -32,10 +30,7 @@ export class UsersService {
     }
 
     async findById(id: string): Promise<UserSafe | null> {
-        const user = await this.prisma.user.findUnique({
-            where: { id },
-            select: userSelectSafe,
-        });
+        const user = await this.userRepository.findById(id);
 
         this.logger.log(`[UserService] fetched user id=${id}`);
 
@@ -43,28 +38,21 @@ export class UsersService {
     }
 
     findByEmail(email: string): Promise<UserSafe | null> {
-        return this.prisma.user.findUnique({
-            where: { email },
-            select: userSelectSafe,
-        });
+        return this.userRepository.findByEmail(email);
     }
 
-    async findByEmailForAuth(email: string): Promise<UserWithPassword | null> {
-        const user = await this.prisma.user.findUnique({
-            where: { email },
-            select: userSelectAuth,
-        });
-
-        return user;
+    findByEmailForAuth(email: string): Promise<UserWithPassword | null> {
+        return this.userRepository.findByEmailForAuth(email);
     }
 
     async create(dto: CreateUserDto): Promise<UserSafe> {
-        const user = await this.prisma.user.create({
-            data: {
-                ...dto,
-                password: await this.argon2Service.hashPassword(dto.password),
-            },
-            select: userSelectSafe,
+        const hashedPassword = await this.argon2Service.hashPassword(
+            dto.password
+        );
+
+        const user = await this.userRepository.create({
+            ...dto,
+            password: hashedPassword,
         });
 
         this.logger.log(`[UserService] created id=${user.id}`);
@@ -73,11 +61,7 @@ export class UsersService {
     }
 
     async update(id: string, dto: UpdateUserDto): Promise<UserSafe> {
-        const user = await this.prisma.user.update({
-            where: { id },
-            data: dto,
-            select: userSelectSafe,
-        });
+        const user = await this.userRepository.update(id, dto);
 
         this.logger.log(`[UserService] updated id=${id}`);
 
@@ -85,12 +69,11 @@ export class UsersService {
     }
 
     async delete(id: string): Promise<UserSafe> {
-        const user = await this.prisma.user.delete({
-            where: { id },
-            select: userSelectSafe,
-        });
+        const user = await this.userRepository.softDelete(id);
 
-        this.logger.log(`[UserService] deleted id=${id}`);
+        await this.redisService.del(RedisPrefix.REFRESH_TOKEN, id);
+
+        this.logger.log(`[UserService] soft deleted id=${id}`);
 
         return user;
     }
