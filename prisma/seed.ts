@@ -1,8 +1,6 @@
 import 'dotenv/config';
-import { Pool } from 'pg';
-import { PrismaPg } from '@prisma/adapter-pg';
 
-import { PrismaClient } from '../src/generated/prisma/client';
+import { prisma, disconnect } from './client';
 
 import { seedUsers } from './seed/users.seed';
 import { seedChats } from './seed/chats.seed';
@@ -10,29 +8,9 @@ import { seedMessages } from './seed/messages.seed';
 import { seedFiles } from './seed/files.seed';
 import { seedOrganizations } from './seed/organizations.seed';
 
-const connectionString = process.env.DATABASE_URL!;
-const pool = new Pool({ connectionString });
-const adapter = new PrismaPg(pool);
-
-const prisma = new PrismaClient({
-    adapter,
-    log: ['error', 'warn'],
-} as any);
-
 async function main() {
     try {
         console.log('START SEED');
-
-        await prisma.$transaction([
-            prisma.file.deleteMany(),
-            prisma.message.deleteMany(),
-            prisma.usersChats.deleteMany(),
-            prisma.chat.deleteMany(),
-            prisma.user.deleteMany(),
-            prisma.organization.deleteMany(),
-        ]);
-
-        console.log('DELETE DONE');
 
         const organizations = await seedOrganizations(prisma);
         console.log('ORG DONE');
@@ -57,13 +35,9 @@ async function main() {
 }
 
 main()
-    .then(async () => {
-        await prisma.$disconnect();
-        await pool.end();
-    })
+    .then(disconnect)
     .catch(async (e) => {
         console.error(e);
-        await prisma.$disconnect();
-        await pool.end();
+        await disconnect();
         process.exit(1);
     });
