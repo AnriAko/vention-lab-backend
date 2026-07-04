@@ -9,6 +9,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserSafe, UserWithPassword } from '~/common/types/user.types';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { UsersRepository } from '~/modules/user/user.repository';
+import { UserRole } from '~/generated/prisma/enums';
 
 @Injectable()
 export class UsersService {
@@ -44,8 +45,16 @@ export class UsersService {
     findByEmailForAuth(email: string): Promise<UserWithPassword | null> {
         return this.userRepository.findByEmailForAuth(email);
     }
+    async findAllAdmins(): Promise<UserSafe[]> {
+        const admins = await this.userRepository.findAllAdmins();
 
-    async create(dto: CreateUserDto): Promise<UserSafe> {
+        this.logger.log(
+            `[UserService] fetched all admins count=${admins.length}`
+        );
+
+        return admins;
+    }
+    async createUser(dto: CreateUserDto): Promise<UserSafe> {
         const hashedPassword = await this.argon2Service.hashPassword(
             dto.password
         );
@@ -58,6 +67,19 @@ export class UsersService {
         this.logger.log(`[UserService] created id=${user.id}`);
 
         return user;
+    }
+    async createAdmin(dto: CreateUserDto): Promise<UserSafe> {
+        const hashedPassword = await this.argon2Service.hashPassword(
+            dto.password
+        );
+
+        return this.userRepository.create(
+            {
+                ...dto,
+                password: hashedPassword,
+            },
+            UserRole.ADMIN
+        );
     }
 
     async update(id: string, dto: UpdateUserDto): Promise<UserSafe> {

@@ -9,6 +9,7 @@ import {
 } from '~/common/types/user.types';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserRole } from '~/generated/prisma/enums';
 
 @Injectable()
 export class UsersRepository {
@@ -43,12 +44,25 @@ export class UsersRepository {
             select: userSelectAuth,
         });
     }
+    findAllAdmins(): Promise<UserSafe[]> {
+        return this.prisma.user.findMany({
+            where: {
+                role: UserRole.ADMIN,
+                isDeleted: false,
+            },
+            select: userSelectSafe,
+        });
+    }
 
     create(
-        dto: Omit<CreateUserDto, 'password'> & { password: string }
+        dto: Omit<CreateUserDto, 'password'> & { password: string },
+        role: UserRole = UserRole.USER
     ): Promise<UserSafe> {
         return this.prisma.user.create({
-            data: dto,
+            data: {
+                ...dto,
+                role,
+            },
             select: userSelectSafe,
         });
     }

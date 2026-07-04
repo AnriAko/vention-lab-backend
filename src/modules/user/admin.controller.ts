@@ -14,14 +14,14 @@ import { UserIdDto } from './dto/user-id.dto';
 import { Roles } from '~/common/decorators/roles.decorator';
 import { UserRole } from '~/generated/prisma/enums';
 
-@Roles(UserRole.ADMIN)
-@Controller('users')
-export class UsersController {
+@Roles(UserRole.OWNER)
+@Controller('admins')
+export class AdminController {
     constructor(private readonly userService: UsersService) {}
 
     @Get()
     findAll() {
-        return this.userService.findAll();
+        return this.userService.findAllAdmins();
     }
 
     @Get(':id')
@@ -29,9 +29,10 @@ export class UsersController {
         return this.userService.findById(dto.id);
     }
 
+    // @PublicRoute()
     @Post()
     create(@Body() dto: CreateUserDto) {
-        return this.userService.createUser(dto);
+        return this.userService.createAdmin(dto);
     }
 
     @Patch(':id')
