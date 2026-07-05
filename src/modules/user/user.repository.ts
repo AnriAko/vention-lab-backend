@@ -74,6 +74,15 @@ export class UsersRepository {
             select: userSelectSafe,
         });
     }
+    restore(id: string): Promise<UserSafe> {
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                isDeleted: false,
+            },
+            select: userSelectSafe,
+        });
+    }
 
     softDelete(id: string): Promise<UserSafe> {
         return this.prisma.user.update({

@@ -89,6 +89,13 @@ export class UsersService {
 
         return user;
     }
+    async restore(id: string): Promise<UserSafe> {
+        const user = await this.userRepository.restore(id);
+
+        this.logger.log(`[UserService] restored id=${id}`);
+
+        return user;
+    }
 
     async delete(id: string): Promise<UserSafe> {
         const user = await this.userRepository.softDelete(id);

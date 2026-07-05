@@ -9,6 +9,7 @@ import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
 import { LoggerModule } from '~/infrastructure/logging/logger.module';
 import { envFilePath } from '~/common/utils/env-file-path';
 import { AuthModule } from '~/modules/auth/auth.module';
+import { OrganizationModule } from './modules/organization/organization.module';
 
 @Module({
     imports: [
@@ -26,6 +27,7 @@ import { AuthModule } from '~/modules/auth/auth.module';
         LoggerModule,
         AuthModule,
         UsersModule,
+        OrganizationModule,
     ],
 })
 export class AppModule implements NestModule {
