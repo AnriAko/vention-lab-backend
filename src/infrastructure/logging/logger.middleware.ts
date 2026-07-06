@@ -1,21 +1,27 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
+import { randomUUID } from 'crypto';
+import { requestContext } from '../context/request-context';
 
 type Req = Request & {
     requestId?: string;
-    startTime?: number;
 };
 
 @Injectable()
 export class LoggerMiddleware implements NestMiddleware {
     use(req: Req, res: Response, next: NextFunction) {
-        const requestId = crypto.randomUUID();
-
-        req.requestId = requestId;
-        req.startTime = Date.now();
+        const requestId = randomUUID();
+        const startTime = Date.now();
 
         res.setHeader('x-request-id', requestId);
 
-        next();
+        requestContext.run(
+            {
+                requestId,
+                startTime,
+                userId: 'anonymous',
+            },
+            () => next()
+        );
     }
 }

@@ -2,26 +2,20 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, Prisma } from '~/generated/prisma/client';
 import { ConfigService } from '@nestjs/config';
-
-import chalk from 'chalk';
+import { LoggerService } from '~/infrastructure/logging/logger.service';
 
 import {
     QueryEvent,
     LogEvent,
 } from '~/generated/prisma/internal/prismaNamespace';
-
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import chalk from 'chalk';
+import { formatPrismaQuery } from '~/infrastructure/database/utils/prisma-query-formatter';
 
 @Injectable()
 export class PrismaService
     extends PrismaClient<{
         adapter: PrismaPg;
         log: (Prisma.LogLevel | Prisma.LogDefinition)[];
-        transactionOptions?: {
-            maxWait?: number;
-            timeout?: number;
-            isolationLevel?: Prisma.TransactionIsolationLevel;
-        };
     }>
     implements OnModuleInit, OnModuleDestroy
 {
@@ -29,62 +23,52 @@ export class PrismaService
         configService: ConfigService,
         private readonly logger: LoggerService
     ) {
-        const url = configService.get<string>('database.url');
-
         const adapter = new PrismaPg({
-            connectionString: url as string,
+            connectionString: configService.get<string>('database.url')!,
         });
 
         super({
             adapter,
             log: [
                 { emit: 'event', level: 'query' },
-                { emit: 'stdout', level: 'error' },
-                { emit: 'stdout', level: 'warn' },
-                { emit: 'stdout', level: 'info' },
+                { emit: 'event', level: 'error' },
+                { emit: 'event', level: 'warn' },
             ],
         });
     }
 
     async onModuleInit() {
         await this.$connect();
+        console.log(
+            chalk.green('[System]') +
+                ' ' +
+                chalk.white(`Prisma connected to database`)
+        );
+        const label = 'Prisma';
 
         this.$on('query', (e: QueryEvent) => {
-            const duration = Number(e.duration.toFixed(2));
+            const duration = Number(e.duration.toFixed());
+            const slowThreshold = 50;
+            const isSlow = duration > slowThreshold;
 
-            let durationColor: (text: string) => string;
+            const sql = formatPrismaQuery(e.query, e.params);
 
-            if (duration < 10) {
-                durationColor = chalk.green;
-            } else if (duration < 50) {
-                durationColor = chalk.yellow;
-            } else {
-                durationColor = chalk.red;
+            this.logger.log({
+                message: `[Prisma] query ${duration}ms`,
+                sql,
+            });
+
+            if (isSlow) {
+                this.logger.warn(`[Prisma] SLOW QUERY ${duration}ms\n${sql}`);
             }
-
-            this.logger.log(
-                chalk.cyan('[Prisma] Query') +
-                    '\n' +
-                    chalk.white(e.query) +
-                    '\n' +
-                    chalk.gray('Params: ') +
-                    chalk.white(JSON.stringify(e.params)) +
-                    '\n' +
-                    chalk.gray('Duration: ') +
-                    durationColor(`${duration}ms`)
-            );
         });
 
         this.$on('warn', (e: LogEvent) => {
-            this.logger.warn(
-                chalk.yellow(`[Prisma] Warn: ${JSON.stringify(e)}`)
-            );
+            this.logger.warn(`[${label}] warn ${JSON.stringify(e)}`);
         });
 
         this.$on('error', (e: LogEvent) => {
-            this.logger.error(
-                chalk.red(`[Prisma] Error: ${JSON.stringify(e)}`)
-            );
+            this.logger.error(`[${label}] error ${JSON.stringify(e)}`);
         });
     }
 

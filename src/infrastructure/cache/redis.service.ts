@@ -5,6 +5,7 @@ import {
     OnModuleInit,
 } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
+import chalk from 'chalk';
 import Redis from 'ioredis';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { redisConfig } from '~/config';
@@ -34,7 +35,9 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
 
     async onModuleInit(): Promise<void> {
         await this.client.ping();
-        this.logger.log('Redis connected');
+        console.log(
+            chalk.green('[System]') + ' ' + chalk.white(`Redis connected`)
+        );
     }
 
     async onModuleDestroy(): Promise<void> {

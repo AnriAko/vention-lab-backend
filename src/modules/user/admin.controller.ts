@@ -29,7 +29,6 @@ export class AdminController {
         return this.userService.findById(dto.id);
     }
 
-    // @PublicRoute()
     @Post()
     create(@Body() dto: CreateUserDto) {
         return this.userService.createAdmin(dto);
