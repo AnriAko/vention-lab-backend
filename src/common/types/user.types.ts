@@ -6,7 +6,6 @@ export const userSelectSafe = {
     name: true,
     role: true,
     image: true,
-    organizationId: true,
     isDeleted: true,
 } as const;
 
@@ -21,7 +20,6 @@ export type UserSafe = {
     name: string;
     role: UserRole;
     image: string;
-    organizationId: string;
     isDeleted: boolean;
 };
 
