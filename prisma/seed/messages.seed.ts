@@ -1,10 +1,13 @@
-import { PrismaClient, Chat, User } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 
 import { faker } from '@faker-js/faker';
 
+const TOTAL_MESSAGES = 200;
+const BATCH_SIZE = 100;
+
 export async function seedMessages(
     prisma: PrismaClient,
-    chats: Chat[]
+    chats: { id: string }[]
 ): Promise<void> {
     const chatUsers = await prisma.usersChats.findMany();
 
@@ -14,32 +17,49 @@ export async function seedMessages(
         if (!chatUserMap.has(cu.chatId)) {
             chatUserMap.set(cu.chatId, []);
         }
+
         chatUserMap.get(cu.chatId)!.push(cu.userId);
     }
 
-    const messagesData: {
+    let messagesBatch: {
         chatId: string;
         senderId: string;
         content: string;
     }[] = [];
 
-    for (const chat of chats) {
+    const flush = async () => {
+        if (!messagesBatch.length) {
+            return;
+        }
+
+        await prisma.message.createMany({
+            data: messagesBatch,
+        });
+
+        messagesBatch.length = 0;
+    };
+
+    for (let i = 0; i < TOTAL_MESSAGES; i++) {
+        const chat = chats[Math.floor(Math.random() * chats.length)];
+
         const userIds = chatUserMap.get(chat.id) || [];
 
-        const count = faker.number.int({ min: 5, max: 20 });
+        if (!userIds.length) {
+            continue;
+        }
 
-        for (let i = 0; i < count; i++) {
-            messagesData.push({
-                chatId: chat.id,
-                senderId: userIds[Math.floor(Math.random() * userIds.length)],
-                content: faker.lorem.sentence(),
-            });
+        messagesBatch.push({
+            chatId: chat.id,
+            senderId: userIds[Math.floor(Math.random() * userIds.length)],
+            content: faker.lorem.sentence(),
+        });
+
+        if (messagesBatch.length >= BATCH_SIZE) {
+            await flush();
         }
     }
 
-    await prisma.message.createMany({
-        data: messagesData,
-    });
+    await flush();
 
     console.log('Messages seeded');
 }
