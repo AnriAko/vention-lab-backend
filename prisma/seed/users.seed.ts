@@ -1,7 +1,5 @@
 import { faker } from '@faker-js/faker';
 import argon2 from 'argon2';
-import fs from 'node:fs';
-import path from 'node:path';
 
 import {
     Organization,
@@ -11,9 +9,7 @@ import {
 
 const DEFAULT_PASSWORD = 'Password123!';
 const TOTAL_USERS = 10_000;
-const BATCH_SIZE = 100;
-
-const TEMP_FILE = path.join(process.cwd(), 'users.seed.jsonl');
+const BATCH_SIZE = 5000;
 
 export async function seedUsers(
     prisma: PrismaClient,
@@ -61,12 +57,18 @@ export async function seedUsers(
         });
     }
 
-    const writeStream = fs.createWriteStream(TEMP_FILE, {
-        encoding: 'utf8',
-    });
+    let usersBatch: {
+        id: string;
+        name: string;
+        email: string;
+        password: string;
+        role: UserRole;
+    }[] = [];
 
-    let usersBatch: any[] = [];
-    let relationsBatch: any[] = [];
+    let relationsBatch: {
+        userId: string;
+        organizationId: string;
+    }[] = [];
 
     let userIndex = 1;
 
@@ -88,7 +90,6 @@ export async function seedUsers(
     };
 
     const usersPerOrg = Math.floor(TOTAL_USERS / organizations.length);
-
     const remainder = TOTAL_USERS % organizations.length;
 
     for (let orgIndex = 0; orgIndex < organizations.length; orgIndex++) {
@@ -99,17 +100,13 @@ export async function seedUsers(
         for (let i = 0; i < count; i++) {
             const userId = crypto.randomUUID();
 
-            const user = {
+            usersBatch.push({
                 id: userId,
                 name: faker.person.fullName(),
                 email: `user${userIndex}@example.com`,
                 password: hashedPassword,
                 role: UserRole.USER,
-            };
-
-            writeStream.write(JSON.stringify(user) + '\n');
-
-            usersBatch.push(user);
+            });
 
             relationsBatch.push({
                 userId,
@@ -125,14 +122,4 @@ export async function seedUsers(
     }
 
     await flush();
-
-    await new Promise<void>((resolve, reject) => {
-        writeStream.end(resolve);
-
-        writeStream.on('error', reject);
-    });
-
-    await fs.promises.unlink(TEMP_FILE);
-
-    return;
 }

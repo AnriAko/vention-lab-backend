@@ -9,7 +9,10 @@ import {
     LogEvent,
 } from '~/generated/prisma/internal/prismaNamespace';
 import chalk from 'chalk';
-import { formatPrismaQuery } from '~/infrastructure/database/utils/prisma-query-formatter';
+import {
+    // formatPrismaQuery,
+    getRawPrismaQuery,
+} from '~/infrastructure/database/utils/prisma-query-formatter';
 
 @Injectable()
 export class PrismaService
@@ -48,18 +51,19 @@ export class PrismaService
 
         this.$on('query', (e: QueryEvent) => {
             const duration = Number(e.duration.toFixed());
-            const slowThreshold = 50;
-            const isSlow = duration > slowThreshold;
 
-            const sql = formatPrismaQuery(e.query, e.params);
+            const rawSql = getRawPrismaQuery(e.query, e.params);
 
             this.logger.log({
                 message: `[Prisma] query ${duration}ms`,
-                sql,
+                sql: rawSql,
             });
 
-            if (isSlow) {
-                this.logger.warn(`[Prisma] SLOW QUERY ${duration}ms\n${sql}`);
+            if (duration > 50) {
+                this.logger.warn({
+                    message: `[Prisma] SLOW QUERY ${duration}ms`,
+                    sql: rawSql,
+                });
             }
         });
 

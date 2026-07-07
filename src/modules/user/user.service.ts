@@ -27,6 +27,34 @@ export class UsersService {
     findById(id: string): Promise<UserSafe | null> {
         return this.userRepository.findById(id);
     }
+    findAllOffset(page: number, limit: number) {
+        return this.userRepository.findAllOffset(page, limit);
+    }
+
+    async findAllCursor(cursor?: string, limit = 20) {
+        const decodedCursor = cursor
+            ? JSON.parse(Buffer.from(cursor, 'base64').toString())
+            : undefined;
+
+        const result = await this.userRepository.findAllCursor(
+            decodedCursor,
+            limit
+        );
+
+        return {
+            data: result.data,
+
+            meta: {
+                nextCursor: result.nextCursor
+                    ? Buffer.from(JSON.stringify(result.nextCursor)).toString(
+                          'base64'
+                      )
+                    : null,
+
+                hasNextPage: result.hasNextPage,
+            },
+        };
+    }
 
     findByEmail(email: string): Promise<UserSafe | null> {
         return this.userRepository.findByEmail(email);

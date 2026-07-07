@@ -16,9 +16,29 @@ export const formatPrismaQuery = (query: string, params: string): string => {
                 value
             );
         });
-    } catch {
-        // ignore
-    }
+    } catch {}
 
     return formatted;
+};
+
+export const getRawPrismaQuery = (query: string, params: string): string => {
+    let sql = query;
+
+    try {
+        const parsedParams = JSON.parse(params || '[]');
+
+        parsedParams.forEach((p: any, i: number) => {
+            let value: string;
+
+            if (typeof p === 'string') {
+                value = `'${p.replace(/'/g, "''")}'`;
+            } else {
+                value = String(p);
+            }
+
+            sql = sql.replace(new RegExp(`\\$${i + 1}\\b`, 'g'), value);
+        });
+    } catch {}
+
+    return sql;
 };

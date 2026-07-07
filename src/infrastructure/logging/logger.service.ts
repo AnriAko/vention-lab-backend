@@ -40,6 +40,10 @@ export class LoggerService {
         winstonLogger.info(this.enrich(input));
     }
 
+    debug(input: LogInput) {
+        winstonLogger.debug(this.enrich(input));
+    }
+
     warn(input: LogInput) {
         winstonLogger.warn(this.enrich(input));
     }
