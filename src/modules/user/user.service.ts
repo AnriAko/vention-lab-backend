@@ -35,22 +35,18 @@ export class UsersService {
         const decodedCursor = cursor
             ? JSON.parse(Buffer.from(cursor, 'base64').toString())
             : undefined;
-
         const result = await this.userRepository.findAllCursor(
             decodedCursor,
             limit
         );
-
         return {
             data: result.data,
-
             meta: {
                 nextCursor: result.nextCursor
                     ? Buffer.from(JSON.stringify(result.nextCursor)).toString(
                           'base64'
                       )
                     : null,
-
                 hasNextPage: result.hasNextPage,
             },
         };
