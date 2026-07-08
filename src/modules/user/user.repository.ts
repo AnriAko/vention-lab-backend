@@ -11,7 +11,7 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRole } from '~/generated/prisma/enums';
-import { SortOrder } from '~/generated/prisma/internal/prismaNamespace';
+import { SortOrder } from '~/common/types/sort-order.enum';
 
 @Injectable()
 export class UsersRepository {
@@ -31,10 +31,10 @@ export class UsersRepository {
                 select: userSelectSafe,
                 orderBy: [
                     {
-                        createdAt: SortOrder.desc,
+                        createdAt: SortOrder.DESC,
                     },
                     {
-                        id: SortOrder.desc,
+                        id: SortOrder.DESC,
                     },
                 ],
             }),
@@ -66,10 +66,10 @@ export class UsersRepository {
             select: userSelectSafe,
             orderBy: [
                 {
-                    createdAt: SortOrder.desc,
+                    createdAt: SortOrder.DESC,
                 },
                 {
-                    id: SortOrder.desc,
+                    id: SortOrder.DESC,
                 },
             ],
         });
