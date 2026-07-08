@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { winstonLogger } from './core/winston.logger';
 import { requestContext } from '../context/request-context';
+import { AUTH_GUEST } from '~/common/types/auth.types';
 
 type LogInput =
     | string
@@ -31,7 +32,7 @@ export class LoggerService {
         return {
             ...base,
             requestId: ctx?.requestId ?? 'no-req',
-            userId: ctx?.userId ?? 'anonymous',
+            userId: ctx?.userId ?? AUTH_GUEST,
             timestamp: new Date().toISOString(),
         };
     }

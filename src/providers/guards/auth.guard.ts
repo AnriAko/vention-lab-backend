@@ -13,6 +13,7 @@ import { RedisService } from '~/infrastructure/cache/redis.service';
 
 import { jwtConfig } from '~/config';
 import {
+    AUTH_GUEST,
     AUTH_HEADER,
     AUTH_SCHEME,
     AuthRequest,
@@ -80,7 +81,7 @@ export class AuthGuard implements CanActivate {
                 userId: payload.sub,
                 role: payload.role,
             };
-            setRequestUser(payload.sub ?? 'anonymous');
+            setRequestUser(payload.sub ?? AUTH_GUEST);
             return true;
         } catch {
             throw new UnauthorizedException('Invalid or expired token');

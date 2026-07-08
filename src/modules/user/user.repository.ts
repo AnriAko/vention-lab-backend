@@ -23,7 +23,6 @@ export class UsersRepository {
     }
     async findAllOffset(page: number, limit: number) {
         const skip = (page - 1) * limit;
-
         const [users, total] = await Promise.all([
             this.prisma.user.findMany({
                 skip,
@@ -40,7 +39,6 @@ export class UsersRepository {
             }),
             this.prisma.user.count(),
         ]);
-
         return {
             data: users,
             meta: {
@@ -55,20 +53,16 @@ export class UsersRepository {
     async findAllCursor(cursor: UserCursor | undefined, limit: number) {
         const users = await this.prisma.user.findMany({
             take: limit + 1,
-
             ...(cursor && {
                 skip: 1,
                 cursor: {
                     createdAt_id: cursor,
                 },
             }),
-
             where: {
                 isDeleted: false,
             },
-
             select: userSelectSafe,
-
             orderBy: [
                 {
                     createdAt: 'desc',
@@ -78,18 +72,13 @@ export class UsersRepository {
                 },
             ],
         });
-
         const hasNextPage = users.length > limit;
-
         if (hasNextPage) {
             users.pop();
         }
-
         const nextUser = users.at(-1);
-
         return {
             data: users,
-
             nextCursor:
                 hasNextPage && nextUser
                     ? {
@@ -97,7 +86,6 @@ export class UsersRepository {
                           id: nextUser.id,
                       }
                     : null,
-
             hasNextPage,
         };
     }
