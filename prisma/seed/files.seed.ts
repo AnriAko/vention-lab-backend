@@ -1,8 +1,23 @@
-import { PrismaClient, User } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 
-export async function seedFiles(prisma: PrismaClient, users: User[]) {
-    const filesData: {
+const TOTAL_FILES = 200;
+const BATCH_SIZE = 100;
+
+export async function seedFiles(prisma: PrismaClient) {
+    const users = await prisma.user.findMany({
+        select: {
+            id: true,
+        },
+    });
+
+    const organizations = await prisma.organization.findMany({
+        select: {
+            id: true,
+        },
+    });
+
+    const filesBatch: {
         ownerId: string;
         organizationId: string;
         filename: string;
@@ -14,42 +29,45 @@ export async function seedFiles(prisma: PrismaClient, users: User[]) {
         processingError: null;
     }[] = [];
 
-    const relations = await prisma.usersOrganizations.findMany();
-
-    const userOrgMap = new Map<string, string[]>();
-
-    for (const r of relations) {
-        if (!userOrgMap.has(r.userId)) {
-            userOrgMap.set(r.userId, []);
+    const flush = async () => {
+        if (!filesBatch.length) {
+            return;
         }
-        userOrgMap.get(r.userId)!.push(r.organizationId);
+
+        await prisma.file.createMany({
+            data: filesBatch,
+        });
+
+        filesBatch.length = 0;
+    };
+
+    for (let i = 0; i < TOTAL_FILES; i++) {
+        const user = users[Math.floor(Math.random() * users.length)];
+
+        const organization =
+            organizations[Math.floor(Math.random() * organizations.length)];
+
+        filesBatch.push({
+            ownerId: user.id,
+            organizationId: organization.id,
+            filename: faker.system.fileName(),
+            size: faker.number.int({
+                min: 1000,
+                max: 5_000_000,
+            }),
+            status: 'READY',
+            contentType: 'application/octet-stream',
+            storageKey: faker.string.uuid(),
+            application: null,
+            processingError: null,
+        });
+
+        if (filesBatch.length >= BATCH_SIZE) {
+            await flush();
+        }
     }
 
-    for (const user of users) {
-        const orgIds = userOrgMap.get(user.id) || [];
-
-        for (const orgId of orgIds) {
-            const count = faker.number.int({ min: 1, max: 5 });
-
-            for (let i = 0; i < count; i++) {
-                filesData.push({
-                    ownerId: user.id,
-                    organizationId: orgId,
-                    filename: faker.system.fileName(),
-                    size: faker.number.int({ min: 1000, max: 5_000_000 }),
-                    status: 'READY',
-                    contentType: 'application/octet-stream',
-                    storageKey: faker.string.uuid(),
-                    application: null,
-                    processingError: null,
-                });
-            }
-        }
-    }
-
-    await prisma.file.createMany({
-        data: filesData,
-    });
+    await flush();
 
     console.log('Files seeded');
 }
