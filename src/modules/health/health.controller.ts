@@ -4,7 +4,9 @@ import { PrismaHealthIndicator } from '@nestjs/terminus';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { RabbitmqService } from '~/infrastructure/messaging/rabbitmq.service';
+import { PublicRoute } from '~/common/decorators/public.decorator';
 
+@PublicRoute()
 @Controller('health')
 export class HealthController {
     constructor(

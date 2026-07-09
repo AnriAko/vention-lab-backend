@@ -6,6 +6,7 @@ import {
     Param,
     Patch,
     Post,
+    Query,
 } from '@nestjs/common';
 import { UsersService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -13,6 +14,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserIdDto } from './dto/user-id.dto';
 import { Roles } from '~/common/decorators/roles.decorator';
 import { UserRole } from '~/generated/prisma/enums';
+import { OffsetPaginationDto } from '~/modules/user/dto/offset-pagination.dto';
+import { CursorPaginationDto } from '~/modules/user/dto/cursor-pagination.dto';
 
 @Roles(UserRole.ADMIN)
 @Controller('users')
@@ -22,6 +25,15 @@ export class UsersController {
     @Get()
     findAll() {
         return this.userService.findAll();
+    }
+    @Get('offset')
+    findAllOffset(@Query() dto: OffsetPaginationDto) {
+        return this.userService.findAllOffset(dto.page, dto.limit);
+    }
+
+    @Get('cursor')
+    findAllCursor(@Query() dto: CursorPaginationDto) {
+        return this.userService.findAllCursor(dto.cursor, dto.limit);
     }
 
     @Get(':id')
