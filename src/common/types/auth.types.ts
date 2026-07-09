@@ -28,3 +28,5 @@ export const AUTH_HEADER = {
 export const AUTH_SCHEME = {
     BEARER: 'Bearer',
 } as const;
+
+export const AUTH_GUEST = 'anonymous';

@@ -1,31 +1,77 @@
-import { PrismaClient, User } from '../../src/generated/prisma/client';
+import { PrismaClient } from '../../src/generated/prisma/client';
 
-export async function seedChats(prisma: PrismaClient, users: User[]) {
-    const chatsData: { id: string }[] = [];
-    const chatUsersData: { chatId: string; userId: string }[] = [];
+const TOTAL_CHATS = 200;
+const BATCH_SIZE = 100;
 
-    for (let i = 0; i < users.length; i++) {
-        for (let j = i + 1; j < users.length; j++) {
-            const userA = users[i];
-            const userB = users[j];
+export async function seedChats(prisma: PrismaClient) {
+    const users = await prisma.user.findMany({
+        select: {
+            id: true,
+        },
+    });
 
-            if (Math.random() > 0.25) continue;
+    const chatsBatch: {
+        id: string;
+    }[] = [];
 
-            const chatId = crypto.randomUUID();
+    const chatUsersBatch: {
+        chatId: string;
+        userId: string;
+    }[] = [];
 
-            chatsData.push({ id: chatId });
+    for (let i = 0; i < TOTAL_CHATS; i++) {
+        const userA = users[Math.floor(Math.random() * users.length)];
 
-            chatUsersData.push(
-                { chatId, userId: userA.id },
-                { chatId, userId: userB.id }
-            );
+        let userB = users[Math.floor(Math.random() * users.length)];
+
+        while (userA.id === userB.id) {
+            userB = users[Math.floor(Math.random() * users.length)];
+        }
+
+        const chatId = crypto.randomUUID();
+
+        chatsBatch.push({
+            id: chatId,
+        });
+
+        chatUsersBatch.push(
+            {
+                chatId,
+                userId: userA.id,
+            },
+            {
+                chatId,
+                userId: userB.id,
+            }
+        );
+
+        if (chatsBatch.length >= BATCH_SIZE) {
+            await prisma.chat.createMany({
+                data: chatsBatch,
+            });
+
+            await prisma.usersChats.createMany({
+                data: chatUsersBatch,
+            });
+
+            chatsBatch.length = 0;
+            chatUsersBatch.length = 0;
         }
     }
 
-    await prisma.$transaction([
-        prisma.chat.createMany({ data: chatsData }),
-        prisma.usersChats.createMany({ data: chatUsersData }),
-    ]);
+    if (chatsBatch.length) {
+        await prisma.chat.createMany({
+            data: chatsBatch,
+        });
 
-    return prisma.chat.findMany();
+        await prisma.usersChats.createMany({
+            data: chatUsersBatch,
+        });
+    }
+
+    return prisma.chat.findMany({
+        select: {
+            id: true,
+        },
+    });
 }

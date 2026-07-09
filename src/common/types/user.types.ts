@@ -6,8 +6,9 @@ export const userSelectSafe = {
     name: true,
     role: true,
     image: true,
-    organizationId: true,
     isDeleted: true,
+    createdAt: true,
+    updatedAt: true,
 } as const;
 
 export const userSelectAuth = {
@@ -21,10 +22,16 @@ export type UserSafe = {
     name: string;
     role: UserRole;
     image: string;
-    organizationId: string;
     isDeleted: boolean;
+    createdAt: Date;
+    updatedAt: Date;
 };
 
 export type UserWithPassword = UserSafe & {
     password: string;
+};
+
+export type UserCursor = {
+    createdAt: Date;
+    id: string;
 };
