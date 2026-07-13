@@ -64,11 +64,9 @@ export class UserStatsRepository {
         const leaderboard = users
             .sort((a, b) => {
                 const countDifference = b._count.messages - a._count.messages;
-
                 if (countDifference !== 0) {
                     return countDifference;
                 }
-
                 return a.name.localeCompare(b.name);
             })
             .map((user, index) => ({
@@ -86,9 +84,7 @@ export class UserStatsRepository {
                           ),
                 rank: index + 1,
             }));
-
         const offset = (page - 1) * limit;
-
         return leaderboard.slice(offset, offset + limit);
     }
 }
