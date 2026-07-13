@@ -9,16 +9,7 @@ export class UserStatsRepository {
 
     async getMessageLeaderboardRaw({ page, limit }: OffsetPaginationDto) {
         const offset = (page - 1) * limit;
-
-        return this.prisma.$queryRawUnsafe<
-            {
-                id: string;
-                name: string;
-                messageCount: number;
-                percentOfAllMessages: number;
-                rank: number;
-            }[]
-        >(messageLeaderboardQuery, limit, offset);
+        return this.prisma.$queryRaw(messageLeaderboardQuery(limit, offset));
     }
 
     async getMessageLeaderboardPrisma({ page, limit }: OffsetPaginationDto) {

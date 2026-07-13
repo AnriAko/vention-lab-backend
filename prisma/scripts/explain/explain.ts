@@ -3,7 +3,7 @@ import 'dotenv/config';
 import { Pool } from 'pg';
 import { format } from 'sql-formatter';
 
-import { loadPrismaEnv } from '../../src/config/prisma/prisma-env';
+import { loadPrismaEnv } from '../../../src/config/prisma/prisma-env';
 import { EXPLAIN_ANALYZE, QUERY_TO_EXPLAIN } from './query-to-explain';
 
 const { DATABASE_URL } = loadPrismaEnv();

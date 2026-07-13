@@ -11,6 +11,7 @@ import { AuthModule } from '~/modules/auth/auth.module';
 import { OrganizationModule } from './modules/organization/organization.module';
 import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
 import { UserStatsModule } from '~/modules/user-stats/user-stats.module';
+import { SearchModule } from '~/modules/search/search.module';
 
 @Module({
     imports: [
@@ -30,6 +31,7 @@ import { UserStatsModule } from '~/modules/user-stats/user-stats.module';
         UsersModule,
         OrganizationModule,
         UserStatsModule,
+        SearchModule,
     ],
 })
 export class AppModule implements NestModule {
