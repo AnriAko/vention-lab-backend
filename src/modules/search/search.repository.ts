@@ -5,6 +5,7 @@ import {
     searchOrganizationsQuery,
     searchUsersQuery,
 } from '~/modules/search/search.query';
+import { userSelectSafe } from '~/common/types/user.types';
 
 @Injectable()
 export class SearchRepository {
@@ -47,6 +48,7 @@ export class SearchRepository {
             },
             skip: offset,
             take: limit,
+            select: userSelectSafe,
         });
     }
 
