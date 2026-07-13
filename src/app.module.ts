@@ -10,6 +10,7 @@ import { envFilePath } from '~/common/utils/env-file-path';
 import { AuthModule } from '~/modules/auth/auth.module';
 import { OrganizationModule } from './modules/organization/organization.module';
 import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
+import { UserStatsModule } from '~/modules/user-stats/user-stats.module';
 
 @Module({
     imports: [
@@ -28,6 +29,7 @@ import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
         AuthModule,
         UsersModule,
         OrganizationModule,
+        UserStatsModule,
     ],
 })
 export class AppModule implements NestModule {

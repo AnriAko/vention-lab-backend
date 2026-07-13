@@ -14,8 +14,8 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserIdDto } from './dto/user-id.dto';
 import { Roles } from '~/common/decorators/roles.decorator';
 import { UserRole } from '~/generated/prisma/enums';
-import { OffsetPaginationDto } from '~/modules/user/dto/offset-pagination.dto';
-import { CursorPaginationDto } from '~/modules/user/dto/cursor-pagination.dto';
+import { OffsetPaginationDto } from '~/common/dto/offset-pagination.dto';
+import { CursorPaginationDto } from '~/common/dto/cursor-pagination.dto';
 
 @Roles(UserRole.ADMIN)
 @Controller('users')

@@ -4,7 +4,7 @@ import { PrismaService } from '~/infrastructure/database/prisma.service';
 
 import { CreateOrganizationDto } from './dto/create-organization.dto';
 import { UpdateOrganizationDto } from './dto/update-organization.dto';
-import { Organization } from '~/generated/prisma/client';
+import { Organization, UserRole } from '~/generated/prisma/client';
 
 @Injectable()
 export class OrganizationsRepository {
@@ -27,9 +27,30 @@ export class OrganizationsRepository {
         });
     }
 
-    create(dto: CreateOrganizationDto): Promise<Organization> {
-        return this.prisma.organization.create({
-            data: dto,
+    async create(dto: CreateOrganizationDto) {
+        return this.prisma.$transaction(async (tx) => {
+            const organization = await tx.organization.create({
+                data: dto,
+            });
+            const owner = await tx.user.findFirst({
+                where: {
+                    role: UserRole.OWNER,
+                },
+                select: {
+                    id: true,
+                },
+            });
+            if (!owner) {
+                throw new Error('Owner not found');
+            }
+            await tx.usersOrganizations.create({
+                data: {
+                    userId: owner.id,
+                    organizationId: organization.id,
+                    role: UserRole.OWNER,
+                },
+            });
+            return organization;
         });
     }
 
