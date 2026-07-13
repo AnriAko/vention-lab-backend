@@ -11,12 +11,12 @@ export const searchUsersQuery = (
         email,
         ts_rank(
             search_vector,
-            plainto_tsquery('simple', ${query})
+            plainto_tsquery('english', ${query})
         ) AS rank
     FROM "User"
     WHERE
         search_vector @@ plainto_tsquery(
-            'simple',
+            'english',
             ${query}
         )
     AND "isDeleted" = false
@@ -35,12 +35,12 @@ export const searchOrganizationsQuery = (
         name,
         ts_rank(
             search_vector,
-            plainto_tsquery('simple', ${query})
+            plainto_tsquery('english', ${query})
         ) AS rank
     FROM "Organization"
     WHERE
         search_vector @@ plainto_tsquery(
-            'simple',
+            'english',
             ${query}
         )
     AND "isDeleted" = false

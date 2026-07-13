@@ -3,10 +3,20 @@
 ALTER TABLE "User"
 ADD COLUMN search_vector tsvector
 GENERATED ALWAYS AS (
-    to_tsvector(
-        'simple',
-        coalesce(name,'') || ' ' ||
-        coalesce(email,'')
+    setweight(
+        to_tsvector(
+            'english',
+            coalesce(name, '')
+        ),
+        'A'
+    )
+    ||
+    setweight(
+        to_tsvector(
+            'english',
+            coalesce(email, '')
+        ),
+        'B'
     )
 ) STORED;
 
@@ -21,9 +31,12 @@ USING GIN(search_vector);
 ALTER TABLE "Organization"
 ADD COLUMN search_vector tsvector
 GENERATED ALWAYS AS (
-    to_tsvector(
-        'simple',
-        coalesce(name,'')
+    setweight(
+        to_tsvector(
+            'english',
+            coalesce(name, '')
+        ),
+        'A'
     )
 ) STORED;
 
