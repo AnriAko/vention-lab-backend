@@ -36,6 +36,7 @@ export const getRawPrismaQuery = (query: string, params: string): string => {
                 typeof p === 'string'
                     ? `'${p.replace(/'/g, "''")}'`
                     : String(p);
+
             sql = sql.replace(new RegExp(`\\$${i + 1}\\b`, 'g'), value);
         });
     } catch (error) {
@@ -45,5 +46,5 @@ export const getRawPrismaQuery = (query: string, params: string): string => {
         });
     }
 
-    return sql;
+    return sql.replace(/\s+/g, ' ').trim();
 };
