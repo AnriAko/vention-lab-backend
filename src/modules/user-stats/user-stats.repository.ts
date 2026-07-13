@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { OffsetPaginationDto } from '~/common/dto/offset-pagination.dto';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { messageLeaderboardQuery } from '~/modules/user-stats/user-stats.queries';
 
 @Injectable()
 export class UserStatsRepository {
@@ -9,7 +10,7 @@ export class UserStatsRepository {
     async getMessageLeaderboardRaw({ page, limit }: OffsetPaginationDto) {
         const offset = (page - 1) * limit;
 
-        return this.prisma.$queryRaw<
+        return this.prisma.$queryRawUnsafe<
             {
                 id: string;
                 name: string;
@@ -17,30 +18,7 @@ export class UserStatsRepository {
                 percentOfAllMessages: number;
                 rank: number;
             }[]
-        >`
-            SELECT
-                u.id,
-                u.name,
-                COUNT(m.id)::int AS "messageCount",
-                ROUND(
-                    COUNT(m.id) * 100.0
-                    / SUM(COUNT(m.id)) OVER (),
-                    2
-                ) AS "percentOfAllMessages",
-                RANK() OVER (
-                    ORDER BY COUNT(m.id) DESC
-                )::int AS "rank"
-            FROM "User" u
-            LEFT JOIN "Message" m
-                ON m."senderId" = u.id
-            GROUP BY
-                u.id,
-                u.name
-            ORDER BY
-                "messageCount" DESC
-            LIMIT ${limit}
-            OFFSET ${offset};
-        `;
+        >(messageLeaderboardQuery, limit, offset);
     }
 
     async getMessageLeaderboardPrisma({ page, limit }: OffsetPaginationDto) {
