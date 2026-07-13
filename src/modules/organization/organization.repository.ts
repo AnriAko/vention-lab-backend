@@ -32,7 +32,6 @@ export class OrganizationsRepository {
             const organization = await tx.organization.create({
                 data: dto,
             });
-
             const owner = await tx.user.findFirst({
                 where: {
                     role: UserRole.OWNER,
@@ -41,11 +40,9 @@ export class OrganizationsRepository {
                     id: true,
                 },
             });
-
             if (!owner) {
                 throw new Error('Owner not found');
             }
-
             await tx.usersOrganizations.create({
                 data: {
                     userId: owner.id,
@@ -53,7 +50,6 @@ export class OrganizationsRepository {
                     role: UserRole.OWNER,
                 },
             });
-
             return organization;
         });
     }
