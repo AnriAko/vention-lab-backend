@@ -3,10 +3,12 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, APP_GUARD } from '@nestjs/core';
 
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { RedisModule } from '~/infrastructure/cache/redis.module';
+import { PrismaModule } from '~/infrastructure/database/prisma.module';
 import { LoggerInterceptor } from '~/infrastructure/logging/logger.interceptor';
 import { HttpExceptionFilter } from '~/providers/filters/http-exception.filter';
 import { PrismaExceptionFilter } from '~/providers/filters/prisma-exception.filter';
 import { AuthGuard } from '~/providers/guards/auth.guard';
+import { OrganizationGuard } from '~/providers/guards/organization.guard';
 import { RolesGuard } from '~/providers/guards/roles.guard';
 
 @Module({
@@ -47,12 +49,18 @@ import { RolesGuard } from '~/providers/guards/roles.guard';
             useClass: AuthGuard,
         },
 
-        // 7. Roles guard
+        // 7. Organization guard (after auth context exists)
+        {
+            provide: APP_GUARD,
+            useClass: OrganizationGuard,
+        },
+
+        // 8. Roles guard
         {
             provide: APP_GUARD,
             useClass: RolesGuard,
         },
     ],
-    imports: [RedisModule],
+    imports: [RedisModule, PrismaModule],
 })
 export class GlobalModule {}

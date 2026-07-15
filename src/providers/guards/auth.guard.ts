@@ -10,10 +10,10 @@ import type { ConfigType } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 
 import { RedisService } from '~/infrastructure/cache/redis.service';
+import { setRequestUser } from '~/infrastructure/context/request-context';
 
 import { jwtConfig } from '~/config';
 import {
-    AUTH_GUEST,
     AUTH_HEADER,
     AUTH_SCHEME,
     AuthRequest,
@@ -22,10 +22,6 @@ import {
 import { IS_PUBLIC_KEY } from '~/common/decorators/constants';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { parseHeader } from '~/common/utils/parse-header';
-import {
-    requestContext,
-    setRequestUser,
-} from '~/infrastructure/context/request-context';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -81,7 +77,7 @@ export class AuthGuard implements CanActivate {
                 userId: payload.sub,
                 role: payload.role,
             };
-            setRequestUser(payload.sub ?? AUTH_GUEST);
+            setRequestUser(payload.sub);
             return true;
         } catch {
             throw new UnauthorizedException('Invalid or expired token');

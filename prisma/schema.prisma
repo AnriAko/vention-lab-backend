@@ -42,6 +42,7 @@ model Organization {
     isDeleted Boolean  @default(false)
 
     users UsersOrganizations[]
+    chats Chat[]
     files File[]
 }
 
@@ -79,6 +80,9 @@ model File {
 
 model Chat {
     id       String       @id @default(uuid())
+    organizationId String
+    organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+
     users    UsersChats[]
     messages Message[]
 }
