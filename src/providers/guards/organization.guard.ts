@@ -7,7 +7,10 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
-import { IS_PUBLIC_KEY } from '~/common/decorators/constants';
+import {
+    IS_PUBLIC_KEY,
+    SKIP_ORGANIZATION_KEY,
+} from '~/common/decorators/constants';
 import { AUTH_HEADER, AuthRequest } from '~/common/types/auth.types';
 import {
     setRequestOrganization,
@@ -32,6 +35,15 @@ export class OrganizationGuard implements CanActivate {
             return true;
         }
 
+        const skipOrganization = this.reflector.getAllAndOverride<boolean>(
+            SKIP_ORGANIZATION_KEY,
+            [context.getHandler(), context.getClass()]
+        );
+
+        if (skipOrganization) {
+            return true;
+        }
+
         const request = context.switchToHttp().getRequest<AuthRequest>();
 
         const organizationIdHeader =
@@ -40,9 +52,8 @@ export class OrganizationGuard implements CanActivate {
             ? organizationIdHeader[0]
             : organizationIdHeader;
 
-        // Non-tenant requests (auth refresh/logout, system OWNER ops) omit the header.
         if (!organizationId) {
-            return true;
+            throw new UnauthorizedException('Missing organization');
         }
 
         if (!request.user?.userId) {

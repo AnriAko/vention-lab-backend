@@ -1,9 +1,10 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { UserStatsService } from './user-stats.service';
-import { PublicRoute } from '~/common/decorators/public.decorator';
 import { OffsetPaginationDto } from '~/common/dto/offset-pagination.dto';
+import { Roles } from '~/common/decorators/roles.decorator';
+import { UserRole } from '~/generated/prisma/enums';
 
-@PublicRoute()
+@Roles(UserRole.ADMIN)
 @Controller('user-stats')
 export class UserStatsController {
     constructor(private readonly userStatsService: UserStatsService) {}

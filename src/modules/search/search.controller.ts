@@ -1,9 +1,7 @@
 import { Controller, Get, Query } from '@nestjs/common';
-import { PublicRoute } from '~/common/decorators/public.decorator';
 import { SearchDto } from '~/modules/search/dto/search.dto';
 import { SearchService } from '~/modules/search/search.service';
 
-@PublicRoute()
 @Controller('search')
 export class SearchController {
     constructor(private readonly service: SearchService) {}
