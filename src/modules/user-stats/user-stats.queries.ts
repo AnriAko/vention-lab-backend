@@ -1,4 +1,9 @@
-export const messageLeaderboardQuery = `
+import { Prisma } from '~/generated/prisma/client';
+
+export const messageLeaderboardQuery = (
+    limit: number,
+    offset: number
+) => Prisma.sql`
     SELECT
         u.id,
         u.name,
@@ -19,6 +24,6 @@ export const messageLeaderboardQuery = `
         u.name
     ORDER BY
         "messageCount" DESC
-    LIMIT $1
-    OFFSET $2;
+    LIMIT ${limit}
+    OFFSET ${offset};
 `;
