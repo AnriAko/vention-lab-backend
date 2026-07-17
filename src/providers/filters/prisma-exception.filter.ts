@@ -1,6 +1,10 @@
 import { Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Prisma } from '~/generated/prisma/client';
+
+import { ApiErrorResponse } from '~/common/dto/error.response';
+import { CommonErrors } from '~/common/errors';
+import { requestContext } from '~/infrastructure/context/request-context';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 
 @Catch(Prisma.PrismaClientKnownRequestError)
@@ -15,23 +19,27 @@ export class PrismaExceptionFilter {
         const res = ctx.getResponse<Response>();
         const req = ctx.getRequest<Request>();
 
-        let status = HttpStatus.INTERNAL_SERVER_ERROR;
-        let message = 'Database error';
+        let status: number = CommonErrors.DATABASE_ERROR.statusCode;
+        let message: string = CommonErrors.DATABASE_ERROR.message;
+        let errorCode: string = CommonErrors.DATABASE_ERROR.code;
 
         switch (exception.code) {
             case 'P2025':
                 status = HttpStatus.NOT_FOUND;
                 message = 'Record not found';
+                errorCode = CommonErrors.NOT_FOUND.code;
                 break;
 
             case 'P2002':
-                status = HttpStatus.CONFLICT;
-                message = 'Unique constraint failed';
+                status = CommonErrors.UNIQUE_CONSTRAINT.statusCode;
+                message = CommonErrors.UNIQUE_CONSTRAINT.message;
+                errorCode = CommonErrors.UNIQUE_CONSTRAINT.code;
                 break;
 
             case 'P2003':
-                status = HttpStatus.BAD_REQUEST;
-                message = 'Foreign key constraint failed';
+                status = CommonErrors.FOREIGN_KEY_CONSTRAINT.statusCode;
+                message = CommonErrors.FOREIGN_KEY_CONSTRAINT.message;
+                errorCode = CommonErrors.FOREIGN_KEY_CONSTRAINT.code;
                 break;
         }
 
@@ -39,10 +47,14 @@ export class PrismaExceptionFilter {
             `[PRISMA ERROR] ${req.method} ${req.originalUrl} ${exception.code} ${message}`
         );
 
-        res.status(status).json({
-            statusCode: status,
-            path: req.originalUrl,
+        const body: ApiErrorResponse = {
+            success: false,
             message,
-        });
+            errorCode,
+            requestId: requestContext.getStore()?.requestId,
+            timestamp: new Date().toISOString(),
+        };
+
+        res.status(status).json(body);
     }
 }

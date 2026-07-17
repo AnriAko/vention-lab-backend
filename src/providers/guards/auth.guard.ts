@@ -2,15 +2,16 @@ import {
     CanActivate,
     ExecutionContext,
     Injectable,
-    UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Inject } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 
+import { AppException } from '~/common/errors';
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { setRequestUser } from '~/infrastructure/context/request-context';
+import { AuthErrors } from '~/modules/auth/auth.errors';
 
 import { jwtConfig } from '~/config';
 import {
@@ -49,7 +50,7 @@ export class AuthGuard implements CanActivate {
         const token = this.extractToken(request);
 
         if (!token) {
-            throw new UnauthorizedException('Missing access token');
+            throw new AppException(AuthErrors.MISSING_ACCESS_TOKEN);
         }
 
         try {
@@ -61,7 +62,7 @@ export class AuthGuard implements CanActivate {
             );
 
             if (!payload?.sub) {
-                throw new UnauthorizedException('Invalid token payload');
+                throw new AppException(AuthErrors.INVALID_TOKEN_PAYLOAD);
             }
 
             const isBlacklisted = await this.redisService.exists(
@@ -70,7 +71,7 @@ export class AuthGuard implements CanActivate {
             );
 
             if (isBlacklisted) {
-                throw new UnauthorizedException('Token revoked');
+                throw new AppException(AuthErrors.TOKEN_REVOKED);
             }
 
             request.user = {
@@ -79,8 +80,12 @@ export class AuthGuard implements CanActivate {
             };
             setRequestUser(payload.sub);
             return true;
-        } catch {
-            throw new UnauthorizedException('Invalid or expired token');
+        } catch (error) {
+            if (error instanceof AppException) {
+                throw error;
+            }
+
+            throw new AppException(AuthErrors.INVALID_OR_EXPIRED_TOKEN);
         }
     }
     private extractToken(request: AuthRequest): string | undefined {

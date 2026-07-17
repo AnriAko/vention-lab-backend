@@ -1,0 +1,53 @@
+import {
+    CallHandler,
+    ExecutionContext,
+    Injectable,
+    NestInterceptor,
+} from '@nestjs/common';
+import { Observable, map } from 'rxjs';
+
+import type { ApiSuccessEnvelope } from '~/common/dto/response-schema';
+import { requestContext } from '~/infrastructure/context/request-context';
+
+function isAlreadyWrapped(value: unknown): value is ApiSuccessEnvelope {
+    return (
+        typeof value === 'object' &&
+        value !== null &&
+        'success' in value &&
+        (value as { success: unknown }).success === true &&
+        'data' in value &&
+        'timestamp' in value
+    );
+}
+
+/**
+ * Wraps handler output in the public success envelope.
+ * Must run AFTER ZodSerializerInterceptor so field whitelisting
+ * happens on the raw payload before wrapping.
+ */
+@Injectable()
+export class ApiResponseInterceptor implements NestInterceptor {
+    intercept(
+        context: ExecutionContext,
+        next: CallHandler
+    ): Observable<unknown> {
+        return next.handle().pipe(
+            map((data) => {
+                if (isAlreadyWrapped(data)) {
+                    return data;
+                }
+
+                const store = requestContext.getStore();
+
+                const envelope: ApiSuccessEnvelope = {
+                    success: true,
+                    requestId: store?.requestId,
+                    timestamp: new Date().toISOString(),
+                    data: data ?? null,
+                };
+
+                return envelope;
+            })
+        );
+    }
+}

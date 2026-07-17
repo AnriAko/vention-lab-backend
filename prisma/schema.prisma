@@ -19,19 +19,28 @@ model User {
     email     String   @unique
     name      String
     password  String
-    role      UserRole @default(USER)
+
     image     String   @default("")
     isDeleted Boolean  @default(false)
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
 
-    organizations UsersOrganizations[]
-    files         File[]
-    chats         UsersChats[]
-    messages      Message[]
-    
+    organizations     UsersOrganizations[]
+    organizationRoles UsersOrganizationsRoles[]
+    owner             Owner?
+    files             File[]
+    chats             UsersChats[]
+    messages          Message[]
+
     @@unique([createdAt, id])
+}
+
+model Owner {
+    userId    String   @id
+    createdAt DateTime @default(now())
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Organization {
@@ -41,9 +50,10 @@ model Organization {
     updatedAt DateTime @updatedAt
     isDeleted Boolean  @default(false)
 
-    users UsersOrganizations[]
-    chats Chat[]
-    files File[]
+    users     UsersOrganizations[]
+    userRoles UsersOrganizationsRoles[]
+    chats     Chat[]
+    files     File[]
 }
 
 model UsersOrganizations {
@@ -53,9 +63,20 @@ model UsersOrganizations {
     user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
     organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-    role UserRole @default(USER)
+    @@id([userId, organizationId])
+    @@index([organizationId])
+}
+
+model UsersOrganizationsRoles {
+    userId         String
+    organizationId String
+    role           OrganizationRole @default(USER)
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+    organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
     @@id([userId, organizationId])
+    @@index([organizationId])
 }
 
 model File {
@@ -76,15 +97,19 @@ model File {
 
     createdAt DateTime @default(now())
     updatedAt DateTime @updatedAt
+
+    @@index([organizationId])
 }
 
 model Chat {
-    id       String       @id @default(uuid())
+    id             String       @id @default(uuid())
     organizationId String
-    organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+    organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
     users    UsersChats[]
     messages Message[]
+
+    @@index([organizationId])
 }
 
 model UsersChats {
@@ -95,6 +120,7 @@ model UsersChats {
     chat Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
 
     @@id([userId, chatId])
+    @@index([chatId])
 }
 
 model Message {
@@ -106,10 +132,11 @@ model Message {
 
     chat   Chat @relation(fields: [chatId], references: [id], onDelete: Cascade)
     sender User @relation(fields: [senderId], references: [id], onDelete: Cascade)
+    @@index([chatId])
+    @@index([senderId])
 }
 
-enum UserRole {
+enum OrganizationRole {
     USER
     ADMIN
-    OWNER
 }

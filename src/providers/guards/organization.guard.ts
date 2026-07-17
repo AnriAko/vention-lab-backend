@@ -1,22 +1,21 @@
-import {
-    CanActivate,
-    ExecutionContext,
-    ForbiddenException,
-    Injectable,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 
 import {
     IS_PUBLIC_KEY,
     SKIP_ORGANIZATION_KEY,
 } from '~/common/decorators/constants';
+import { AppException } from '~/common/errors';
 import { AUTH_HEADER, AuthRequest } from '~/common/types/auth.types';
+import { AppRole } from '~/common/types/app-role.enum';
 import {
     setRequestOrganization,
+    setRequestRole,
     setRequestUser,
 } from '~/infrastructure/context/request-context';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { AuthErrors } from '~/modules/auth/auth.errors';
+import { OrganizationErrors } from '~/modules/organization/organization.errors';
 
 @Injectable()
 export class OrganizationGuard implements CanActivate {
@@ -53,11 +52,37 @@ export class OrganizationGuard implements CanActivate {
             : organizationIdHeader;
 
         if (!organizationId) {
-            throw new UnauthorizedException('Missing organization');
+            throw new AppException(OrganizationErrors.MISSING_ORGANIZATION);
         }
 
         if (!request.user?.userId) {
-            throw new UnauthorizedException('Missing authenticated user');
+            throw new AppException(AuthErrors.MISSING_AUTHENTICATED_USER);
+        }
+
+        const platformRole = request.user.role;
+
+        if (platformRole === AppRole.OWNER) {
+            const organization = await this.prisma.organization.findUnique({
+                where: {
+                    id: organizationId,
+                    isDeleted: false,
+                },
+                select: { id: true },
+            });
+
+            if (!organization) {
+                throw new AppException(OrganizationErrors.ACCESS_DENIED);
+            }
+
+            request.user.organizationId = organizationId;
+
+            request.user.role = AppRole.OWNER;
+
+            setRequestUser(request.user.userId);
+            setRequestOrganization(organizationId);
+            setRequestRole(AppRole.OWNER);
+
+            return true;
         }
 
         const membership = await this.prisma.usersOrganizations.findUnique({
@@ -70,13 +95,30 @@ export class OrganizationGuard implements CanActivate {
         });
 
         if (!membership) {
-            throw new ForbiddenException('Access denied');
+            throw new AppException(OrganizationErrors.ACCESS_DENIED);
         }
 
+        const orgRole = await this.prisma.usersOrganizationsRoles.findUnique({
+            where: {
+                userId_organizationId: {
+                    userId: request.user.userId,
+                    organizationId,
+                },
+            },
+        });
+
+        if (!orgRole) {
+            throw new AppException(OrganizationErrors.ACCESS_DENIED);
+        }
+
+        const membershipRole = orgRole.role as AppRole;
+
         request.user.organizationId = organizationId;
+        request.user.role = membershipRole;
 
         setRequestUser(request.user.userId);
         setRequestOrganization(organizationId);
+        setRequestRole(membershipRole);
 
         return true;
     }

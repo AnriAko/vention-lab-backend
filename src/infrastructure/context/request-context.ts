@@ -1,11 +1,16 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
+import type { AppRole } from '~/common/types/app-role.enum';
+import { AUTH_GUEST } from '~/common/types/auth.types';
+import type { Prisma } from '~/generated/prisma/client';
 
 export type RequestContext = {
     requestId: string;
     startTime: number;
     userId: string;
     organizationId?: string;
-    role?: string;
+    role?: AppRole;
+    /** Active Prisma interactive transaction for tenant RLS queries. */
+    transaction?: Prisma.TransactionClient;
 };
 
 export const requestContext = new AsyncLocalStorage<RequestContext>();
@@ -15,7 +20,7 @@ export function setRequestUser(userId: string) {
 
     if (!store) return;
 
-    store.userId = userId ?? 'anonymous';
+    store.userId = userId ?? AUTH_GUEST;
 }
 
 export function setRequestOrganization(organizationId: string) {
@@ -24,4 +29,51 @@ export function setRequestOrganization(organizationId: string) {
     if (!store) return;
 
     store.organizationId = organizationId;
+}
+
+export function setRequestRole(role: AppRole) {
+    const store = requestContext.getStore();
+
+    if (!store) return;
+
+    store.role = role;
+}
+
+export function getPrismaTransaction(): Prisma.TransactionClient | undefined {
+    return requestContext.getStore()?.transaction;
+}
+
+/**
+ * Attach a Prisma transaction via an immutable nested ALS scope.
+ * Prefer PrismaRlsService.withRls() for HTTP requests.
+ *
+ * Reuses the same transaction if already active; never nests BEGIN.
+ */
+export function runWithPrismaTransaction<T>(
+    transaction: Prisma.TransactionClient,
+    callback: () => T
+): T {
+    const parent = requestContext.getStore();
+
+    if (!parent) {
+        throw new Error('RLS: Missing request context');
+    }
+
+    if (parent.transaction === transaction) {
+        return callback();
+    }
+
+    if (parent.transaction) {
+        throw new Error(
+            'RLS: Active transaction already exists; nested BEGIN is not allowed'
+        );
+    }
+
+    return requestContext.run(
+        {
+            ...parent,
+            transaction,
+        },
+        callback
+    );
 }

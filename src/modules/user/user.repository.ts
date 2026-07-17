@@ -1,80 +1,44 @@
 import { Injectable } from '@nestjs/common';
 
-import { PrismaRlsService } from '~/infrastructure/database/prisma-rls.service';
-import { PrismaService } from '~/infrastructure/database/prisma.service';
-import {
-    UserCursor,
-    UserSafe,
-    userSelectAuth,
-    userSelectSafe,
-    UserWithPassword,
-} from '~/common/types/user.types';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
-import { UserRole } from '~/generated/prisma/enums';
+import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
+import type { Prisma } from '~/generated/prisma/client';
+import { UserSafe, userSelectSafe } from '~/common/types/user.types';
+import { CreateUserDto } from './requests/create-user.request.dto';
+import { UpdateUserDto } from './requests/update-user.request.dto';
+import { OrganizationRole } from '~/generated/prisma/enums';
 import { SortDirection } from '~/common/types/sort-order.enum';
+import { requestContext } from '~/infrastructure/context/request-context';
 
 @Injectable()
-export class UsersRepository {
-    constructor(
-        private readonly prisma: PrismaService,
-        private readonly prismaRls: PrismaRlsService
-    ) {}
+export class UserRepository {
+    constructor(private readonly prisma: PrismaRlsClient) {}
 
-    findAll(): Promise<UserSafe[]> {
-        return this.prismaRls.transaction((tx) =>
-            tx.user.findMany({
-                select: userSelectSafe,
-            })
-        );
+    private activeOrganizationId(): string {
+        const organizationId = requestContext.getStore()?.organizationId;
+        if (!organizationId) {
+            throw new Error('Missing organization context');
+        }
+        return organizationId;
+    }
+
+    private memberWhere(organizationId: string) {
+        return {
+            isDeleted: false,
+            organizations: {
+                some: { organizationId },
+            },
+        } as const;
     }
 
     async findAllOffset(page: number, limit: number) {
+        const organizationId = this.activeOrganizationId();
         const skip = (page - 1) * limit;
 
-        return this.prismaRls.transaction(async (tx) => {
-            const [users, total] = await Promise.all([
-                tx.user.findMany({
-                    skip,
-                    take: limit,
-                    select: userSelectSafe,
-                    orderBy: [
-                        {
-                            createdAt: SortDirection.DESC,
-                        },
-                        {
-                            id: SortDirection.DESC,
-                        },
-                    ],
-                }),
-                tx.user.count(),
-            ]);
-
-            return {
-                data: users,
-                meta: {
-                    page,
-                    limit,
-                    total,
-                    totalPages: Math.ceil(total / limit),
-                },
-            };
-        });
-    }
-
-    async findAllCursor(cursor: UserCursor | undefined, limit: number) {
-        return this.prismaRls.transaction(async (tx) => {
-            const users = await tx.user.findMany({
-                take: limit + 1,
-                ...(cursor && {
-                    skip: 1,
-                    cursor: {
-                        createdAt_id: cursor,
-                    },
-                }),
-                where: {
-                    isDeleted: false,
-                },
+        const [users, total] = await Promise.all([
+            this.prisma.user.findMany({
+                where: this.memberWhere(organizationId),
+                skip,
+                take: limit,
                 select: userSelectSafe,
                 orderBy: [
                     {
@@ -84,131 +48,125 @@ export class UsersRepository {
                         id: SortDirection.DESC,
                     },
                 ],
-            });
+            }),
+            this.prisma.user.count({
+                where: this.memberWhere(organizationId),
+            }),
+        ]);
 
-            const hasNextPage = users.length > limit;
-            if (hasNextPage) {
-                users.pop();
-            }
-
-            const nextUser = users.at(-1);
-
-            return {
-                data: users,
-                nextCursor:
-                    hasNextPage && nextUser
-                        ? {
-                              createdAt: nextUser.createdAt,
-                              id: nextUser.id,
-                          }
-                        : null,
-                hasNextPage,
-            };
-        });
+        return {
+            data: users,
+            meta: {
+                page,
+                limit,
+                total,
+            },
+        };
     }
 
     findById(id: string): Promise<UserSafe | null> {
-        return this.prismaRls.transaction((tx) =>
-            tx.user.findUnique({
-                where: { id },
-                select: userSelectSafe,
-            })
-        );
-    }
+        const organizationId = this.activeOrganizationId();
 
-    findByEmail(email: string): Promise<UserSafe | null> {
-        return this.prismaRls.transaction((tx) =>
-            tx.user.findUnique({
-                where: { email },
-                select: userSelectSafe,
-            })
-        );
-    }
-
-    /**
-     * Auth / pre-organization context — must not use PrismaRlsService.
-     * RLS session vars are not available during login.
-     */
-    findByEmailForAuth(email: string): Promise<UserWithPassword | null> {
-        return this.prisma.user.findFirst({
+        return this.prisma.user.findUnique({
             where: {
-                email,
-                isDeleted: false,
+                id,
+                ...this.memberWhere(organizationId),
             },
-            select: userSelectAuth,
+            select: userSelectSafe,
         });
     }
 
-    findAllAdmins(): Promise<UserSafe[]> {
-        return this.prismaRls.transaction((tx) =>
-            tx.user.findMany({
-                where: {
-                    role: UserRole.ADMIN,
-                    isDeleted: false,
-                },
-                select: userSelectSafe,
-            })
-        );
+    findCurrentProfile(): Promise<UserSafe | null> {
+        const userId = requestContext.getStore()?.userId;
+        if (!userId) {
+            throw new Error('Missing user context');
+        }
+
+        const organizationId = this.activeOrganizationId();
+
+        return this.prisma.user.findUnique({
+            where: {
+                id: userId,
+                ...this.memberWhere(organizationId),
+            },
+            select: userSelectSafe,
+        });
+    }
+
+    findByEmail(email: string): Promise<UserSafe | null> {
+        const organizationId = this.activeOrganizationId();
+
+        return this.prisma.user.findUnique({
+            where: {
+                email,
+                ...this.memberWhere(organizationId),
+            },
+            select: userSelectSafe,
+        });
     }
 
     create(
         dto: Omit<CreateUserDto, 'password'> & { password: string },
-        role: UserRole = UserRole.USER
+        transaction?: Prisma.TransactionClient,
+        membershipRole: OrganizationRole = OrganizationRole.USER
     ): Promise<UserSafe> {
-        const { organizationId, ...userData } = dto;
+        const organizationId = transaction
+            ? dto.organizationId
+            : this.activeOrganizationId();
 
-        return this.prismaRls.transaction(async (tx) => {
-            const user = await tx.user.create({
-                data: {
-                    ...userData,
-                    role,
-                    organizations: {
-                        create: {
-                            organizationId,
-                            role,
-                        },
+        if (!organizationId) {
+            throw new Error('Missing organizationId');
+        }
+
+        const { organizationId: _dtoOrganizationId, ...userData } = dto;
+        const client = transaction ?? this.prisma;
+
+        return client.user.create({
+            data: {
+                ...userData,
+                organizations: {
+                    create: {
+                        organizationId,
                     },
                 },
-                select: userSelectSafe,
-            });
-
-            return user;
+                organizationRoles: {
+                    create: {
+                        organizationId,
+                        role: membershipRole,
+                    },
+                },
+            },
+            select: userSelectSafe,
         });
     }
 
     update(id: string, dto: UpdateUserDto): Promise<UserSafe> {
         const { organizationId: _organizationId, ...userData } = dto;
 
-        return this.prismaRls.transaction((tx) =>
-            tx.user.update({
-                where: { id },
-                data: userData,
-                select: userSelectSafe,
-            })
-        );
+        return this.prisma.user.update({
+            where: { id },
+            data: userData,
+            select: userSelectSafe,
+        });
     }
 
     restore(id: string): Promise<UserSafe> {
-        return this.prismaRls.transaction((tx) =>
-            tx.user.update({
-                where: { id },
-                data: {
-                    isDeleted: false,
-                },
-                select: userSelectSafe,
-            })
-        );
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                isDeleted: false,
+            },
+            select: userSelectSafe,
+        });
     }
 
     softDelete(id: string): Promise<UserSafe> {
-        return this.prismaRls.transaction((tx) =>
-            tx.user.update({
-                where: { id },
-                data: {
-                    isDeleted: true,
-                },
-                select: userSelectSafe,
-            })
-        );
+        return this.prisma.user.update({
+            where: { id },
+            data: {
+                isDeleted: true,
+            },
+            select: userSelectSafe,
+        });
     }
 }
