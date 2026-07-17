@@ -9,5 +9,6 @@ export const OrganizationListResponse = createResponseSchema(
     'OrganizationListResponseDto'
 );
 
-export type OrganizationListResponse = z.infer<typeof OrganizationListResponse.schema>;
-
+export type OrganizationListResponse = z.infer<
+    typeof OrganizationListResponse.schema
+>;

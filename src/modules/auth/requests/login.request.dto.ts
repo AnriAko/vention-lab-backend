@@ -7,12 +7,10 @@ import {
 } from '~/common/swagger/seed-examples';
 
 export const Login = z.object({
-    email: z
-        .string()
-        .meta({
-            description: 'Seeded accounts: owner, org admin, or userN@example.com',
-            examples: [SEED_LOGIN_OWNER.email, SEED_LOGIN_ORG_ADMIN.email],
-        }),
+    email: z.string().meta({
+        description: 'Seeded accounts: owner, org admin, or userN@example.com',
+        examples: [SEED_LOGIN_OWNER.email, SEED_LOGIN_ORG_ADMIN.email],
+    }),
     password: z.string().meta({
         description: 'Default seed password',
         examples: [SEED_LOGIN_OWNER.password],

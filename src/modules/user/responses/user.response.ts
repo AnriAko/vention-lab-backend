@@ -1,6 +1,9 @@
 import { z } from 'zod';
 
-import { createResponseSchema, DateTimeResponse } from '~/common/dto/response-schema';
+import {
+    createResponseSchema,
+    DateTimeResponse,
+} from '~/common/dto/response-schema';
 
 export const UserResponse = createResponseSchema(
     z.object({
@@ -16,4 +19,3 @@ export const UserResponse = createResponseSchema(
 );
 
 export type UserResponse = z.infer<typeof UserResponse.schema>;
-

@@ -12,12 +12,18 @@ export const UpdateUser = z
         email: z.email().meta({
             examples: [SEED_USERS.demoMember.email],
         }),
-        name: z.string().min(1).meta({
-            examples: ['Updated Demo Member'],
-        }),
-        password: z.string().min(8).meta({
-            examples: [SEED_PASSWORD],
-        }),
+        name: z
+            .string()
+            .min(1)
+            .meta({
+                examples: ['Updated Demo Member'],
+            }),
+        password: z
+            .string()
+            .min(8)
+            .meta({
+                examples: [SEED_PASSWORD],
+            }),
         organizationId: z.uuid().meta({
             examples: [SEED_ORGANIZATIONS.catFans.id],
         }),

@@ -14,9 +14,7 @@ export class SearchRepository {
     async searchUsers({ query, page, limit }: SearchDto) {
         const offset = (page - 1) * limit;
 
-        return this.prisma.$queryRaw(
-            searchUsersQuery(query, limit, offset)
-        );
+        return this.prisma.$queryRaw(searchUsersQuery(query, limit, offset));
     }
 
     async searchOrganizations({ query, page, limit }: SearchDto) {

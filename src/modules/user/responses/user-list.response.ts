@@ -10,4 +10,3 @@ export const UserListResponse = createResponseSchema(
 );
 
 export type UserListResponse = z.infer<typeof UserListResponse.schema>;
-

@@ -104,10 +104,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
 
             if ('details' in payload) {
                 details = payload.details;
-            } else if (
-                Array.isArray(payload.errors) &&
-                details === undefined
-            ) {
+            } else if (Array.isArray(payload.errors) && details === undefined) {
                 details = payload.errors;
                 errorCode = CommonErrors.VALIDATION_ERROR.code;
                 if (typeof payload.message !== 'string') {

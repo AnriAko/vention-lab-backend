@@ -17,4 +17,3 @@ export const LeaderboardResponse = createResponseSchema(
 );
 
 export type LeaderboardResponse = z.infer<typeof LeaderboardResponse.schema>;
-

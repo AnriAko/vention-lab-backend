@@ -29,7 +29,9 @@ export async function seedChats(prisma: PrismaClient) {
         .filter(({ userIds }) => userIds.length >= 2);
 
     if (!orgMembers.length) {
-        throw new Error('Need at least one organization with two members to seed chats');
+        throw new Error(
+            'Need at least one organization with two members to seed chats'
+        );
     }
 
     const chatsBatch: {
@@ -60,8 +62,7 @@ export async function seedChats(prisma: PrismaClient) {
     };
 
     for (let i = 0; i < TOTAL_CHATS; i++) {
-        const org =
-            orgMembers[Math.floor(Math.random() * orgMembers.length)];
+        const org = orgMembers[Math.floor(Math.random() * orgMembers.length)];
 
         const userA =
             org.userIds[Math.floor(Math.random() * org.userIds.length)];

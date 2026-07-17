@@ -12,4 +12,3 @@ export const OrganizationMemberListResponse = createResponseSchema(
 export type OrganizationMemberListResponse = z.infer<
     typeof OrganizationMemberListResponse.schema
 >;
-

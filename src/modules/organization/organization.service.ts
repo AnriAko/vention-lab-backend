@@ -23,7 +23,10 @@ export class OrganizationService {
     ) {}
 
     async findAll(page: number, limit: number) {
-        const result = await this.organizationRepository.findAllOffset(page, limit);
+        const result = await this.organizationRepository.findAllOffset(
+            page,
+            limit
+        );
         return {
             items: result.data,
             pagination: result.meta,
@@ -137,4 +140,3 @@ export class OrganizationService {
         return organization;
     }
 }
-

@@ -15,4 +15,3 @@ export const OrganizationWithAdminResponse = createResponseSchema(
 export type OrganizationWithAdminResponse = z.infer<
     typeof OrganizationWithAdminResponse.schema
 >;
-

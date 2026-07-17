@@ -16,9 +16,7 @@ import { EmptyResponse } from '~/common/dto/empty.response';
 import { OffsetPaginationQuery } from '~/common/dto/pagination.request';
 import { ApiResponse } from '~/common/dto/response-schema';
 import { AppRole } from '~/common/types/app-role.enum';
-import {
-    SEED_ORGANIZATIONS,
-} from '~/common/swagger/seed-examples';
+import { SEED_ORGANIZATIONS } from '~/common/swagger/seed-examples';
 
 import { OrganizationMemberService } from './organization-member.service';
 import { OrganizationIdParamDto } from './requests/organization-id-param.request.dto';
@@ -115,7 +113,8 @@ export class OrganizationMemberController {
     @ApiEndpoint({
         summary: 'Remove member from organization',
         roles: [AppRole.ADMIN],
-        description: 'Removes membership (and role) for the user in the organization.',
+        description:
+            'Removes membership (and role) for the user in the organization.',
     })
     @ApiResponse(EmptyResponse)
     remove(@Param() params: OrganizationMemberParamsDto) {

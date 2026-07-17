@@ -9,9 +9,7 @@ import { z } from 'zod';
  */
 export const DateTimeResponse = z
     .union([z.date(), z.iso.datetime()])
-    .transform((value) =>
-        value instanceof Date ? value.toISOString() : value
-    )
+    .transform((value) => (value instanceof Date ? value.toISOString() : value))
     .pipe(z.iso.datetime());
 
 export type ResponseSchema<T extends z.ZodTypeAny = z.ZodTypeAny> = {

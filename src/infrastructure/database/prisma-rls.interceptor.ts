@@ -69,8 +69,6 @@ export class PrismaRlsInterceptor implements NestInterceptor {
             return next.handle();
         }
 
-        return from(
-            this.prismaRls.withRls(() => lastValueFrom(next.handle()))
-        );
+        return from(this.prismaRls.withRls(() => lastValueFrom(next.handle())));
     }
 }
