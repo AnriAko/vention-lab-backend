@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
-
-import { AppException } from '~/common/errors';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { Prisma } from '~/generated/prisma/client';
-import { UserErrors } from '~/modules/user/user.errors';
 import {
     OrganizationSafe,
     organizationSelectSafe,
 } from '~/common/types/organization.types';
+import type { UserSafe } from '~/common/types/user.types';
 
 import { CreateOrganizationDto } from './requests/create-organization.request.dto';
 import { UpdateOrganizationDto } from './requests/update-organization.request.dto';
@@ -130,18 +128,6 @@ export class OrganizationsRepository {
     }
 
     async create(dto: CreateOrganizationDto): Promise<OrganizationSafe> {
-        const user = await this.prisma.user.findUnique({
-            where: {
-                id: dto.userId,
-                isDeleted: false,
-            },
-            select: { id: true },
-        });
-
-        if (!user) {
-            throw new AppException(UserErrors.NOT_FOUND);
-        }
-
         return this.prisma.$transaction(async (transaction) => {
             const organization = await transaction.organization.create({
                 data: {
@@ -150,9 +136,33 @@ export class OrganizationsRepository {
                 select: organizationSelectSafe,
             });
 
-            await this.attachAdmin(transaction, organization.id, user.id);
+            await this.attachAdmin(transaction, organization.id, dto.userId);
 
             return organization;
+        });
+    }
+
+    async createWithAdmin(
+        organizationName: string,
+        createAdmin: (
+            transaction: Prisma.TransactionClient,
+            organizationId: string
+        ) => Promise<UserSafe>
+    ): Promise<{ organization: OrganizationSafe; user: UserSafe }> {
+        return this.prisma.$transaction(async (transaction) => {
+            const organization = await transaction.organization.create({
+                data: {
+                    name: organizationName,
+                },
+                select: organizationSelectSafe,
+            });
+
+            const user = await createAdmin(transaction, organization.id);
+
+            return {
+                organization,
+                user,
+            };
         });
     }
 

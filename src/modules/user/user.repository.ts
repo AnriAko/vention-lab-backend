@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
 import type { Prisma } from '~/generated/prisma/client';
 import { UserSafe, userSelectSafe } from '~/common/types/user.types';
 import { CreateUserDto } from './requests/create-user.request.dto';
@@ -11,7 +12,10 @@ import { requestContext } from '~/infrastructure/context/request-context';
 
 @Injectable()
 export class UserRepository {
-    constructor(private readonly prisma: PrismaRlsClient) {}
+    constructor(
+        private readonly prisma: PrismaRlsClient,
+        private readonly prismaService: PrismaService
+    ) {}
 
     private activeOrganizationId(): string {
         const organizationId = requestContext.getStore()?.organizationId;
@@ -74,6 +78,18 @@ export class UserRepository {
             },
             select: userSelectSafe,
         });
+    }
+
+    async existsById(id: string): Promise<boolean> {
+        const user = await this.prismaService.user.findUnique({
+            where: {
+                id,
+                isDeleted: false,
+            },
+            select: { id: true },
+        });
+
+        return user !== null;
     }
 
     findCurrentProfile(): Promise<UserSafe | null> {

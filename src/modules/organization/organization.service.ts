@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
-import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { requestContext } from '~/infrastructure/context/request-context';
 import { UsersService } from '~/modules/user/user.service';
 import { UserErrors } from '~/modules/user/user.errors';
@@ -11,7 +10,6 @@ import { OrganizationRole } from '~/generated/prisma/client';
 import { CreateOrganizationDto } from './requests/create-organization.request.dto';
 import { CreateOrganizationWithAdminDto } from './requests/create-organization-with-admin.request.dto';
 import { UpdateOrganizationDto } from './requests/update-organization.request.dto';
-import { organizationSelectSafe } from '~/common/types/organization.types';
 import { OrganizationsRepository } from './organization.repository';
 
 @Injectable()
@@ -19,7 +17,6 @@ export class OrganizationService {
     constructor(
         private readonly organizationRepository: OrganizationsRepository,
         private readonly usersService: UsersService,
-        private readonly prisma: PrismaService,
         private readonly logger: LoggerService
     ) {}
 
@@ -59,15 +56,9 @@ export class OrganizationService {
     }
 
     async findAllByUserId(userId: string, page: number, limit: number) {
-        const user = await this.prisma.user.findUnique({
-            where: {
-                id: userId,
-                isDeleted: false,
-            },
-            select: { id: true },
-        });
+        const userExists = await this.usersService.existsById(userId);
 
-        if (!user) {
+        if (!userExists) {
             throw new AppException(UserErrors.NOT_FOUND);
         }
 
@@ -84,6 +75,12 @@ export class OrganizationService {
     }
 
     async create(dto: CreateOrganizationDto) {
+        const userExists = await this.usersService.existsById(dto.userId);
+
+        if (!userExists) {
+            throw new AppException(UserErrors.NOT_FOUND);
+        }
+
         const organization = await this.organizationRepository.create(dto);
 
         this.logger.log(
@@ -94,34 +91,26 @@ export class OrganizationService {
     }
 
     async createWithAdmin(dto: CreateOrganizationWithAdminDto) {
-        return this.prisma.$transaction(async (transaction) => {
-            const organization = await transaction.organization.create({
-                data: {
-                    name: dto.organizationName,
-                },
-                select: organizationSelectSafe,
-            });
+        const result = await this.organizationRepository.createWithAdmin(
+            dto.organizationName,
+            (transaction, organizationId) =>
+                this.usersService.createUser(
+                    {
+                        email: dto.adminsEmail,
+                        name: dto.adminsName,
+                        password: dto.adminsPassword,
+                        organizationId,
+                    },
+                    transaction,
+                    OrganizationRole.ADMIN
+                )
+        );
 
-            const user = await this.usersService.createUser(
-                {
-                    email: dto.adminsEmail,
-                    name: dto.adminsName,
-                    password: dto.adminsPassword,
-                    organizationId: organization.id,
-                },
-                transaction,
-                OrganizationRole.ADMIN
-            );
+        this.logger.log(
+            `[OrganizationService] created with new admin userId=${result.user.id} id=${result.organization.id}`
+        );
 
-            this.logger.log(
-                `[OrganizationService] created with new admin userId=${user.id} id=${organization.id}`
-            );
-
-            return {
-                organization,
-                user,
-            };
-        });
+        return result;
     }
 
     async update(id: string, dto: UpdateOrganizationDto) {

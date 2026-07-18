@@ -38,6 +38,10 @@ export class UsersService {
         return this.userRepository.findById(id);
     }
 
+    existsById(id: string) {
+        return this.userRepository.existsById(id);
+    }
+
     getCurrentProfile() {
         return this.userRepository.findCurrentProfile();
     }
