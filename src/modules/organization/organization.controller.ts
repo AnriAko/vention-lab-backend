@@ -34,7 +34,7 @@ import { OrganizationUserIdDto } from './requests/organization-user-id.request.d
 @ApiTags('organizations')
 @SkipOrganization()
 @Roles(AppRole.OWNER)
-@Controller('organizations')
+@Controller('orgs')
 export class OrganizationController {
     constructor(private readonly organizationService: OrganizationService) {}
 
