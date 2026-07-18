@@ -13,15 +13,6 @@ import { AuthGuard } from '~/providers/guards/auth.guard';
 import { OrganizationGuard } from '~/providers/guards/organization.guard';
 import { RolesGuard } from '~/providers/guards/roles.guard';
 
-/**
- * Global cross-cutting providers.
- *
- * Interceptor order (outer → inner):
- * ApiResponse → ZodSerializer → Logger → PrismaRls → handler
- *
- * Response path (inner → outer):
- * handler → PrismaRls → Logger → ZodSerializer (whitelist) → ApiResponse (envelope)
- */
 @Module({
     providers: [
         {

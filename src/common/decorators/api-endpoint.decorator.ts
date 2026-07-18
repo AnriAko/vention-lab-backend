@@ -10,9 +10,6 @@ function roleLine(roles?: string[]): string {
     return `\n\n**Required role (minimum):** \`${roles.join('` | `')}\``;
 }
 
-/**
- * Standard operation docs. Pass `guest: true` to clear global security (public routes).
- */
 export function ApiEndpoint(
     options: OperationInput & {
         guest?: boolean;

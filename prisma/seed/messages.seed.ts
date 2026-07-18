@@ -9,10 +9,6 @@ import {
 const TOTAL_MESSAGES = 500;
 const BATCH_SIZE = 100;
 
-/**
- * Seeds enough messages for leaderboard sorting, and gives demo users
- * predictable higher counts so Swagger examples show ranked results.
- */
 export async function seedMessages(
     prisma: PrismaClient,
     chats: { id: string; organizationId?: string }[]

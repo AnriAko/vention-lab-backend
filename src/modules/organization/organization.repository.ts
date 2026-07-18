@@ -4,11 +4,14 @@ import { AppException } from '~/common/errors';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { Prisma } from '~/generated/prisma/client';
 import { UserErrors } from '~/modules/user/user.errors';
-import { UserOrganization } from '~/common/types/user-organization.types';
+import {
+    OrganizationSafe,
+    organizationSelectSafe,
+} from '~/common/types/organization.types';
 
 import { CreateOrganizationDto } from './requests/create-organization.request.dto';
 import { UpdateOrganizationDto } from './requests/update-organization.request.dto';
-import { Organization, OrganizationRole } from '~/generated/prisma/client';
+import { OrganizationRole } from '~/generated/prisma/client';
 
 @Injectable()
 export class OrganizationsRepository {
@@ -20,6 +23,7 @@ export class OrganizationsRepository {
         const [organizations, total] = await Promise.all([
             this.prisma.organization.findMany({
                 where: { isDeleted: false },
+                select: organizationSelectSafe,
                 skip,
                 take: limit,
                 orderBy: { name: 'asc' },
@@ -43,6 +47,7 @@ export class OrganizationsRepository {
         const [organizations, total] = await Promise.all([
             this.prisma.organization.findMany({
                 where: { isDeleted: true },
+                select: organizationSelectSafe,
                 skip,
                 take: limit,
                 orderBy: { name: 'asc' },
@@ -60,26 +65,13 @@ export class OrganizationsRepository {
         };
     }
 
-    findById(id: string): Promise<Organization | null> {
+    findById(id: string): Promise<OrganizationSafe | null> {
         return this.prisma.organization.findUnique({
             where: {
                 id,
             },
+            select: organizationSelectSafe,
         });
-    }
-
-    private mapUserOrganization(membership: {
-        role: OrganizationRole;
-        organization: Organization;
-    }): UserOrganization {
-        return {
-            id: membership.organization.id,
-            name: membership.organization.name,
-            createdAt: membership.organization.createdAt,
-            updatedAt: membership.organization.updatedAt,
-            isDeleted: membership.organization.isDeleted,
-            role: membership.role,
-        };
     }
 
     async findAllByUserIdOffset(userId: string, page: number, limit: number) {
@@ -96,15 +88,18 @@ export class OrganizationsRepository {
                 skip,
                 take: limit,
                 orderBy: { organization: { name: 'asc' } },
-                include: { organization: true },
+                select: {
+                    role: true,
+                    organization: {
+                        select: organizationSelectSafe,
+                    },
+                },
             }),
             this.prisma.usersOrganizationsRoles.count({ where }),
         ]);
 
         return {
-            data: memberships.map((membership) =>
-                this.mapUserOrganization(membership)
-            ),
+            data: memberships,
             meta: {
                 page,
                 limit,
@@ -134,7 +129,7 @@ export class OrganizationsRepository {
         });
     }
 
-    async create(dto: CreateOrganizationDto) {
+    async create(dto: CreateOrganizationDto): Promise<OrganizationSafe> {
         const user = await this.prisma.user.findUnique({
             where: {
                 id: dto.userId,
@@ -152,6 +147,7 @@ export class OrganizationsRepository {
                 data: {
                     name: dto.organizationName,
                 },
+                select: organizationSelectSafe,
             });
 
             await this.attachAdmin(transaction, organization.id, user.id);
@@ -160,7 +156,7 @@ export class OrganizationsRepository {
         });
     }
 
-    update(id: string, dto: UpdateOrganizationDto): Promise<Organization> {
+    update(id: string, dto: UpdateOrganizationDto): Promise<OrganizationSafe> {
         return this.prisma.organization.update({
             where: { id },
             data: {
@@ -168,24 +164,27 @@ export class OrganizationsRepository {
                     name: dto.organizationName,
                 }),
             },
+            select: organizationSelectSafe,
         });
     }
 
-    restore(id: string): Promise<Organization> {
+    restore(id: string): Promise<OrganizationSafe> {
         return this.prisma.organization.update({
             where: { id },
             data: {
                 isDeleted: false,
             },
+            select: organizationSelectSafe,
         });
     }
 
-    softDelete(id: string): Promise<Organization> {
+    softDelete(id: string): Promise<OrganizationSafe> {
         return this.prisma.organization.update({
             where: { id },
             data: {
                 isDeleted: true,
             },
+            select: organizationSelectSafe,
         });
     }
 }

@@ -46,7 +46,7 @@ export class UsersController {
         return this.userService.findAll(dto.page, dto.limit);
     }
 
-    @Get('me')
+    @Get('current')
     @Roles(AppRole.USER)
     @ApiEndpoint({
         summary: 'Get current user profile',

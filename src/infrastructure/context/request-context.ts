@@ -9,7 +9,6 @@ export type RequestContext = {
     userId: string;
     organizationId?: string;
     role?: AppRole;
-    /** Active Prisma interactive transaction for tenant RLS queries. */
     transaction?: Prisma.TransactionClient;
 };
 
@@ -43,12 +42,6 @@ export function getPrismaTransaction(): Prisma.TransactionClient | undefined {
     return requestContext.getStore()?.transaction;
 }
 
-/**
- * Attach a Prisma transaction via an immutable nested ALS scope.
- * Prefer PrismaRlsService.withRls() for HTTP requests.
- *
- * Reuses the same transaction if already active; never nests BEGIN.
- */
 export function runWithPrismaTransaction<T>(
     transaction: Prisma.TransactionClient,
     callback: () => T

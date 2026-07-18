@@ -2,11 +2,6 @@ import { applyDecorators } from '@nestjs/common';
 import { createZodDto, ZodResponse, type ZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-/**
- * Accepts Date (Prisma) or ISO string; serializes to ISO string.
- * Ends with `.pipe(z.iso.datetime())` so OpenAPI output schema is a plain
- * date-time string (bare transforms are not representable in JSON Schema).
- */
 export const DateTimeResponse = z
     .union([z.date(), z.iso.datetime()])
     .transform((value) => (value instanceof Date ? value.toISOString() : value))
@@ -37,17 +32,10 @@ export function createArrayResponse<T extends z.ZodTypeAny>(
     return createResponseSchema(z.array(response.schema), name);
 }
 
-/**
- * Single decorator for Swagger docs + Zod response serialization.
- * Uses nestjs-zod @ZodResponse under the hood (keeps createZodDto internal).
- */
 export function ApiResponse<T extends z.ZodTypeAny>(
     response: ResponseSchema<T>
 ) {
-    return applyDecorators(
-        // nestjs-zod overloads are too strict for generic ResponseSchema wrappers
-        ZodResponse({ type: response.dto as never })
-    );
+    return applyDecorators(ZodResponse({ type: response.dto as never }));
 }
 
 export type InferResponse<T extends ResponseSchema> = z.infer<T['schema']>;

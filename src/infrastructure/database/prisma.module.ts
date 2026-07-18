@@ -4,11 +4,6 @@ import { PrismaRlsInterceptor } from '~/infrastructure/database/prisma-rls.inter
 import { PrismaRlsService } from '~/infrastructure/database/prisma-rls.service';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 
-/**
- * Single registration of PrismaService for the whole app.
- * Feature modules may import PrismaModule; Nest reuses this module instance
- * so PrismaService stays a singleton.
- */
 @Global()
 @Module({
     providers: [

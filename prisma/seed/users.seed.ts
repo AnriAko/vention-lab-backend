@@ -138,7 +138,6 @@ export async function seedUsers(
         role: OrganizationRole;
     }[] = [];
 
-    // user1@ is reserved for the demo CatFans member created above.
     let userIndex = 2;
 
     const flush = async () => {
@@ -163,7 +162,6 @@ export async function seedUsers(
         rolesBatch = [];
     };
 
-    // TOTAL_USERS includes the reserved demo member.
     const remainingUsers = TOTAL_USERS - 1;
     const usersPerOrg = Math.floor(remainingUsers / organizations.length);
     const remainder = remainingUsers % organizations.length;

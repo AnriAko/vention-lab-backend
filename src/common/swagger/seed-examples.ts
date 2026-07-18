@@ -1,7 +1,3 @@
-/**
- * Stable IDs and credentials used by `prisma/seed/*`.
- * Keep in sync with seed scripts so Swagger "Try it out" examples work after seeding.
- */
 export const SEED_PASSWORD = 'Password123!';
 
 export const SEED_ORGANIZATIONS = {
@@ -35,7 +31,6 @@ export const SEED_USERS = {
         name: 'Super Owner',
         password: SEED_PASSWORD,
     },
-    /** First regular member in CatFans (user1@example.com). */
     demoMember: {
         id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
         email: 'user1@example.com',

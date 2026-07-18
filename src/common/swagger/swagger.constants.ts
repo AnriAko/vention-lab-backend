@@ -9,7 +9,6 @@ import {
     SEED_USERS,
 } from './seed-examples';
 
-/** Security scheme names registered in `main.ts` DocumentBuilder. */
 export const SWAGGER_AUTH = {
     ACCESS_TOKEN: 'access-token',
     ORGANIZATION_ID: 'organization-id',

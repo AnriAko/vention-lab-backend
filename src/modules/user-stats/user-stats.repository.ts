@@ -8,7 +8,6 @@ export class UserStatsRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
 
     async getMessageLeaderboardRaw({ page, limit }: OffsetPagination) {
-        // Keep endpoint, but return the same offset-paginated shape as the Prisma implementation.
         const offset = (page - 1) * limit;
         const [items, total] = await Promise.all([
             this.prisma.$queryRaw(messageLeaderboardQuery(limit, offset)),

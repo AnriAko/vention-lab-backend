@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors';
 import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
-import { OrganizationMember } from '~/common/types/organization-member.types';
+import { organizationMemberSelect } from '~/common/types/organization-member.types';
 import { OrganizationRole } from '~/generated/prisma/enums';
 import { UserErrors } from '~/modules/user/user.errors';
 import { OrganizationMemberErrors } from './organization-member.errors';
@@ -10,33 +10,6 @@ import { OrganizationMemberErrors } from './organization-member.errors';
 @Injectable()
 export class OrganizationMemberRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
-
-    private mapMember(user: {
-        id: string;
-        email: string;
-        name: string;
-        organizationRoles: { role: OrganizationRole }[];
-    }): OrganizationMember {
-        return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.organizationRoles[0]?.role ?? OrganizationRole.USER,
-        };
-    }
-
-    private memberSelect(organizationId: string) {
-        return {
-            id: true,
-            email: true,
-            name: true,
-            organizationRoles: {
-                where: { organizationId },
-                select: { role: true },
-                take: 1,
-            },
-        } as const;
-    }
 
     async findAllOffset(organizationId: string, page: number, limit: number) {
         const skip = (page - 1) * limit;
@@ -51,7 +24,7 @@ export class OrganizationMemberRepository {
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
-                select: this.memberSelect(organizationId),
+                select: organizationMemberSelect(organizationId),
                 orderBy: { name: 'asc' },
                 skip,
                 take: limit,
@@ -60,7 +33,7 @@ export class OrganizationMemberRepository {
         ]);
 
         return {
-            data: members.map((member) => this.mapMember(member)),
+            data: members,
             meta: {
                 page,
                 limit,
@@ -86,7 +59,7 @@ export class OrganizationMemberRepository {
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
-                select: this.memberSelect(organizationId),
+                select: organizationMemberSelect(organizationId),
                 orderBy: { name: 'asc' },
                 skip,
                 take: limit,
@@ -95,7 +68,7 @@ export class OrganizationMemberRepository {
         ]);
 
         return {
-            data: members.map((member) => this.mapMember(member)),
+            data: members,
             meta: {
                 page,
                 limit,
@@ -127,7 +100,7 @@ export class OrganizationMemberRepository {
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
-                select: this.memberSelect(organizationId),
+                select: organizationMemberSelect(organizationId),
                 orderBy: { name: 'asc' },
                 skip,
                 take: limit,
@@ -136,7 +109,7 @@ export class OrganizationMemberRepository {
         ]);
 
         return {
-            data: members.map((member) => this.mapMember(member)),
+            data: members,
             meta: {
                 page,
                 limit,
@@ -145,10 +118,7 @@ export class OrganizationMemberRepository {
         };
     }
 
-    async findById(
-        organizationId: string,
-        userId: string
-    ): Promise<OrganizationMember | null> {
+    async findById(organizationId: string, userId: string) {
         const member = await this.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -157,17 +127,17 @@ export class OrganizationMemberRepository {
                     some: { organizationId },
                 },
             },
-            select: this.memberSelect(organizationId),
+            select: organizationMemberSelect(organizationId),
         });
 
-        return member ? this.mapMember(member) : null;
+        return member;
     }
 
     async assignRole(
         organizationId: string,
         userId: string,
         role: OrganizationRole | 'USER' | 'ADMIN'
-    ): Promise<OrganizationMember> {
+    ) {
         const user = await this.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -211,7 +181,7 @@ export class OrganizationMemberRepository {
 
         const member = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: this.memberSelect(organizationId),
+            select: organizationMemberSelect(organizationId),
         });
 
         if (!member) {
@@ -220,7 +190,7 @@ export class OrganizationMemberRepository {
             );
         }
 
-        return this.mapMember(member);
+        return member;
     }
 
     async remove(organizationId: string, userId: string): Promise<void> {

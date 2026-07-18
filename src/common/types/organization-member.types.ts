@@ -1,8 +1,11 @@
-import type { OrganizationRole } from '~/generated/prisma/enums';
-
-export type OrganizationMember = {
-    id: string;
-    email: string;
-    name: string;
-    role: OrganizationRole;
-};
+export const organizationMemberSelect = (organizationId: string) =>
+    ({
+        id: true,
+        email: true,
+        name: true,
+        organizationRoles: {
+            where: { organizationId },
+            select: { role: true },
+            take: 1,
+        },
+    }) as const;

@@ -3,14 +3,6 @@ import type { Prisma } from '~/generated/prisma/client';
 
 import { getPrismaTransaction } from '~/infrastructure/context/request-context';
 
-/**
- * Transparent Prisma client for only tenant-scoped repositories.
- *
- * Always uses the active interactive transaction from RequestContext.
- * Never falls back to PrismaService — that would bypass RLS session vars.
- *
- * Repositories must not accept TransactionClient parameters.
- */
 @Injectable()
 export class PrismaRlsClient {
     private get client(): Prisma.TransactionClient {

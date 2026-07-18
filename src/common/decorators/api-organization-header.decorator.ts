@@ -5,10 +5,6 @@ import { SWAGGER_AUTH } from '~/common/swagger/swagger.constants';
 import { SEED_ORGANIZATIONS } from '~/common/swagger/seed-examples';
 import { AUTH_HEADER } from '~/common/types/auth.types';
 
-/**
- * Documents tenant scoping for routes that require `x-organization-id`
- * (used together with `@Roles(...)`; not for `@SkipOrganization()` / `@PublicRoute()`).
- */
 export const ApiOrganizationHeader = () =>
     applyDecorators(
         ApiSecurity(SWAGGER_AUTH.ORGANIZATION_ID),

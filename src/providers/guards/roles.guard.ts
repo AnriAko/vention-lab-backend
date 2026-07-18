@@ -40,7 +40,6 @@ export class RolesGuard implements CanActivate {
             return false;
         }
 
-        // Tenant routes: role is membership role for x-organization-id (set by OrganizationGuard)
         const activeRole = request.user.role;
         const requiredRank = Math.min(...roles.map((role) => ROLE_RANK[role]));
 

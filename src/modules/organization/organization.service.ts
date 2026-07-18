@@ -11,6 +11,7 @@ import { OrganizationRole } from '~/generated/prisma/client';
 import { CreateOrganizationDto } from './requests/create-organization.request.dto';
 import { CreateOrganizationWithAdminDto } from './requests/create-organization-with-admin.request.dto';
 import { UpdateOrganizationDto } from './requests/update-organization.request.dto';
+import { organizationSelectSafe } from '~/common/types/organization.types';
 import { OrganizationsRepository } from './organization.repository';
 
 @Injectable()
@@ -98,6 +99,7 @@ export class OrganizationService {
                 data: {
                     name: dto.organizationName,
                 },
+                select: organizationSelectSafe,
             });
 
             const user = await this.usersService.createUser(

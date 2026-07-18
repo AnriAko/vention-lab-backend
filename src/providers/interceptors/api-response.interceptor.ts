@@ -20,11 +20,6 @@ function isAlreadyWrapped(value: unknown): value is ApiSuccessEnvelope {
     );
 }
 
-/**
- * Wraps handler output in the public success envelope.
- * Must run AFTER ZodSerializerInterceptor so field whitelisting
- * happens on the raw payload before wrapping.
- */
 @Injectable()
 export class ApiResponseInterceptor implements NestInterceptor {
     intercept(

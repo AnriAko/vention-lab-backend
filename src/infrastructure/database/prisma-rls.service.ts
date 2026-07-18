@@ -9,18 +9,6 @@ import {
 import { AUTH_GUEST } from '~/common/types/auth.types';
 import type { AppRole } from '~/common/types/app-role.enum';
 
-/**
- * Opens a single interactive transaction, sets PostgreSQL RLS session
- * variables, and exposes the transaction via an immutable nested
- * RequestContext ALS scope (requestContext.run).
- *
- * Lifecycle:
- * BEGIN → ALS { ...ctx, transaction } → set_config(app.current_*) → callback → COMMIT
- * On error: Prisma rolls back; ALS scope ends automatically (no manual cleanup)
- *
- * Nested withRls() / withTenant() calls reuse the current transaction and
- * current RLS identity — never BEGIN inside BEGIN.
- */
 @Injectable()
 export class PrismaRlsService {
     constructor(private readonly prisma: PrismaService) {}
@@ -40,7 +28,6 @@ export class PrismaRlsService {
             throw new Error('RLS: Missing role context');
         }
 
-        // Nested RLS scopes reuse current transaction and current RLS identity
         if (ctx.transaction) {
             return callback();
         }
@@ -90,12 +77,6 @@ export class PrismaRlsService {
         });
     }
 
-    /**
-     * Convenience entry when user/org are already known (e.g. scripts).
-     * Prefer request-scoped withRls() for HTTP handlers.
-     *
-     * Nested RLS scopes reuse current transaction and current RLS identity.
-     */
     async withTenant<T>(
         params: {
             userId: string;

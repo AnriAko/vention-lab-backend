@@ -62,7 +62,7 @@ export class OrganizationController {
         return this.organizationService.findAllDeleted(dto.page, dto.limit);
     }
 
-    @Get('me')
+    @Get('current')
     @Roles(AppRole.USER)
     @ApiEndpoint({
         summary: 'List my organizations',
