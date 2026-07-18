@@ -14,8 +14,10 @@ export class OrganizationMemberService {
     ) {}
 
     async findAll(page: number, limit: number) {
-        const result =
-            await this.organizationMemberRepository.findAllOffset(page, limit);
+        const result = await this.organizationMemberRepository.findAllOffset(
+            page,
+            limit
+        );
         return {
             items: result.data,
             pagination: result.meta,
@@ -60,8 +62,7 @@ export class OrganizationMemberService {
     }
 
     async remove(userId: string): Promise<null> {
-        const member =
-            await this.organizationMemberRepository.findById(userId);
+        const member = await this.organizationMemberRepository.findById(userId);
 
         if (!member) {
             throw new AppException(OrganizationMemberErrors.NOT_FOUND);
@@ -69,9 +70,7 @@ export class OrganizationMemberService {
 
         await this.organizationMemberRepository.remove(userId);
 
-        this.logger.log(
-            `[OrganizationMemberService] removed userId=${userId}`
-        );
+        this.logger.log(`[OrganizationMemberService] removed userId=${userId}`);
 
         return null;
     }

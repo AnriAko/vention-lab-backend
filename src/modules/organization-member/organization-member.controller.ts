@@ -69,7 +69,10 @@ export class OrganizationMemberController {
     })
     @ApiResponse(OrganizationMemberListResponse)
     findAllAdmins(@Query() dto: OffsetPaginationQuery) {
-        return this.organizationMemberService.findAllAdmins(dto.page, dto.limit);
+        return this.organizationMemberService.findAllAdmins(
+            dto.page,
+            dto.limit
+        );
     }
 
     @Patch(':userId/role')
