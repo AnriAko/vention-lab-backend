@@ -13,22 +13,18 @@ export class OrganizationMemberService {
         private readonly logger: LoggerService
     ) {}
 
-    async findAll(organizationId: string, page: number, limit: number) {
-        const result = await this.organizationMemberRepository.findAllOffset(
-            organizationId,
-            page,
-            limit
-        );
+    async findAll(page: number, limit: number) {
+        const result =
+            await this.organizationMemberRepository.findAllOffset(page, limit);
         return {
             items: result.data,
             pagination: result.meta,
         };
     }
 
-    async findAllDeleted(organizationId: string, page: number, limit: number) {
+    async findAllDeleted(page: number, limit: number) {
         const result =
             await this.organizationMemberRepository.findAllDeletedOffset(
-                organizationId,
                 page,
                 limit
             );
@@ -38,10 +34,9 @@ export class OrganizationMemberService {
         };
     }
 
-    async findAllAdmins(organizationId: string, page: number, limit: number) {
+    async findAllAdmins(page: number, limit: number) {
         const result =
             await this.organizationMemberRepository.findAllAdminsOffset(
-                organizationId,
                 page,
                 limit
             );
@@ -51,38 +46,31 @@ export class OrganizationMemberService {
         };
     }
 
-    async assignRole(
-        organizationId: string,
-        userId: string,
-        dto: UpdateMemberRoleDto
-    ) {
+    async assignRole(userId: string, dto: UpdateMemberRoleDto) {
         const member = await this.organizationMemberRepository.assignRole(
-            organizationId,
             userId,
             dto.role
         );
 
         this.logger.log(
-            `[OrganizationMemberService] assigned role=${dto.role} userId=${userId} organizationId=${organizationId}`
+            `[OrganizationMemberService] assigned role=${dto.role} userId=${userId}`
         );
 
         return member;
     }
 
-    async remove(organizationId: string, userId: string): Promise<null> {
-        const member = await this.organizationMemberRepository.findById(
-            organizationId,
-            userId
-        );
+    async remove(userId: string): Promise<null> {
+        const member =
+            await this.organizationMemberRepository.findById(userId);
 
         if (!member) {
             throw new AppException(OrganizationMemberErrors.NOT_FOUND);
         }
 
-        await this.organizationMemberRepository.remove(organizationId, userId);
+        await this.organizationMemberRepository.remove(userId);
 
         this.logger.log(
-            `[OrganizationMemberService] removed userId=${userId} organizationId=${organizationId}`
+            `[OrganizationMemberService] removed userId=${userId}`
         );
 
         return null;

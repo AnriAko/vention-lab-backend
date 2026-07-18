@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors';
 import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
+import { requestContext } from '~/infrastructure/context/request-context';
 import { organizationMemberSelect } from '~/common/types/organization-member.types';
 import { OrganizationRole } from '~/generated/prisma/enums';
 import { UserErrors } from '~/modules/user/user.errors';
@@ -11,7 +12,16 @@ import { OrganizationMemberErrors } from './organization-member.errors';
 export class OrganizationMemberRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
 
-    async findAllOffset(organizationId: string, page: number, limit: number) {
+    private activeOrganizationId(): string {
+        const organizationId = requestContext.getStore()?.organizationId;
+        if (!organizationId) {
+            throw new Error('Missing organization context');
+        }
+        return organizationId;
+    }
+
+    async findAllOffset(page: number, limit: number) {
+        const organizationId = this.activeOrganizationId();
         const skip = (page - 1) * limit;
 
         const where = {
@@ -42,11 +52,8 @@ export class OrganizationMemberRepository {
         };
     }
 
-    async findAllDeletedOffset(
-        organizationId: string,
-        page: number,
-        limit: number
-    ) {
+    async findAllDeletedOffset(page: number, limit: number) {
+        const organizationId = this.activeOrganizationId();
         const skip = (page - 1) * limit;
 
         const where = {
@@ -77,11 +84,8 @@ export class OrganizationMemberRepository {
         };
     }
 
-    async findAllAdminsOffset(
-        organizationId: string,
-        page: number,
-        limit: number
-    ) {
+    async findAllAdminsOffset(page: number, limit: number) {
+        const organizationId = this.activeOrganizationId();
         const skip = (page - 1) * limit;
 
         const where = {
@@ -118,7 +122,9 @@ export class OrganizationMemberRepository {
         };
     }
 
-    async findById(organizationId: string, userId: string) {
+    async findById(userId: string) {
+        const organizationId = this.activeOrganizationId();
+
         const member = await this.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -134,10 +140,11 @@ export class OrganizationMemberRepository {
     }
 
     async assignRole(
-        organizationId: string,
         userId: string,
         role: OrganizationRole | 'USER' | 'ADMIN'
     ) {
+        const organizationId = this.activeOrganizationId();
+
         const user = await this.prisma.user.findUnique({
             where: {
                 id: userId,
@@ -193,7 +200,9 @@ export class OrganizationMemberRepository {
         return member;
     }
 
-    async remove(organizationId: string, userId: string): Promise<void> {
+    async remove(userId: string): Promise<void> {
+        const organizationId = this.activeOrganizationId();
+
         await this.prisma.usersOrganizationsRoles.delete({
             where: {
                 userId_organizationId: {
