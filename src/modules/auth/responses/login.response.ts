@@ -1,13 +1,9 @@
-import { z } from 'zod';
-
+import z from 'zod';
 import { createResponseSchema } from '~/common/dto/response-schema';
+import { tokenSchema } from '~/common/dto/token.response';
 
 export const LoginResponse = createResponseSchema(
-    z.object({
-        id: z.uuid(),
-        email: z.email(),
-        accessToken: z.string(),
-    }),
+    tokenSchema,
     'LoginResponseDto'
 );
 

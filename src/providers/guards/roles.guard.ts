@@ -6,6 +6,7 @@ import { AuthRequest } from '~/common/types/auth.types';
 import { AppRole } from '~/common/types/app-role.enum';
 
 const ROLE_RANK: Record<AppRole, number> = {
+    [AppRole.AUTHENTICATED_USER]: 0,
     [AppRole.USER]: 1,
     [AppRole.ADMIN]: 2,
     [AppRole.OWNER]: 3,

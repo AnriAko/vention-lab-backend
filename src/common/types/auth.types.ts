@@ -17,7 +17,6 @@ export interface AuthRequest extends Request {
 
 export type JwtPayload = {
     sub: string;
-    role: AppRole;
 };
 
 export const AUTH_COOKIE = {
@@ -27,6 +26,7 @@ export const AUTH_COOKIE = {
 export const AUTH_HEADER = {
     AUTHORIZATION: 'authorization',
     ORGANIZATION_ID: 'x-organization-id',
+    ORGANIZATION_ROLE: 'x-organization-role',
 } as const;
 
 export const AUTH_SCHEME = {
@@ -37,7 +37,6 @@ export const AUTH_GUEST = 'anonymous';
 
 export type UserWithPassword = UserSafe & {
     password: string;
-    role: AppRole;
 };
 
 export const userSelectAuth = {

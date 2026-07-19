@@ -13,7 +13,7 @@ import { AuthErrors } from '~/modules/auth/auth.errors';
 
 import { jwtConfig } from '~/config';
 import { AuthCookie } from './auth.constants';
-import { AuthRequest, UserWithPassword } from '~/common/types/auth.types';
+import { AuthRequest } from '~/common/types/auth.types';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { AuthCookieService } from '~/modules/auth/auth-cookie.service';
 import { LoginResponse } from '~/modules/auth/responses/login.response';
@@ -42,7 +42,7 @@ export class AuthService {
         );
     }
 
-    async login(signInDto: LoginDto, res: Response) {
+    async login(signInDto: LoginDto, res: Response): Promise<LoginResponse> {
         const user = await this.authRepository.findByEmailForAuth(
             signInDto.email
         );
@@ -62,7 +62,6 @@ export class AuthService {
 
         const payload = {
             sub: user.id,
-            role: user.role,
         };
 
         const accessToken = await this.jwtService.signAsync(payload, {
@@ -87,8 +86,7 @@ export class AuthService {
             refreshToken,
             this.refreshTokenTtlSeconds * 1000
         );
-
-        return this.buildAuthResponse(accessToken, user);
+        return { accessToken };
     }
 
     async refresh(req: AuthRequest, res: Response) {
@@ -186,17 +184,5 @@ export class AuthService {
         }
 
         return { message: 'Successfully logged out' };
-    }
-    private buildAuthResponse(
-        accessToken: string,
-        user: UserWithPassword
-    ): LoginResponse {
-        const { password: _password, ...safeUser } = user;
-
-        return {
-            id: safeUser.id,
-            email: safeUser.email,
-            accessToken,
-        };
     }
 }

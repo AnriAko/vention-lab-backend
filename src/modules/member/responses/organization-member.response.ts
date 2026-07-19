@@ -3,14 +3,14 @@ import { z } from 'zod';
 import { createResponseSchema } from '~/common/dto/response-schema';
 import { OrganizationRole } from '~/generated/prisma/enums';
 
-const OrganizationMemberOutput = z.object({
+const MemberOutput = z.object({
     id: z.uuid(),
     email: z.email(),
     name: z.string(),
     role: z.enum(OrganizationRole),
 });
 
-export const OrganizationMemberResponse = createResponseSchema(
+export const MemberResponse = createResponseSchema(
     z
         .object({
             id: z.uuid(),
@@ -24,10 +24,8 @@ export const OrganizationMemberResponse = createResponseSchema(
             ...member,
             role: organizationRoles[0].role,
         }))
-        .pipe(OrganizationMemberOutput),
-    'OrganizationMemberResponseDto'
+        .pipe(MemberOutput),
+    'MemberResponseDto'
 );
 
-export type OrganizationMemberResponse = z.infer<
-    typeof OrganizationMemberResponse.schema
->;
+export type MemberResponse = z.infer<typeof MemberResponse.schema>;

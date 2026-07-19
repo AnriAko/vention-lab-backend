@@ -1,4 +1,5 @@
 export const AppRole = {
+    AUTHENTICATED_USER: 'AUTHENTICATED_USER',
     USER: 'USER',
     ADMIN: 'ADMIN',
     OWNER: 'OWNER',

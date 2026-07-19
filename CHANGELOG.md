@@ -91,11 +91,11 @@ module/
 - Added `UserOrganizationResponse` / `UserOrganizationListResponse` contracts (org fields + `role`).
 - Repository interactions updated for membership/role attachment.
 
-### Organization Member
+### Member
 
 - Module for listing members, role management, and membership removal under RLS (not user profile CRUD — that stays in **User**).
 - **`GET /organizations/:organizationId/members`** — all active members with roles; **`GET .../deleted`** — soft-deleted members still linked to the org.
-- **`GET /organizations/:organizationId/members/admins`** — offset-paginated `ADMIN` members only; reuses `OrganizationMemberListResponse` in Swagger.
+- **`GET /organizations/:organizationId/members/admins`** — offset-paginated `ADMIN` members only; reuses `MemberListResponse` in Swagger.
 - **`PATCH .../:userId/role`** and **`DELETE .../:userId`** for role assignment and membership removal.
 - Removed **`GET .../:userId`** (single member by id) as duplicate of `GET /users/:id` within the same organization.
 - Request DTOs for org/member params and role updates; response DTOs for member payloads.

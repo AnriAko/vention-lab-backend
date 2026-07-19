@@ -53,6 +53,16 @@ async function bootstrap() {
                 },
                 SWAGGER_AUTH.ORGANIZATION_ID
             )
+            .addApiKey(
+                {
+                    type: 'apiKey',
+                    in: 'header',
+                    name: AUTH_HEADER.ORGANIZATION_ROLE,
+                    description:
+                        'Organization role context hint (`USER` | `ADMIN`). Required on tenant routes; verified against the database.',
+                },
+                SWAGGER_AUTH.ORGANIZATION_ROLE
+            )
             .addCookieAuth(
                 AuthCookie.REFRESH_TOKEN,
                 {

@@ -46,13 +46,16 @@ export class OrganizationService {
         return this.organizationRepository.findById(id);
     }
 
-    async findAllForCurrentUser(page: number, limit: number) {
+    async getCurrentOrganizations() {
         const userId = requestContext.getStore()?.userId;
         if (!userId) {
             throw new Error('Missing user context');
         }
 
-        return this.findAllByUserId(userId, page, limit);
+        const organizationRoles =
+            await this.organizationRepository.findMembershipsByUserId(userId);
+
+        return { organizationRoles };
     }
 
     async findAllByUserId(userId: string, page: number, limit: number) {

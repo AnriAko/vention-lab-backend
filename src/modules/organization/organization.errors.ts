@@ -13,6 +13,16 @@ export const OrganizationErrors = {
         message: 'Missing organization',
         statusCode: HttpStatus.UNAUTHORIZED,
     },
+    MISSING_ORGANIZATION_ROLE: {
+        code: 'ORGANIZATION_ROLE_MISSING',
+        message: 'Missing organization role',
+        statusCode: HttpStatus.UNAUTHORIZED,
+    },
+    INVALID_ORGANIZATION_ROLE: {
+        code: 'ORGANIZATION_ROLE_INVALID',
+        message: 'Invalid organization role',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
     ACCESS_DENIED: {
         code: 'ORGANIZATION_ACCESS_DENIED',
         message: 'Access denied',

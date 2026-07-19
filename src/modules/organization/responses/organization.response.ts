@@ -5,10 +5,13 @@ import {
     DateTimeResponse,
 } from '~/common/dto/response-schema';
 
+export const OrganizationBase = z.object({
+    id: z.uuid(),
+    name: z.string(),
+});
+
 export const OrganizationResponse = createResponseSchema(
-    z.object({
-        id: z.uuid(),
-        name: z.string(),
+    OrganizationBase.extend({
         createdAt: DateTimeResponse,
         updatedAt: DateTimeResponse,
         isDeleted: z.boolean(),

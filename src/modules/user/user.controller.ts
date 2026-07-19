@@ -13,6 +13,7 @@ import { ApiTags } from '@nestjs/swagger';
 import { ApiEndpoint } from '~/common/decorators/api-endpoint.decorator';
 import { ApiOrganizationHeader } from '~/common/decorators/api-organization-header.decorator';
 import { Roles } from '~/common/decorators/roles.decorator';
+import { SkipOrganization } from '~/common/decorators/skip-organization.decorator';
 import { OffsetPaginationQuery } from '~/common/dto/pagination.request';
 import { ApiResponse } from '~/common/dto/response-schema';
 import { AppException } from '~/common/errors';
@@ -22,6 +23,7 @@ import { SEED_USERS } from '~/common/swagger/seed-examples';
 import { CreateUserDto } from './requests/create-user.request.dto';
 import { UpdateUserDto } from './requests/update-user.request.dto';
 import { UserIdDto } from './requests/user-id.request.dto';
+import { CurrentUserResponse } from './responses/current-user.response';
 import { UserListResponse } from './responses/user-list.response';
 import { UserResponse } from './responses/user.response';
 import { UserErrors } from './user.errors';
@@ -46,17 +48,18 @@ export class UsersController {
         return this.userService.findAll(dto.page, dto.limit);
     }
 
+    @SkipOrganization()
     @Get('current')
-    @Roles(AppRole.USER)
+    @Roles(AppRole.AUTHENTICATED_USER)
     @ApiEndpoint({
-        summary: 'Get current user profile',
-        roles: [AppRole.USER],
+        summary: 'Get current authenticated user',
+        roles: [AppRole.AUTHENTICATED_USER],
         description:
-            'Returns safe profile fields for the authenticated user in the active organization.',
+            'Returns the authenticated user profile. Requires Bearer token only — no organization header or organization role.',
     })
-    @ApiResponse(UserResponse)
-    async getCurrentProfile() {
-        const user = await this.userService.getCurrentProfile();
+    @ApiResponse(CurrentUserResponse)
+    async getCurrentUser() {
+        const user = await this.userService.getCurrentUser();
         if (!user) {
             throw new AppException(UserErrors.NOT_FOUND);
         }

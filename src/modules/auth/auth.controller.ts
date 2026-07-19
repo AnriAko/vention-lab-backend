@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-
 import { ApiEndpoint } from '~/common/decorators/api-endpoint.decorator';
 import { PublicRoute } from '~/common/decorators/public.decorator';
 import { SkipOrganization } from '~/common/decorators/skip-organization.decorator';
@@ -58,7 +57,7 @@ export class AuthController {
     login(
         @Body() loginDto: LoginDto,
         @Res({ passthrough: true }) res: Response
-    ) {
+    ): Promise<LoginResponse> {
         return this.authService.login(loginDto, res);
     }
 
