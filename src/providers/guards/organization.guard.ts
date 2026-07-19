@@ -60,14 +60,18 @@ export class OrganizationGuard implements CanActivate {
         }
 
         if (!claimedRole) {
-            throw new AppException(OrganizationErrors.MISSING_ORGANIZATION_ROLE);
+            throw new AppException(
+                OrganizationErrors.MISSING_ORGANIZATION_ROLE
+            );
         }
 
         if (
             claimedRole !== OrganizationRole.USER &&
             claimedRole !== OrganizationRole.ADMIN
         ) {
-            throw new AppException(OrganizationErrors.INVALID_ORGANIZATION_ROLE);
+            throw new AppException(
+                OrganizationErrors.INVALID_ORGANIZATION_ROLE
+            );
         }
 
         if (!request.user?.userId) {

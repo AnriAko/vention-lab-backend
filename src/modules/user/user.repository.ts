@@ -3,10 +3,7 @@ import { Injectable } from '@nestjs/common';
 import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 import type { Prisma } from '~/generated/prisma/client';
-import {
-    UserSafe,
-    userSelectSafe,
-} from '~/common/types/user.types';
+import { UserSafe, userSelectSafe } from '~/common/types/user.types';
 import { CreateUserDto } from './requests/create-user.request.dto';
 import { UpdateUserDto } from './requests/update-user.request.dto';
 import { OrganizationRole } from '~/generated/prisma/enums';
