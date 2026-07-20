@@ -4,7 +4,6 @@ import type { ConfigType } from '@nestjs/config';
 import { connect, Channel, ChannelModel } from 'amqplib';
 import { rabbitmqConfig } from '~/config';
 
-//NOTE - use later at microservices
 @Injectable()
 export class RabbitmqService implements OnModuleInit, OnModuleDestroy {
     private connection!: ChannelModel;
