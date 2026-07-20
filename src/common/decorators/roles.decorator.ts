@@ -1,6 +1,16 @@
-import { SetMetadata } from '@nestjs/common';
-import { ROLES_KEY } from '~/common/decorators/constants';
-import { UserRole } from '~/generated/prisma/enums';
+import { applyDecorators, SetMetadata } from '@nestjs/common';
+import { ApiBearerAuth, ApiExtension } from '@nestjs/swagger';
 
-export const Roles = (...roles: UserRole[]) =>
-    SetMetadata(ROLES_KEY, roles.length ? roles : [UserRole.USER]);
+import { ROLES_KEY } from '~/common/decorators/constants';
+import { SWAGGER_AUTH } from '~/common/swagger/swagger.constants';
+import { AppRole } from '~/common/types/app-role.enum';
+
+export const Roles = (...roles: AppRole[]) => {
+    const required = roles.length ? roles : [AppRole.USER];
+
+    return applyDecorators(
+        SetMetadata(ROLES_KEY, required),
+        ApiBearerAuth(SWAGGER_AUTH.ACCESS_TOKEN),
+        ApiExtension('x-required-roles', required)
+    );
+};

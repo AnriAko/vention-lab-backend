@@ -9,10 +9,7 @@ import {
     LogEvent,
 } from '~/generated/prisma/internal/prismaNamespace';
 import chalk from 'chalk';
-import {
-    // formatPrismaQuery,
-    getRawPrismaQuery,
-} from '~/infrastructure/database/utils/prisma-query-formatter';
+import { getRawPrismaQuery } from '~/infrastructure/database/utils/prisma-query-formatter';
 
 @Injectable()
 export class PrismaService

@@ -1,37 +1,33 @@
-import {
-    CanActivate,
-    ExecutionContext,
-    Injectable,
-    UnauthorizedException,
-} from '@nestjs/common';
+import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Inject } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 
+import { AppException } from '~/common/errors';
 import { RedisService } from '~/infrastructure/cache/redis.service';
+import { setRequestUser } from '~/infrastructure/context/request-context';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { AuthErrors } from '~/modules/auth/auth.errors';
 
 import { jwtConfig } from '~/config';
 import {
-    AUTH_GUEST,
     AUTH_HEADER,
     AUTH_SCHEME,
     AuthRequest,
     JwtPayload,
 } from '~/common/types/auth.types';
+import { AppRole } from '~/common/types/app-role.enum';
 import { IS_PUBLIC_KEY } from '~/common/decorators/constants';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { parseHeader } from '~/common/utils/parse-header';
-import {
-    requestContext,
-    setRequestUser,
-} from '~/infrastructure/context/request-context';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
     constructor(
         private readonly jwtService: JwtService,
         private readonly redisService: RedisService,
+        private readonly prisma: PrismaService,
         private readonly reflector: Reflector,
 
         @Inject(jwtConfig.KEY)
@@ -53,7 +49,7 @@ export class AuthGuard implements CanActivate {
         const token = this.extractToken(request);
 
         if (!token) {
-            throw new UnauthorizedException('Missing access token');
+            throw new AppException(AuthErrors.MISSING_ACCESS_TOKEN);
         }
 
         try {
@@ -65,7 +61,7 @@ export class AuthGuard implements CanActivate {
             );
 
             if (!payload?.sub) {
-                throw new UnauthorizedException('Invalid token payload');
+                throw new AppException(AuthErrors.INVALID_TOKEN_PAYLOAD);
             }
 
             const isBlacklisted = await this.redisService.exists(
@@ -74,17 +70,26 @@ export class AuthGuard implements CanActivate {
             );
 
             if (isBlacklisted) {
-                throw new UnauthorizedException('Token revoked');
+                throw new AppException(AuthErrors.TOKEN_REVOKED);
             }
+
+            const owner = await this.prisma.owner.findUnique({
+                where: { userId: payload.sub },
+                select: { userId: true },
+            });
 
             request.user = {
                 userId: payload.sub,
-                role: payload.role,
+                role: owner ? AppRole.OWNER : AppRole.AUTHENTICATED_USER,
             };
-            setRequestUser(payload.sub ?? AUTH_GUEST);
+            setRequestUser(payload.sub);
             return true;
-        } catch {
-            throw new UnauthorizedException('Invalid or expired token');
+        } catch (error) {
+            if (error instanceof AppException) {
+                throw error;
+            }
+
+            throw new AppException(AuthErrors.INVALID_OR_EXPIRED_TOKEN);
         }
     }
     private extractToken(request: AuthRequest): string | undefined {

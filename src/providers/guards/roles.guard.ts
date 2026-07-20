@@ -3,7 +3,14 @@ import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY, ROLES_KEY } from '~/common/decorators/constants';
 
 import { AuthRequest } from '~/common/types/auth.types';
-import { UserRole } from '~/generated/prisma/enums';
+import { AppRole } from '~/common/types/app-role.enum';
+
+const ROLE_RANK: Record<AppRole, number> = {
+    [AppRole.AUTHENTICATED_USER]: 0,
+    [AppRole.USER]: 1,
+    [AppRole.ADMIN]: 2,
+    [AppRole.OWNER]: 3,
+};
 
 @Injectable()
 export class RolesGuard implements CanActivate {
@@ -19,7 +26,7 @@ export class RolesGuard implements CanActivate {
             return true;
         }
 
-        const roles = this.reflector.getAllAndOverride<UserRole[]>(ROLES_KEY, [
+        const roles = this.reflector.getAllAndOverride<AppRole[]>(ROLES_KEY, [
             context.getHandler(),
             context.getClass(),
         ]);
@@ -33,10 +40,10 @@ export class RolesGuard implements CanActivate {
         if (!request.user) {
             return false;
         }
-        if (request.user.role === UserRole.OWNER) {
-            return true;
-        }
 
-        return roles.includes(request.user.role);
+        const activeRole = request.user.role;
+        const requiredRank = Math.min(...roles.map((role) => ROLE_RANK[role]));
+
+        return ROLE_RANK[activeRole] >= requiredRank;
     }
 }

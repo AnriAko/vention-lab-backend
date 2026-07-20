@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { SearchDto } from '~/modules/search/dto/search.dto';
-import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { SearchDto } from '~/modules/search/requests/search.request.dto';
+import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
 import {
     searchOrganizationsQuery,
     searchUsersQuery,
@@ -9,7 +9,7 @@ import { userSelectSafe } from '~/common/types/user.types';
 
 @Injectable()
 export class SearchRepository {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaRlsClient) {}
 
     async searchUsers({ query, page, limit }: SearchDto) {
         const offset = (page - 1) * limit;

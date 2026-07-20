@@ -9,7 +9,6 @@ import { seedChats } from './seed/chats.seed';
 import { seedMessages } from './seed/messages.seed';
 import { seedFiles } from './seed/files.seed';
 import { seedOrganizations } from './seed/organizations.seed';
-// import { seedUsersLarge } from './seed/users-large.seed';
 
 async function main() {
     const start = performance.now();
@@ -21,7 +20,6 @@ async function main() {
         console.log('ORG DONE');
 
         await seedUsers(prisma, organizations);
-        // await seedUsersLarge(prisma, organizations);
 
         console.log('USERS DONE');
 

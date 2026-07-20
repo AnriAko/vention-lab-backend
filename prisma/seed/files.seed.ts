@@ -5,17 +5,16 @@ const TOTAL_FILES = 200;
 const BATCH_SIZE = 100;
 
 export async function seedFiles(prisma: PrismaClient) {
-    const users = await prisma.user.findMany({
+    const memberships = await prisma.usersOrganizations.findMany({
         select: {
-            id: true,
+            userId: true,
+            organizationId: true,
         },
     });
 
-    const organizations = await prisma.organization.findMany({
-        select: {
-            id: true,
-        },
-    });
+    if (!memberships.length) {
+        throw new Error('Need organization memberships to seed files');
+    }
 
     const filesBatch: {
         ownerId: string;
@@ -42,14 +41,12 @@ export async function seedFiles(prisma: PrismaClient) {
     };
 
     for (let i = 0; i < TOTAL_FILES; i++) {
-        const user = users[Math.floor(Math.random() * users.length)];
-
-        const organization =
-            organizations[Math.floor(Math.random() * organizations.length)];
+        const membership =
+            memberships[Math.floor(Math.random() * memberships.length)];
 
         filesBatch.push({
-            ownerId: user.id,
-            organizationId: organization.id,
+            ownerId: membership.userId,
+            organizationId: membership.organizationId,
             filename: faker.system.fileName(),
             size: faker.number.int({
                 min: 1000,

@@ -1,5 +1,6 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { configLoaders, validateEnv } from './config';
 import { GlobalModule } from './shared/global.module';
 import { UsersModule } from '~/modules/user/user.module';
@@ -9,6 +10,7 @@ import { LoggerModule } from '~/infrastructure/logging/logger.module';
 import { envFilePath } from '~/common/utils/env-file-path';
 import { AuthModule } from '~/modules/auth/auth.module';
 import { OrganizationModule } from './modules/organization/organization.module';
+import { MemberModule } from '~/modules/member/member.module';
 import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
 import { UserStatsModule } from '~/modules/user-stats/user-stats.module';
 import { SearchModule } from '~/modules/search/search.module';
@@ -23,13 +25,21 @@ import { SearchModule } from '~/modules/search/search.module';
             cache: true,
             validate: validateEnv,
         }),
-        GlobalModule,
+        ThrottlerModule.forRoot([
+            {
+                name: 'default',
+                ttl: 60 * 60 * 1000,
+                limit: 200,
+            },
+        ]),
         PrismaModule,
+        GlobalModule,
         HealthModule,
         LoggerModule,
         AuthModule,
         UsersModule,
         OrganizationModule,
+        MemberModule,
         UserStatsModule,
         SearchModule,
     ],

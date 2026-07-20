@@ -1,18 +1,30 @@
 import { Injectable } from '@nestjs/common';
-import { OffsetPaginationDto } from '~/common/dto/offset-pagination.dto';
-import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { OffsetPagination } from '~/common/dto/pagination.request';
+import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
 import { messageLeaderboardQuery } from '~/modules/user-stats/user-stats.queries';
 
 @Injectable()
 export class UserStatsRepository {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(private readonly prisma: PrismaRlsClient) {}
 
-    async getMessageLeaderboardRaw({ page, limit }: OffsetPaginationDto) {
+    async getMessageLeaderboardRaw({ page, limit }: OffsetPagination) {
         const offset = (page - 1) * limit;
-        return this.prisma.$queryRaw(messageLeaderboardQuery(limit, offset));
+        const [items, total] = await Promise.all([
+            this.prisma.$queryRaw(messageLeaderboardQuery(limit, offset)),
+            this.prisma.user.count(),
+        ]);
+
+        return {
+            items,
+            pagination: {
+                page,
+                limit,
+                total,
+            },
+        };
     }
 
-    async getMessageLeaderboardPrisma({ page, limit }: OffsetPaginationDto) {
+    async getMessageLeaderboardPrisma({ page, limit }: OffsetPagination) {
         const users = await this.prisma.user.findMany({
             select: {
                 id: true,
@@ -54,6 +66,14 @@ export class UserStatsRepository {
                 rank: index + 1,
             }));
         const offset = (page - 1) * limit;
-        return leaderboard.slice(offset, offset + limit);
+
+        return {
+            items: leaderboard.slice(offset, offset + limit),
+            pagination: {
+                page,
+                limit,
+                total: leaderboard.length,
+            },
+        };
     }
 }

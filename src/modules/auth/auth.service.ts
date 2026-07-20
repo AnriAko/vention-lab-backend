@@ -1,21 +1,22 @@
-import { Injectable, Inject, UnauthorizedException } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import type { ConfigType } from '@nestjs/config';
 import { Response } from 'express';
 import ms from 'ms';
 
+import { AppException } from '~/common/errors';
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
-import { UsersService } from '~/modules/user/user.service';
-import { SignInDto } from '~/modules/auth/dto/sign-in.dto';
+import { AuthRepository } from '~/modules/auth/auth.repository';
+import { LoginDto } from '~/modules/auth/requests/login.request.dto';
+import { AuthErrors } from '~/modules/auth/auth.errors';
 
 import { jwtConfig } from '~/config';
 import { AuthCookie } from './auth.constants';
 import { AuthRequest } from '~/common/types/auth.types';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { AuthCookieService } from '~/modules/auth/auth-cookie.service';
-import { User } from '~/generated/prisma/client';
-import { AuthResponseDto } from '~/modules/auth/dto/auth.response.dto';
+import { LoginResponse } from '~/modules/auth/responses/login.response';
 
 @Injectable()
 export class AuthService {
@@ -23,7 +24,7 @@ export class AuthService {
     private readonly refreshTokenTtlSeconds: number;
 
     constructor(
-        private usersService: UsersService,
+        private authRepository: AuthRepository,
         private jwtService: JwtService,
         private argon2Service: Argon2Service,
         private redisService: RedisService,
@@ -41,13 +42,13 @@ export class AuthService {
         );
     }
 
-    async signIn(signInDto: SignInDto, res: Response) {
-        const user = await this.usersService.findByEmailForAuth(
+    async login(signInDto: LoginDto, res: Response): Promise<LoginResponse> {
+        const user = await this.authRepository.findByEmailForAuth(
             signInDto.email
         );
 
         if (!user || user.isDeleted) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new AppException(AuthErrors.INVALID_CREDENTIALS);
         }
 
         const isValid = await this.argon2Service.verify(
@@ -56,12 +57,11 @@ export class AuthService {
         );
 
         if (!isValid) {
-            throw new UnauthorizedException('Invalid email or password');
+            throw new AppException(AuthErrors.INVALID_CREDENTIALS);
         }
 
         const payload = {
             sub: user.id,
-            role: user.role,
         };
 
         const accessToken = await this.jwtService.signAsync(payload, {
@@ -86,8 +86,7 @@ export class AuthService {
             refreshToken,
             this.refreshTokenTtlSeconds * 1000
         );
-
-        return this.buildAuthResponse(accessToken, user);
+        return { accessToken };
     }
 
     async refresh(req: AuthRequest, res: Response) {
@@ -185,16 +184,5 @@ export class AuthService {
         }
 
         return { message: 'Successfully logged out' };
-    }
-    private buildAuthResponse(
-        accessToken: string,
-        user: User
-    ): AuthResponseDto {
-        const { password: _password, ...safeUser } = user;
-
-        return {
-            ...safeUser,
-            accessToken,
-        };
     }
 }
