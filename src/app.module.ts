@@ -10,7 +10,7 @@ import { LoggerModule } from '~/infrastructure/logging/logger.module';
 import { envFilePath } from '~/common/utils/env-file-path';
 import { AuthModule } from '~/modules/auth/auth.module';
 import { OrganizationModule } from './modules/organization/organization.module';
-import { OrganizationMemberModule } from '~/modules/organization-member/organization-member.module';
+import { MemberModule } from '~/modules/member/member.module';
 import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
 import { UserStatsModule } from '~/modules/user-stats/user-stats.module';
 import { SearchModule } from '~/modules/search/search.module';
@@ -39,7 +39,7 @@ import { SearchModule } from '~/modules/search/search.module';
         AuthModule,
         UsersModule,
         OrganizationModule,
-        OrganizationMemberModule,
+        MemberModule,
         UserStatsModule,
         SearchModule,
     ],

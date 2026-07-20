@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaService } from '~/infrastructure/database/prisma.service';
-import { AppRole } from '~/common/types/app-role.enum';
 import { userSelectAuth, UserWithPassword } from '~/common/types/auth.types';
 
 @Injectable()
@@ -21,14 +20,6 @@ export class AuthRepository {
             return null;
         }
 
-        const owner = await this.prisma.owner.findUnique({
-            where: { userId: user.id },
-            select: { userId: true },
-        });
-
-        return {
-            ...user,
-            role: owner ? AppRole.OWNER : AppRole.USER,
-        };
+        return user;
     }
 }

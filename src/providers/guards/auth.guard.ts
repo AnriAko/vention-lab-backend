@@ -7,6 +7,7 @@ import { Reflector } from '@nestjs/core';
 import { AppException } from '~/common/errors';
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { setRequestUser } from '~/infrastructure/context/request-context';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { AuthErrors } from '~/modules/auth/auth.errors';
 
 import { jwtConfig } from '~/config';
@@ -16,6 +17,7 @@ import {
     AuthRequest,
     JwtPayload,
 } from '~/common/types/auth.types';
+import { AppRole } from '~/common/types/app-role.enum';
 import { IS_PUBLIC_KEY } from '~/common/decorators/constants';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { parseHeader } from '~/common/utils/parse-header';
@@ -25,6 +27,7 @@ export class AuthGuard implements CanActivate {
     constructor(
         private readonly jwtService: JwtService,
         private readonly redisService: RedisService,
+        private readonly prisma: PrismaService,
         private readonly reflector: Reflector,
 
         @Inject(jwtConfig.KEY)
@@ -70,9 +73,14 @@ export class AuthGuard implements CanActivate {
                 throw new AppException(AuthErrors.TOKEN_REVOKED);
             }
 
+            const owner = await this.prisma.owner.findUnique({
+                where: { userId: payload.sub },
+                select: { userId: true },
+            });
+
             request.user = {
                 userId: payload.sub,
-                role: payload.role,
+                role: owner ? AppRole.OWNER : AppRole.AUTHENTICATED_USER,
             };
             setRequestUser(payload.sub);
             return true;

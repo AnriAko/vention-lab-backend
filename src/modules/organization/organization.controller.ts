@@ -28,6 +28,7 @@ import { OrganizationIdDto } from './requests/organization-id.request.dto';
 import { OrganizationListResponse } from './responses/organization-list.response';
 import { OrganizationResponse } from './responses/organization.response';
 import { OrganizationWithAdminResponse } from './responses/organization-with-admin.response';
+import { CurrentOrganizationsResponse } from './responses/current-organizations.response';
 import { UserOrganizationListResponse } from './responses/user-organization-list.response';
 import { OrganizationUserIdDto } from './requests/organization-user-id.request.dto';
 
@@ -63,19 +64,16 @@ export class OrganizationController {
     }
 
     @Get('current')
-    @Roles(AppRole.USER)
+    @Roles(AppRole.AUTHENTICATED_USER)
     @ApiEndpoint({
-        summary: 'List my organizations',
-        roles: [AppRole.USER],
+        summary: 'List current user organizations',
+        roles: [AppRole.AUTHENTICATED_USER],
         description:
-            'Offset-paginated organizations the authenticated user belongs to, with membership role in each. No `x-organization-id` required.',
+            'Returns all organizations the authenticated user belongs to, with membership role in each. Requires Bearer token only — no organization headers.',
     })
-    @ApiResponse(UserOrganizationListResponse)
-    findAllForCurrentUser(@Query() dto: OffsetPaginationQuery) {
-        return this.organizationService.findAllForCurrentUser(
-            dto.page,
-            dto.limit
-        );
+    @ApiResponse(CurrentOrganizationsResponse)
+    getCurrentOrganizations() {
+        return this.organizationService.getCurrentOrganizations();
     }
 
     @Get('users/:userId')

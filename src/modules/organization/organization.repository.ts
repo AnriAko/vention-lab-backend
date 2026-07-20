@@ -106,6 +106,25 @@ export class OrganizationsRepository {
         };
     }
 
+    findMembershipsByUserId(userId: string) {
+        return this.prisma.usersOrganizationsRoles.findMany({
+            where: {
+                userId,
+                organization: { isDeleted: false },
+            },
+            orderBy: { organization: { name: 'asc' } },
+            select: {
+                role: true,
+                organization: {
+                    select: {
+                        id: true,
+                        name: true,
+                    },
+                },
+            },
+        });
+    }
+
     private async attachAdmin(
         transaction: Prisma.TransactionClient,
         organizationId: string,

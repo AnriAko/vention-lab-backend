@@ -1,4 +1,4 @@
-export const organizationMemberSelect = (organizationId: string) =>
+export const memberSelect = (organizationId: string) =>
     ({
         id: true,
         email: true,

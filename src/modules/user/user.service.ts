@@ -42,8 +42,8 @@ export class UsersService {
         return this.userRepository.existsById(id);
     }
 
-    getCurrentProfile() {
-        return this.userRepository.findCurrentProfile();
+    getCurrentUser(): Promise<UserSafe | null> {
+        return this.userRepository.findCurrentUser();
     }
 
     findByEmail(email: string): Promise<UserSafe | null> {

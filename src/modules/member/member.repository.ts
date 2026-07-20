@@ -3,13 +3,13 @@ import { Injectable } from '@nestjs/common';
 import { AppException } from '~/common/errors';
 import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
 import { requestContext } from '~/infrastructure/context/request-context';
-import { organizationMemberSelect } from '~/common/types/organization-member.types';
+import { memberSelect } from '~/common/types/member.types';
 import { OrganizationRole } from '~/generated/prisma/enums';
 import { UserErrors } from '~/modules/user/user.errors';
-import { OrganizationMemberErrors } from './organization-member.errors';
+import { MemberErrors } from './member.errors';
 
 @Injectable()
-export class OrganizationMemberRepository {
+export class MemberRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
 
     private activeOrganizationId(): string {
@@ -34,7 +34,7 @@ export class OrganizationMemberRepository {
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
-                select: organizationMemberSelect(organizationId),
+                select: memberSelect(organizationId),
                 orderBy: { name: 'asc' },
                 skip,
                 take: limit,
@@ -66,7 +66,7 @@ export class OrganizationMemberRepository {
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
-                select: organizationMemberSelect(organizationId),
+                select: memberSelect(organizationId),
                 orderBy: { name: 'asc' },
                 skip,
                 take: limit,
@@ -104,7 +104,7 @@ export class OrganizationMemberRepository {
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
-                select: organizationMemberSelect(organizationId),
+                select: memberSelect(organizationId),
                 orderBy: { name: 'asc' },
                 skip,
                 take: limit,
@@ -133,7 +133,7 @@ export class OrganizationMemberRepository {
                     some: { organizationId },
                 },
             },
-            select: organizationMemberSelect(organizationId),
+            select: memberSelect(organizationId),
         });
 
         return member;
@@ -188,12 +188,12 @@ export class OrganizationMemberRepository {
 
         const member = await this.prisma.user.findUnique({
             where: { id: userId },
-            select: organizationMemberSelect(organizationId),
+            select: memberSelect(organizationId),
         });
 
         if (!member) {
             throw new AppException(
-                OrganizationMemberErrors.NOT_FOUND_AFTER_ROLE_ASSIGNMENT
+                MemberErrors.NOT_FOUND_AFTER_ROLE_ASSIGNMENT
             );
         }
 

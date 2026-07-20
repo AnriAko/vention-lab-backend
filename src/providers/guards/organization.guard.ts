@@ -8,6 +8,7 @@ import {
 import { AppException } from '~/common/errors';
 import { AUTH_HEADER, AuthRequest } from '~/common/types/auth.types';
 import { AppRole } from '~/common/types/app-role.enum';
+import { OrganizationRole } from '~/generated/prisma/enums';
 import {
     setRequestOrganization,
     setRequestRole,
@@ -45,14 +46,32 @@ export class OrganizationGuard implements CanActivate {
 
         const request = context.switchToHttp().getRequest<AuthRequest>();
 
-        const organizationIdHeader =
-            request.headers[AUTH_HEADER.ORGANIZATION_ID];
-        const organizationId = Array.isArray(organizationIdHeader)
-            ? organizationIdHeader[0]
-            : organizationIdHeader;
+        const organizationId = this.readHeader(
+            request,
+            AUTH_HEADER.ORGANIZATION_ID
+        );
+        const claimedRole = this.readHeader(
+            request,
+            AUTH_HEADER.ORGANIZATION_ROLE
+        );
 
         if (!organizationId) {
             throw new AppException(OrganizationErrors.MISSING_ORGANIZATION);
+        }
+
+        if (!claimedRole) {
+            throw new AppException(
+                OrganizationErrors.MISSING_ORGANIZATION_ROLE
+            );
+        }
+
+        if (
+            claimedRole !== OrganizationRole.USER &&
+            claimedRole !== OrganizationRole.ADMIN
+        ) {
+            throw new AppException(
+                OrganizationErrors.INVALID_ORGANIZATION_ROLE
+            );
         }
 
         if (!request.user?.userId) {
@@ -75,7 +94,6 @@ export class OrganizationGuard implements CanActivate {
             }
 
             request.user.organizationId = organizationId;
-
             request.user.role = AppRole.OWNER;
 
             setRequestUser(request.user.userId);
@@ -111,6 +129,7 @@ export class OrganizationGuard implements CanActivate {
             throw new AppException(OrganizationErrors.ACCESS_DENIED);
         }
 
+        // Header role is a client context hint only — authorize from DB.
         const membershipRole = orgRole.role as AppRole;
 
         request.user.organizationId = organizationId;
@@ -121,5 +140,13 @@ export class OrganizationGuard implements CanActivate {
         setRequestRole(membershipRole);
 
         return true;
+    }
+
+    private readHeader(
+        request: AuthRequest,
+        headerName: string
+    ): string | undefined {
+        const value = request.headers[headerName];
+        return Array.isArray(value) ? value[0] : value;
     }
 }

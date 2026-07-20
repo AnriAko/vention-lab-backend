@@ -92,18 +92,16 @@ export class UserRepository {
         return user !== null;
     }
 
-    findCurrentProfile(): Promise<UserSafe | null> {
+    findCurrentUser(): Promise<UserSafe | null> {
         const userId = requestContext.getStore()?.userId;
         if (!userId) {
             throw new Error('Missing user context');
         }
 
-        const organizationId = this.activeOrganizationId();
-
-        return this.prisma.user.findUnique({
+        return this.prismaService.user.findUnique({
             where: {
                 id: userId,
-                ...this.memberWhere(organizationId),
+                isDeleted: false,
             },
             select: userSelectSafe,
         });
