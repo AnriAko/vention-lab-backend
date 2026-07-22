@@ -1,7 +1,7 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { Request, Response, NextFunction } from 'express';
 import { randomUUID } from 'crypto';
-import { requestContext } from '../context/request-context';
+import { requestContext } from '../context/request/request-context';
 import { AUTH_GUEST } from '~/common/types/auth.types';
 
 type Req = Request & {

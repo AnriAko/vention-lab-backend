@@ -2,44 +2,38 @@ import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors';
 import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
-import { requestContext } from '~/infrastructure/context/request-context';
 import { memberSelect } from '~/common/types/member.types';
 import { OrganizationRole } from '~/generated/prisma/enums';
 import { UserErrors } from '~/modules/user/user.errors';
 import { MemberErrors } from './member.errors';
+import { getActiveOrgId } from '~/infrastructure/context/organization/organization-context';
+import { activeOrganizationScope } from '~/infrastructure/database/scopes/organization-scope';
+import { addWhere } from '~/infrastructure/database/scopes/addWhere';
 
 @Injectable()
 export class MemberRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
 
-    private activeOrganizationId(): string {
-        const organizationId = requestContext.getStore()?.organizationId;
-        if (!organizationId) {
-            throw new Error('Missing organization context');
-        }
-        return organizationId;
-    }
-
     async findAllOffset(page: number, limit: number) {
-        const organizationId = this.activeOrganizationId();
+        const organizationId = getActiveOrgId();
         const skip = (page - 1) * limit;
 
-        const where = {
-            isDeleted: false,
-            organizations: {
-                some: { organizationId },
-            },
-        } as const;
+        const where = activeOrganizationScope();
 
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
                 select: memberSelect(organizationId),
-                orderBy: { name: 'asc' },
+                orderBy: {
+                    name: 'asc',
+                },
                 skip,
                 take: limit,
             }),
-            this.prisma.user.count({ where }),
+
+            this.prisma.user.count({
+                where,
+            }),
         ]);
 
         return {
@@ -53,25 +47,27 @@ export class MemberRepository {
     }
 
     async findAllDeletedOffset(page: number, limit: number) {
-        const organizationId = this.activeOrganizationId();
+        const organizationId = getActiveOrgId();
         const skip = (page - 1) * limit;
 
-        const where = {
+        const where = addWhere(activeOrganizationScope(), {
             isDeleted: true,
-            organizations: {
-                some: { organizationId },
-            },
-        } as const;
+        });
 
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
                 select: memberSelect(organizationId),
-                orderBy: { name: 'asc' },
+                orderBy: {
+                    name: 'asc',
+                },
                 skip,
                 take: limit,
             }),
-            this.prisma.user.count({ where }),
+
+            this.prisma.user.count({
+                where,
+            }),
         ]);
 
         return {
@@ -85,31 +81,32 @@ export class MemberRepository {
     }
 
     async findAllAdminsOffset(page: number, limit: number) {
-        const organizationId = this.activeOrganizationId();
+        const organizationId = getActiveOrgId();
         const skip = (page - 1) * limit;
 
-        const where = {
-            isDeleted: false,
-            organizations: {
-                some: { organizationId },
-            },
+        const where = addWhere(activeOrganizationScope(), {
             organizationRoles: {
                 some: {
                     organizationId,
                     role: OrganizationRole.ADMIN,
                 },
             },
-        } as const;
+        });
 
         const [members, total] = await Promise.all([
             this.prisma.user.findMany({
                 where,
                 select: memberSelect(organizationId),
-                orderBy: { name: 'asc' },
+                orderBy: {
+                    name: 'asc',
+                },
                 skip,
                 take: limit,
             }),
-            this.prisma.user.count({ where }),
+
+            this.prisma.user.count({
+                where,
+            }),
         ]);
 
         return {
@@ -123,34 +120,30 @@ export class MemberRepository {
     }
 
     async findById(userId: string) {
-        const organizationId = this.activeOrganizationId();
+        const organizationId = getActiveOrgId();
 
-        const member = await this.prisma.user.findUnique({
-            where: {
+        return this.prisma.user.findFirst({
+            where: addWhere(activeOrganizationScope(), {
                 id: userId,
-                isDeleted: false,
-                organizations: {
-                    some: { organizationId },
-                },
-            },
+            }),
+
             select: memberSelect(organizationId),
         });
-
-        return member;
     }
 
     async assignRole(
         userId: string,
         role: OrganizationRole | 'USER' | 'ADMIN'
     ) {
-        const organizationId = this.activeOrganizationId();
+        const organizationId = getActiveOrgId();
 
-        const user = await this.prisma.user.findUnique({
-            where: {
+        const user = await this.prisma.user.findFirst({
+            where: addWhere(activeOrganizationScope(), {
                 id: userId,
-                isDeleted: false,
+            }),
+            select: {
+                id: true,
             },
-            select: { id: true },
         });
 
         if (!user) {
@@ -183,11 +176,16 @@ export class MemberRepository {
                 organizationId,
                 role,
             },
-            update: { role },
+            update: {
+                role,
+            },
         });
 
-        const member = await this.prisma.user.findUnique({
-            where: { id: userId },
+        const member = await this.prisma.user.findFirst({
+            where: addWhere(activeOrganizationScope(), {
+                id: userId,
+            }),
+
             select: memberSelect(organizationId),
         });
 
@@ -201,7 +199,7 @@ export class MemberRepository {
     }
 
     async remove(userId: string): Promise<void> {
-        const organizationId = this.activeOrganizationId();
+        const organizationId = getActiveOrgId();
 
         await this.prisma.usersOrganizationsRoles.delete({
             where: {

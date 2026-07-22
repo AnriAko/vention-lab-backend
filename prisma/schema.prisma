@@ -82,9 +82,9 @@ model File {
     owner        User         @relation(fields: [ownerId], references: [id], onDelete: Cascade)
     organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-    filename        String
+    name            String
     size            Int
-    status          String
+    status          FileStatus @default(PROCESSED)
     contentType     String
     storageKey      String
     application     String?
@@ -134,4 +134,10 @@ model Message {
 enum OrganizationRole {
     USER
     ADMIN
+}
+
+enum FileStatus {
+    PROCESSED
+    PROCESSING
+    ERROR
 }

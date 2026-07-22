@@ -9,14 +9,15 @@ import { AppException } from '~/common/errors';
 import { AUTH_HEADER, AuthRequest } from '~/common/types/auth.types';
 import { AppRole } from '~/common/types/app-role.enum';
 import { OrganizationRole } from '~/generated/prisma/enums';
-import {
-    setRequestOrganization,
-    setRequestRole,
-    setRequestUser,
-} from '~/infrastructure/context/request-context';
+
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { AuthErrors } from '~/modules/auth/auth.errors';
 import { OrganizationErrors } from '~/modules/organization/organization.errors';
+import {
+    setRequestRole,
+    setRequestUser,
+} from '~/infrastructure/context/user/user-context';
+import { setRequestOrganization } from '~/infrastructure/context/organization/organization-context';
 
 @Injectable()
 export class OrganizationGuard implements CanActivate {

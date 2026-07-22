@@ -12,7 +12,7 @@ import {
     SKIP_ORGANIZATION_KEY,
 } from '~/common/decorators/constants';
 import { AUTH_GUEST } from '~/common/types/auth.types';
-import { requestContext } from '~/infrastructure/context/request-context';
+import { requestContext } from '~/infrastructure/context/request/request-context';
 import { PrismaRlsService } from '~/infrastructure/database/prisma-rls.service';
 
 @Injectable()

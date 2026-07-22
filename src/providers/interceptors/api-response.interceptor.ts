@@ -7,7 +7,7 @@ import {
 import { Observable, map } from 'rxjs';
 
 import type { ApiSuccessEnvelope } from '~/common/dto/response-schema';
-import { requestContext } from '~/infrastructure/context/request-context';
+import { requestContext } from '~/infrastructure/context/request/request-context';
 
 function isAlreadyWrapped(value: unknown): value is ApiSuccessEnvelope {
     return (

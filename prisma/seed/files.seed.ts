@@ -1,4 +1,4 @@
-import { PrismaClient } from '../../src/generated/prisma/client';
+import { FileStatus, PrismaClient } from '../../src/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 
 const TOTAL_FILES = 200;
@@ -19,7 +19,7 @@ export async function seedFiles(prisma: PrismaClient) {
     const filesBatch: {
         ownerId: string;
         organizationId: string;
-        filename: string;
+        name: string;
         size: number;
         status: string;
         contentType: string;
@@ -47,12 +47,12 @@ export async function seedFiles(prisma: PrismaClient) {
         filesBatch.push({
             ownerId: membership.userId,
             organizationId: membership.organizationId,
-            filename: faker.system.fileName(),
+            name: faker.system.fileName(),
             size: faker.number.int({
                 min: 1000,
                 max: 5_000_000,
             }),
-            status: 'READY',
+            status: FileStatus.PROCESSED,
             contentType: 'application/octet-stream',
             storageKey: faker.string.uuid(),
             application: null,

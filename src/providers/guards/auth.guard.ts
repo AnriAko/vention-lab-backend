@@ -6,7 +6,6 @@ import { Reflector } from '@nestjs/core';
 
 import { AppException } from '~/common/errors';
 import { RedisService } from '~/infrastructure/cache/redis.service';
-import { setRequestUser } from '~/infrastructure/context/request-context';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { AuthErrors } from '~/modules/auth/auth.errors';
 
@@ -21,6 +20,7 @@ import { AppRole } from '~/common/types/app-role.enum';
 import { IS_PUBLIC_KEY } from '~/common/decorators/constants';
 import { RedisPrefix } from '~/common/types/redis.types';
 import { parseHeader } from '~/common/utils/parse-header';
+import { setRequestUser } from '~/infrastructure/context/user/user-context';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

@@ -1,46 +1,39 @@
 import { Injectable } from '@nestjs/common';
 
 import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
-import { PrismaService } from '~/infrastructure/database/prisma.service';
 import type { Prisma } from '~/generated/prisma/client';
+
 import { UserSafe, userSelectSafe } from '~/common/types/user.types';
 import { CreateUserDto } from './requests/create-user.request.dto';
 import { UpdateUserDto } from './requests/update-user.request.dto';
+
 import { OrganizationRole } from '~/generated/prisma/enums';
 import { SortDirection } from '~/common/types/sort-order.enum';
-import { requestContext } from '~/infrastructure/context/request-context';
+
+import { requestContext } from '~/infrastructure/context/request/request-context';
+import { getActiveOrgId } from '~/infrastructure/context/organization/organization-context';
+
+import { AppException } from '~/common/errors';
+import { UserErrors } from './user.errors';
+import {
+    activeUserScope,
+    deletedOrganizationUserScope,
+    organizationUserScope,
+} from '~/infrastructure/database/scopes/user-scope';
+import { addWhere } from '~/infrastructure/database/scopes/addWhere';
 
 @Injectable()
 export class UserRepository {
-    constructor(
-        private readonly prisma: PrismaRlsClient,
-        private readonly prismaService: PrismaService
-    ) {}
-
-    private activeOrganizationId(): string {
-        const organizationId = requestContext.getStore()?.organizationId;
-        if (!organizationId) {
-            throw new Error('Missing organization context');
-        }
-        return organizationId;
-    }
-
-    private memberWhere(organizationId: string) {
-        return {
-            isDeleted: false,
-            organizations: {
-                some: { organizationId },
-            },
-        } as const;
-    }
+    constructor(private readonly prisma: PrismaRlsClient) {}
 
     async findAllOffset(page: number, limit: number) {
-        const organizationId = this.activeOrganizationId();
         const skip = (page - 1) * limit;
+
+        const where = organizationUserScope();
 
         const [users, total] = await Promise.all([
             this.prisma.user.findMany({
-                where: this.memberWhere(organizationId),
+                where,
                 skip,
                 take: limit,
                 select: userSelectSafe,
@@ -54,7 +47,7 @@ export class UserRepository {
                 ],
             }),
             this.prisma.user.count({
-                where: this.memberWhere(organizationId),
+                where,
             }),
         ]);
 
@@ -69,52 +62,47 @@ export class UserRepository {
     }
 
     findById(id: string): Promise<UserSafe | null> {
-        const organizationId = this.activeOrganizationId();
-
-        return this.prisma.user.findUnique({
-            where: {
+        return this.prisma.user.findFirst({
+            where: addWhere(organizationUserScope(), {
                 id,
-                ...this.memberWhere(organizationId),
-            },
+            }),
             select: userSelectSafe,
         });
     }
 
     async existsById(id: string): Promise<boolean> {
-        const user = await this.prismaService.user.findUnique({
-            where: {
+        const user = await this.prisma.user.findFirst({
+            where: addWhere(activeUserScope(), {
                 id,
-                isDeleted: false,
+            }),
+            select: {
+                id: true,
             },
-            select: { id: true },
         });
 
-        return user !== null;
+        return Boolean(user);
     }
 
     findCurrentUser(): Promise<UserSafe | null> {
         const userId = requestContext.getStore()?.userId;
+
         if (!userId) {
             throw new Error('Missing user context');
         }
 
-        return this.prismaService.user.findUnique({
-            where: {
+        return this.prisma.user.findFirst({
+            where: addWhere(activeUserScope(), {
                 id: userId,
-                isDeleted: false,
-            },
+            }),
             select: userSelectSafe,
         });
     }
 
     findByEmail(email: string): Promise<UserSafe | null> {
-        const organizationId = this.activeOrganizationId();
-
-        return this.prisma.user.findUnique({
-            where: {
+        return this.prisma.user.findFirst({
+            where: addWhere(activeUserScope(), {
                 email,
-                ...this.memberWhere(organizationId),
-            },
+            }),
             select: userSelectSafe,
         });
     }
@@ -124,20 +112,12 @@ export class UserRepository {
         transaction?: Prisma.TransactionClient,
         membershipRole: OrganizationRole = OrganizationRole.USER
     ): Promise<UserSafe> {
-        const organizationId = transaction
-            ? dto.organizationId
-            : this.activeOrganizationId();
-
-        if (!organizationId) {
-            throw new Error('Missing organizationId');
-        }
-
-        const { organizationId: _dtoOrganizationId, ...userData } = dto;
+        const organizationId = getActiveOrgId();
         const client = transaction ?? this.prisma;
 
         return client.user.create({
             data: {
-                ...userData,
+                ...dto,
                 organizations: {
                     create: {
                         organizationId,
@@ -154,19 +134,40 @@ export class UserRepository {
         });
     }
 
-    update(id: string, dto: UpdateUserDto): Promise<UserSafe> {
-        const { organizationId: _organizationId, ...userData } = dto;
+    async update(id: string, dto: UpdateUserDto): Promise<UserSafe> {
+        const user = await this.findById(id);
+
+        if (!user) {
+            throw new AppException(UserErrors.NOT_FOUND);
+        }
 
         return this.prisma.user.update({
-            where: { id },
-            data: userData,
+            where: {
+                id,
+            },
+            data: dto,
             select: userSelectSafe,
         });
     }
 
-    restore(id: string): Promise<UserSafe> {
+    async restore(id: string): Promise<UserSafe> {
+        const user = await this.prisma.user.findFirst({
+            where: addWhere(deletedOrganizationUserScope(), {
+                id,
+            }),
+            select: {
+                id: true,
+            },
+        });
+
+        if (!user) {
+            throw new AppException(UserErrors.NOT_FOUND);
+        }
+
         return this.prisma.user.update({
-            where: { id },
+            where: {
+                id,
+            },
             data: {
                 isDeleted: false,
             },
@@ -174,9 +175,17 @@ export class UserRepository {
         });
     }
 
-    softDelete(id: string): Promise<UserSafe> {
+    async softDelete(id: string): Promise<UserSafe> {
+        const user = await this.findById(id);
+
+        if (!user) {
+            throw new AppException(UserErrors.NOT_FOUND);
+        }
+
         return this.prisma.user.update({
-            where: { id },
+            where: {
+                id,
+            },
             data: {
                 isDeleted: true,
             },

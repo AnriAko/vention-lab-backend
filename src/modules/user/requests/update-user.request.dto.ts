@@ -1,11 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import {
-    SEED_ORGANIZATIONS,
-    SEED_PASSWORD,
-    SEED_USERS,
-} from '~/common/swagger/seed-examples';
+import { SEED_PASSWORD, SEED_USERS } from '~/common/swagger/seed-examples';
 
 export const UpdateUser = z
     .object({
@@ -24,9 +20,6 @@ export const UpdateUser = z
             .meta({
                 examples: [SEED_PASSWORD],
             }),
-        organizationId: z.uuid().meta({
-            examples: [SEED_ORGANIZATIONS.catFans.id],
-        }),
     })
     .partial();
 

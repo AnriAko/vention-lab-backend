@@ -4,7 +4,7 @@ import { Prisma } from '~/generated/prisma/client';
 
 import { ApiErrorResponse } from '~/common/dto/error.response';
 import { CommonErrors } from '~/common/errors';
-import { requestContext } from '~/infrastructure/context/request-context';
+import { requestContext } from '~/infrastructure/context/request/request-context';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 
 @Catch(Prisma.PrismaClientKnownRequestError)

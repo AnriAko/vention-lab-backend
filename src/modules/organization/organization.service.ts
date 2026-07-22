@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
-import { requestContext } from '~/infrastructure/context/request-context';
+import { requestContext } from '~/infrastructure/context/request/request-context';
 import { UsersService } from '~/modules/user/user.service';
 import { UserErrors } from '~/modules/user/user.errors';
 import { OrganizationRole } from '~/generated/prisma/client';

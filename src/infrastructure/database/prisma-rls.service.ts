@@ -2,12 +2,11 @@ import { Injectable } from '@nestjs/common';
 import type { Prisma } from '~/generated/prisma/client';
 
 import { PrismaService } from './prisma.service';
-import {
-    getPrismaTransaction,
-    requestContext,
-} from '~/infrastructure/context/request-context';
+
 import { AUTH_GUEST } from '~/common/types/auth.types';
 import type { AppRole } from '~/common/types/app-role.enum';
+import { requestContext } from '~/infrastructure/context/request/request-context';
+import { getPrismaTransaction } from '~/infrastructure/context/transaction/transaction-context';
 
 @Injectable()
 export class PrismaRlsService {
