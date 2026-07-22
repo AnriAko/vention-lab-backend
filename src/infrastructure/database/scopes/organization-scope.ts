@@ -1,4 +1,4 @@
-import { getActiveOrgId } from '~/infrastructure/context/organization/organization-context';
+import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
 
 export const organizationScope = (organizationId: string) => ({
     organizations: {
@@ -8,7 +8,11 @@ export const organizationScope = (organizationId: string) => ({
     },
 });
 
-export const activeOrganizationScope = () => ({
+export const activeTenantSoftDeleteScope = () => ({
     ...organizationScope(getActiveOrgId()),
     isDeleted: false,
+});
+
+export const activeTenantScope = () => ({
+    organizationId: getActiveOrgId(),
 });

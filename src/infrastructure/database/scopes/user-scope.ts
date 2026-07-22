@@ -1,4 +1,4 @@
-import { getActiveOrgId } from '../../context/organization/organization-context';
+import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
 
 export const activeUserScope = () => ({
     isDeleted: false,

@@ -1,6 +1,9 @@
-export const addWhere = <T extends object>(
+export type Scope = Record<string, unknown>;
+
+export const addWhere = <T extends Scope, U extends Scope>(
     base: T,
-    ...conditions: object[]
-) => {
-    return Object.assign({}, base, ...conditions);
-};
+    extra: U
+): T & U => ({
+    ...base,
+    ...extra,
+});
