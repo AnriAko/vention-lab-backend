@@ -9,7 +9,7 @@ import chalk from 'chalk';
 import Redis from 'ioredis';
 import { RedisPrefix } from '~/infrastructure/cache/redis.types';
 import { redisConfig } from '~/config';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { LoggerService } from '~/infrastructure/logging';
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {

@@ -10,21 +10,23 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import { ApiEndpoint } from '~/common/decorators/api-endpoint.decorator';
-import { PublicRoute } from '~/common/decorators/public.decorator';
-import { SkipOrganization } from '~/common/decorators/skip-organization.decorator';
-import { MessageResponse } from '~/common/dto/message.response';
-import { TokenResponse } from '~/common/dto/token.response';
-import { ApiResponse } from '~/common/dto/response-schema';
 import {
+    ApiEndpoint,
+    MessageResponse,
+    TokenResponse,
+    ApiResponse,
     SEED_LOGIN_ORG_ADMIN,
     SEED_LOGIN_OWNER,
-} from '~/common/swagger/seed-examples';
-import { SWAGGER_AUTH } from '~/common/swagger/swagger.constants';
-import type { AuthRequest } from '~/common/types/auth.types';
-import { AuthService } from '~/modules/auth/auth.service';
-import { LoginDto } from '~/modules/auth/requests/login.request.dto';
-import { LoginResponse } from '~/modules/auth/responses/login.response';
+    SWAGGER_AUTH,
+} from '~/common/api';
+import {
+    PublicRoute,
+    SkipOrganization,
+    type AuthRequest,
+} from '~/common/security';
+import { AuthService } from './auth.service';
+import { LoginDto } from './requests/login.request.dto';
+import { LoginResponse } from './responses/login.response';
 
 @ApiTags('auth')
 @Controller('auth')

@@ -1,7 +1,7 @@
 import type { Request } from 'express';
 import type { AppRole } from '~/common/security/permissions/app-role.enum';
-import { UserSafe, userSelectSafe } from '~/infrastructure/database/selects/user.types';
-import type { AuthCookie } from '~/modules/auth/auth.constants';
+import { UserSafe, userSelectSafe } from '~/infrastructure/database';
+import type { AuthCookie } from '~/modules/auth';
 
 export type AuthUser = {
     userId: string;

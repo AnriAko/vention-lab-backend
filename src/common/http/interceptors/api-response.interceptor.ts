@@ -6,8 +6,8 @@ import {
 } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 
-import type { ApiSuccessEnvelope } from '~/common/api/response/response.types';
-import { requestContext } from '~/common/tenancy/request-context/request-context';
+import type { ApiSuccessEnvelope } from '~/common/api';
+import { requestContext } from '~/common/tenancy';
 
 function isAlreadyWrapped(value: unknown): value is ApiSuccessEnvelope {
     return (

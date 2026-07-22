@@ -5,18 +5,17 @@ import { Response } from 'express';
 import ms from 'ms';
 
 import { AppException } from '~/common/errors';
-import { RedisService } from '~/infrastructure/cache/redis.service';
-import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
-import { AuthRepository } from '~/modules/auth/auth.repository';
-import { LoginDto } from '~/modules/auth/requests/login.request.dto';
-import { AuthErrors } from '~/modules/auth/auth.errors';
+import { AuthRequest } from '~/common/security';
+import { AuthRepository } from './auth.repository';
+import { LoginDto } from './requests/login.request.dto';
+import { AuthErrors } from './auth.errors';
 
 import { jwtConfig } from '~/config';
 import { AuthCookie } from './auth.constants';
-import { AuthRequest } from '~/common/types/auth.types';
-import { RedisPrefix } from '~/common/types/redis.types';
-import { AuthCookieService } from '~/modules/auth/auth-cookie.service';
-import { LoginResponse } from '~/modules/auth/responses/login.response';
+import { AuthCookieService } from './auth-cookie.service';
+import { LoginResponse } from './responses/login.response';
+import { Argon2Service } from '~/infrastructure/hashing';
+import { RedisService, RedisPrefix } from '~/infrastructure/cache';
 
 @Injectable()
 export class AuthService {
@@ -47,7 +46,7 @@ export class AuthService {
             signInDto.email
         );
 
-        if (!user || user.isDeleted) {
+        if (!user) {
             throw new AppException(AuthErrors.INVALID_CREDENTIALS);
         }
 

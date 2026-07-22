@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import { createResponseSchema } from '~/common/dto/response-schema';
+import { createResponseSchema } from '~/common/api';
 import { OrganizationResponse } from './organization.response';
-import { UserResponse } from '~/modules/user/responses/user.response';
+import { UserResponse } from '~/modules/user';
 
 export const OrganizationWithAdminResponse = createResponseSchema(
     z.object({

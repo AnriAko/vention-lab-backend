@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { SearchDto } from '~/modules/search/requests/search.request.dto';
-import { SearchRepository } from '~/modules/search/search.repository';
+import { SearchDto } from './requests/search.request.dto';
+import { SearchRepository } from './search.repository';
 
 @Injectable()
 export class SearchService {

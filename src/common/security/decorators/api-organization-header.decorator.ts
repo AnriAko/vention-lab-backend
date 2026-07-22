@@ -1,8 +1,7 @@
 import { applyDecorators } from '@nestjs/common';
 import { ApiHeader, ApiSecurity } from '@nestjs/swagger';
 
-import { SWAGGER_AUTH } from '~/common/api/swagger/swagger.constants';
-import { SEED_ORGANIZATIONS } from '~/common/api/swagger/seed-examples';
+import { SWAGGER_AUTH, SEED_ORGANIZATIONS } from '~/common/api';
 import { AUTH_HEADER } from '~/common/security/auth.types';
 import { OrganizationRole } from '~/generated/prisma/enums';
 

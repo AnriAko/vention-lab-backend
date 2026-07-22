@@ -3,7 +3,6 @@ export const userSelectSafe = {
     email: true,
     name: true,
     image: true,
-    isDeleted: true,
     createdAt: true,
     updatedAt: true,
 } as const;
@@ -13,7 +12,6 @@ export type UserSafe = {
     email: string;
     name: string;
     image: string;
-    isDeleted: boolean;
     createdAt: Date;
     updatedAt: Date;
 };

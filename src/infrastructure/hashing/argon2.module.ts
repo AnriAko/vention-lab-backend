@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { Argon2Service } from '~/common/security/hashing/argon2.service';
+import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
 
 @Module({
     providers: [Argon2Service],

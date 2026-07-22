@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { OrganizationService } from './organization.service';
 import { OrganizationController } from './organization.controller';
-import { OrganizationsRepository } from '~/modules/organization/organization.repository';
-import { PrismaModule } from '~/infrastructure/database/prisma.module';
-import { UsersModule } from '~/modules/user/user.module';
+import { OrganizationsRepository } from './organization.repository';
+import { PrismaModule } from '~/infrastructure/database';
+import { UsersModule } from '~/modules/user';
 
 @Module({
     imports: [PrismaModule, UsersModule],

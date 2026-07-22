@@ -11,7 +11,7 @@ import {
     IS_PUBLIC_KEY,
     SKIP_ORGANIZATION_KEY,
 } from '~/common/security/constants';
-import { AUTH_GUEST } from '~/common/security/auth.types';
+import { AUTH_GUEST } from '~/common/security';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { PrismaRlsService } from '~/common/tenancy/rls/prisma-rls.service';
 

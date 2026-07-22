@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
+import type { Pagination } from '~/common/api';
 import { UserStatsRepository } from './user-stats.repository';
-import { OffsetPagination } from '~/common/dto/pagination.request';
 
 @Injectable()
 export class UserStatsService {
     constructor(private readonly userStatsRepository: UserStatsRepository) {}
 
-    async getMessageLeaderboardPrisma(dto: OffsetPagination) {
-        return this.userStatsRepository.getMessageLeaderboardPrisma(dto);
+    getMessageLeaderboardPrisma(pagination: Pagination) {
+        return this.userStatsRepository.getMessageLeaderboardPrisma(pagination);
     }
 
-    async getMessageLeaderboardRaw(dto: OffsetPagination) {
-        return this.userStatsRepository.getMessageLeaderboardRaw(dto);
+    getMessageLeaderboardRaw(pagination: Pagination) {
+        return this.userStatsRepository.getMessageLeaderboardRaw(pagination);
     }
 }

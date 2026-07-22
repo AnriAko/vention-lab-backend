@@ -2,18 +2,18 @@ import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { configLoaders, validateEnv } from './config';
-import { GlobalModule } from './shared/global.module';
-import { UsersModule } from '~/modules/user/user.module';
-import { PrismaModule } from '~/infrastructure/database/prisma.module';
-import { HealthModule } from '~/modules/health/health.module';
-import { LoggerModule } from '~/infrastructure/logging/logger.module';
-import { envFilePath } from '~/common/utils/env-file-path';
-import { AuthModule } from '~/modules/auth/auth.module';
-import { OrganizationModule } from './modules/organization/organization.module';
-import { MemberModule } from '~/modules/member/member.module';
-import { LoggerMiddleware } from '~/infrastructure/logging/logger.middleware';
-import { UserStatsModule } from '~/modules/user-stats/user-stats.module';
-import { SearchModule } from '~/modules/search/search.module';
+import { GlobalModule } from './common/global.module';
+import { UsersModule } from '~/modules/user';
+import { PrismaModule } from '~/infrastructure/database';
+import { HealthModule } from '~/modules/health';
+import { LoggerModule } from '~/infrastructure/logging';
+import { envFilePath } from '~/common/utils';
+import { AuthModule } from '~/modules/auth';
+import { OrganizationModule } from '~/modules/organization';
+import { MemberModule } from '~/modules/member';
+import { LoggerMiddleware } from '~/common/http';
+import { UserStatsModule } from '~/modules/user-stats';
+import { SearchModule } from '~/modules/search';
 
 @Module({
     imports: [

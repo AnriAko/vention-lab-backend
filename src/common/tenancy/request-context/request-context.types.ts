@@ -1,5 +1,5 @@
 import type { Prisma } from '~/generated/prisma/client';
-import type { AppRole } from '~/common/security/permissions/app-role.enum';
+import type { AppRole } from '~/common/security';
 
 export type RequestContext = {
     requestId: string;

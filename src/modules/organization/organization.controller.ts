@@ -10,14 +10,15 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ApiEndpoint } from '~/common/decorators/api-endpoint.decorator';
-import { Roles } from '~/common/decorators/roles.decorator';
-import { SkipOrganization } from '~/common/decorators/skip-organization.decorator';
-import { OffsetPaginationQuery } from '~/common/dto/pagination.request';
-import { ApiResponse } from '~/common/dto/response-schema';
+import {
+    ApiEndpoint,
+    PaginationQuery,
+    ApiPaginatedResponse,
+    ApiResponse,
+    SEED_ORGANIZATIONS,
+} from '~/common/api';
+import { Roles, SkipOrganization, AppRole } from '~/common/security';
 import { AppException } from '~/common/errors';
-import { AppRole } from '~/common/types/app-role.enum';
-import { SEED_ORGANIZATIONS } from '~/common/swagger/seed-examples';
 
 import { OrganizationService } from './organization.service';
 import { OrganizationErrors } from './organization.errors';
@@ -25,11 +26,10 @@ import { CreateOrganizationDto } from './requests/create-organization.request.dt
 import { CreateOrganizationWithAdminDto } from './requests/create-organization-with-admin.request.dto';
 import { UpdateOrganizationDto } from './requests/update-organization.request.dto';
 import { OrganizationIdDto } from './requests/organization-id.request.dto';
-import { OrganizationListResponse } from './responses/organization-list.response';
 import { OrganizationResponse } from './responses/organization.response';
 import { OrganizationWithAdminResponse } from './responses/organization-with-admin.response';
 import { CurrentOrganizationsResponse } from './responses/current-organizations.response';
-import { UserOrganizationListResponse } from './responses/user-organization-list.response';
+import { UserOrganizationResponse } from './responses/user-organization.response';
 import { OrganizationUserIdDto } from './requests/organization-user-id.request.dto';
 
 @ApiTags('organizations')
@@ -46,9 +46,9 @@ export class OrganizationController {
         description:
             'Platform-wide offset-paginated list (no `x-organization-id`). Sorted by name ascending (BirdFans → CatFans → DogFans after seed).',
     })
-    @ApiResponse(OrganizationListResponse)
-    findAll(@Query() dto: OffsetPaginationQuery) {
-        return this.organizationService.findAll(dto.page, dto.limit);
+    @ApiPaginatedResponse(OrganizationResponse)
+    findAll(@Query() query: PaginationQuery) {
+        return this.organizationService.findAll(query);
     }
 
     @Get('deleted')
@@ -58,9 +58,9 @@ export class OrganizationController {
         description:
             'Offset-paginated list of organizations with `isDeleted=true`.',
     })
-    @ApiResponse(OrganizationListResponse)
-    findAllDeleted(@Query() dto: OffsetPaginationQuery) {
-        return this.organizationService.findAllDeleted(dto.page, dto.limit);
+    @ApiPaginatedResponse(OrganizationResponse)
+    findAllDeleted(@Query() query: PaginationQuery) {
+        return this.organizationService.findAllDeleted(query);
     }
 
     @Get('current')
@@ -83,16 +83,12 @@ export class OrganizationController {
         description:
             'Offset-paginated organizations a user belongs to, with their role in each. Platform owner only.',
     })
-    @ApiResponse(UserOrganizationListResponse)
+    @ApiPaginatedResponse(UserOrganizationResponse)
     findAllByUserId(
         @Param() params: OrganizationUserIdDto,
-        @Query() dto: OffsetPaginationQuery
+        @Query() query: PaginationQuery
     ) {
-        return this.organizationService.findAllByUserId(
-            params.userId,
-            dto.page,
-            dto.limit
-        );
+        return this.organizationService.findAllByUserId(params.userId, query);
     }
 
     @Post()

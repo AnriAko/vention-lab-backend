@@ -7,10 +7,10 @@ import {
 } from '@nestjs/common';
 import { Request, Response } from 'express';
 
-import { ApiErrorResponse } from '~/common/api/dto/error.response';
+import { ApiErrorResponse } from '~/common/api';
 import { AppException, CommonErrors } from '~/common/errors';
-import { requestContext } from '~/common/tenancy/request-context/request-context';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { requestContext } from '~/common/tenancy';
+import { LoggerService } from '~/infrastructure/logging';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {

@@ -6,20 +6,25 @@ export const searchUsersQuery = (
     offset: number
 ) => Prisma.sql`
     SELECT
-        id,
-        name,
-        email,
+        u.id,
+        u.name,
+        u.email,
         ts_rank(
-            search_vector,
+            u.search_vector,
             plainto_tsquery('english', ${query})
         ) AS rank
-    FROM "User"
+    FROM "User" u
     WHERE
-        search_vector @@ plainto_tsquery(
+        u.search_vector @@ plainto_tsquery(
             'english',
             ${query}
         )
-    AND "isDeleted" = false
+    AND EXISTS (
+        SELECT 1
+        FROM "UsersOrganizations" uo
+        WHERE uo."userId" = u.id
+          AND uo."isDeleted" = false
+    )
     ORDER BY rank DESC
     LIMIT ${limit}
     OFFSET ${offset};

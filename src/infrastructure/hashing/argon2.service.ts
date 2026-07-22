@@ -4,7 +4,7 @@ import { Inject } from '@nestjs/common';
 import argon2 from 'argon2';
 
 import { argon2Config } from '~/config';
-import { HashOptions } from '~/common/security/hashing/argon2.types';
+import { HashOptions } from '~/infrastructure/hashing/argon2.types';
 
 @Injectable()
 export class Argon2Service {

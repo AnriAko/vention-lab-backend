@@ -1,9 +1,6 @@
 import { z } from 'zod';
 
-import {
-    createResponseSchema,
-    DateTimeResponse,
-} from '~/common/dto/response-schema';
+import { createResponseSchema, DateTimeResponse } from '~/common/api';
 
 export const OrganizationBase = z.object({
     id: z.uuid(),

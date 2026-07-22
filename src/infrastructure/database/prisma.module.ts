@@ -1,7 +1,9 @@
 import { Global, Module } from '@nestjs/common';
-import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
-import { PrismaRlsInterceptor } from '~/common/tenancy/rls/prisma-rls.interceptor';
-import { PrismaRlsService } from '~/common/tenancy/rls/prisma-rls.service';
+import {
+    PrismaRlsClient,
+    PrismaRlsInterceptor,
+    PrismaRlsService,
+} from '~/common/tenancy';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 
 @Global()

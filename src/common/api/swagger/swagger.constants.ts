@@ -1,5 +1,5 @@
-import { AUTH_HEADER } from '~/common/security/auth.types';
-import { AuthCookie } from '~/modules/auth/auth.constants';
+import { AUTH_HEADER } from '~/common/security';
+import { AuthCookie } from '~/modules/auth';
 import {
     SEED_LOGIN_MEMBER,
     SEED_LOGIN_ORG_ADMIN,

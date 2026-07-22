@@ -1,10 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import {
-    SEED_LOGIN_ORG_ADMIN,
-    SEED_LOGIN_OWNER,
-} from '~/common/swagger/seed-examples';
+import { SEED_LOGIN_ORG_ADMIN, SEED_LOGIN_OWNER } from '~/common/api';
 
 export const Login = z.object({
     email: z.string().meta({

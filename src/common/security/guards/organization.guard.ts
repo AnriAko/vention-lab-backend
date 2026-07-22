@@ -10,14 +10,14 @@ import { AUTH_HEADER, AuthRequest } from '~/common/security/auth.types';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
 import { OrganizationRole } from '~/generated/prisma/enums';
 
-import { PrismaService } from '~/infrastructure/database/prisma.service';
-import { AuthErrors } from '~/modules/auth/auth.errors';
-import { OrganizationErrors } from '~/modules/organization/organization.errors';
+import { PrismaService } from '~/infrastructure/database';
+import { AuthErrors } from '~/modules/auth';
+import { OrganizationErrors } from '~/modules/organization';
 import {
     setRequestRole,
     setRequestUser,
-} from '~/common/tenancy/user/user-context';
-import { setRequestOrganization } from '~/common/tenancy/organization/organization-context';
+    setRequestOrganization,
+} from '~/common/tenancy';
 
 @Injectable()
 export class OrganizationGuard implements CanActivate {
@@ -104,12 +104,11 @@ export class OrganizationGuard implements CanActivate {
             return true;
         }
 
-        const membership = await this.prisma.usersOrganizations.findUnique({
+        const membership = await this.prisma.usersOrganizations.findFirst({
             where: {
-                userId_organizationId: {
-                    userId: request.user.userId,
-                    organizationId,
-                },
+                userId: request.user.userId,
+                organizationId,
+                isDeleted: false,
             },
         });
 

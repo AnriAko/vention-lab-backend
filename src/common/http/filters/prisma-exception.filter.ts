@@ -2,10 +2,10 @@ import { Catch, ArgumentsHost, HttpStatus } from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Prisma } from '~/generated/prisma/client';
 
-import { ApiErrorResponse } from '~/common/api/dto/error.response';
+import { ApiErrorResponse } from '~/common/api';
 import { CommonErrors } from '~/common/errors';
-import { requestContext } from '~/common/tenancy/request-context/request-context';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { requestContext } from '~/common/tenancy';
+import { LoggerService } from '~/infrastructure/logging';
 
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaExceptionFilter {

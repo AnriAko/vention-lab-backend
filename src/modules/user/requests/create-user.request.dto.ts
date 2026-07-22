@@ -1,10 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import {
-    SEED_ORGANIZATIONS,
-    SEED_PASSWORD,
-} from '~/common/swagger/seed-examples';
+import { SEED_ORGANIZATIONS, SEED_PASSWORD } from '~/common/api';
 
 export const CreateUser = z.object({
     email: z.email().meta({

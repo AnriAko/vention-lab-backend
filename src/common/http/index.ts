@@ -1,5 +1,3 @@
-export { ApiResponseInterceptor } from './interceptors/api-response.interceptor';
-export { LoggerInterceptor } from './interceptors/logger.interceptor';
-export { HttpExceptionFilter } from './filters/http-exception.filter';
-export { PrismaExceptionFilter } from './filters/prisma-exception.filter';
+export { HttpExceptionFilter, PrismaExceptionFilter } from './filters';
+export { ApiResponseInterceptor, LoggerInterceptor } from './interceptors';
 export { LoggerMiddleware } from './middleware/logger.middleware';

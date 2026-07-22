@@ -1,35 +1,32 @@
-export { ApiResponse } from './response/response.decorator';
 export {
+    ApiResponse,
     createResponseSchema,
     DateTimeResponse,
     type ResponseSchema,
-} from './response/response.schema';
-export type {
-    ApiSuccessEnvelope,
-    InferResponse,
-} from './response/response.types';
+    type ApiSuccessEnvelope,
+    type InferResponse,
+} from './response';
 
 export {
     ApiPaginatedResponse,
     createPaginatedSchema,
     PaginationMetaSchema,
-} from './pagination/pagination.response';
-export {
     PaginationSchema,
     PaginationQuery,
     type Pagination,
-} from './pagination/pagination.schema';
-export type {
-    PaginatedResult,
-    PaginationMeta,
-} from './pagination/pagination.types';
-export { paginatePrisma } from './pagination/paginate-prisma';
-export { SortDirection } from './pagination/sort-order.enum';
+    type PaginatedResult,
+    type PaginationMeta,
+    paginatePrisma,
+    SortDirection,
+} from './pagination';
 
-export { EmptyResponse } from './dto/empty.response';
-export { MessageResponse } from './dto/message.response';
-export { TokenResponse, tokenSchema } from './dto/token.response';
-export { ApiErrorResponse } from './dto/error.response';
+export {
+    EmptyResponse,
+    MessageResponse,
+    TokenResponse,
+    tokenSchema,
+    ApiErrorResponse,
+} from './dto';
 
 export { ApiEndpoint } from './decorators/api-endpoint.decorator';
 

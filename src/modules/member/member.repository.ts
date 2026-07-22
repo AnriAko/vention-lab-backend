@@ -1,132 +1,89 @@
 import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors';
-import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
-import { memberSelect } from '~/common/types/member.types';
+import { PrismaRlsClient, getActiveOrgId } from '~/common/tenancy';
+import {
+    memberSelect,
+    activeTenantSoftDeleteScope,
+    deletedTenantMembershipScope,
+    addWhere,
+} from '~/infrastructure/database';
 import { OrganizationRole } from '~/generated/prisma/enums';
-import { UserErrors } from '~/modules/user/user.errors';
+import { UserErrors } from '~/modules/user';
 import { MemberErrors } from './member.errors';
-import { getActiveOrgId } from '~/infrastructure/context/organization/organization-context';
-import { activeOrganizationScope } from '~/infrastructure/database/scopes/organization-scope';
-import { addWhere } from '~/infrastructure/database/scopes/addWhere';
+import { paginatePrisma, type Pagination } from '~/common/api';
 
 @Injectable()
 export class MemberRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
 
-    async findAllOffset(page: number, limit: number) {
+    findAll(pagination: Pagination) {
         const organizationId = getActiveOrgId();
-        const skip = (page - 1) * limit;
 
-        const where = activeOrganizationScope();
-
-        const [members, total] = await Promise.all([
-            this.prisma.user.findMany({
-                where,
-                select: memberSelect(organizationId),
-                orderBy: {
-                    name: 'asc',
-                },
-                skip,
-                take: limit,
-            }),
-
-            this.prisma.user.count({
-                where,
-            }),
-        ]);
-
-        return {
-            data: members,
-            meta: {
-                page,
-                limit,
-                total,
-            },
-        };
-    }
-
-    async findAllDeletedOffset(page: number, limit: number) {
-        const organizationId = getActiveOrgId();
-        const skip = (page - 1) * limit;
-
-        const where = addWhere(activeOrganizationScope(), {
-            isDeleted: true,
-        });
-
-        const [members, total] = await Promise.all([
-            this.prisma.user.findMany({
-                where,
-                select: memberSelect(organizationId),
-                orderBy: {
-                    name: 'asc',
-                },
-                skip,
-                take: limit,
-            }),
-
-            this.prisma.user.count({
-                where,
-            }),
-        ]);
-
-        return {
-            data: members,
-            meta: {
-                page,
-                limit,
-                total,
-            },
-        };
-    }
-
-    async findAllAdminsOffset(page: number, limit: number) {
-        const organizationId = getActiveOrgId();
-        const skip = (page - 1) * limit;
-
-        const where = addWhere(activeOrganizationScope(), {
-            organizationRoles: {
-                some: {
-                    organizationId,
-                    role: OrganizationRole.ADMIN,
-                },
+        return paginatePrisma({
+            pagination,
+            model: this.prisma.user,
+            where: activeTenantSoftDeleteScope(),
+            select: memberSelect(organizationId),
+            orderBy: {
+                name: 'asc',
             },
         });
+    }
 
-        const [members, total] = await Promise.all([
-            this.prisma.user.findMany({
-                where,
-                select: memberSelect(organizationId),
-                orderBy: {
-                    name: 'asc',
-                },
-                skip,
-                take: limit,
-            }),
+    findAllDeleted(pagination: Pagination) {
+        const organizationId = getActiveOrgId();
 
-            this.prisma.user.count({
-                where,
-            }),
-        ]);
-
-        return {
-            data: members,
-            meta: {
-                page,
-                limit,
-                total,
+        return paginatePrisma({
+            pagination,
+            model: this.prisma.user,
+            where: deletedTenantMembershipScope(),
+            select: memberSelect(organizationId),
+            orderBy: {
+                name: 'asc',
             },
-        };
+        });
+    }
+
+    findAllAdmins(pagination: Pagination) {
+        const organizationId = getActiveOrgId();
+
+        return paginatePrisma({
+            pagination,
+            model: this.prisma.user,
+            where: addWhere(activeTenantSoftDeleteScope(), {
+                organizationRoles: {
+                    some: {
+                        organizationId,
+                        role: OrganizationRole.ADMIN,
+                    },
+                },
+            }),
+            select: memberSelect(organizationId),
+            orderBy: {
+                name: 'asc',
+            },
+        });
     }
 
     async findById(userId: string) {
         const organizationId = getActiveOrgId();
 
         return this.prisma.user.findFirst({
-            where: addWhere(activeOrganizationScope(), {
+            where: addWhere(activeTenantSoftDeleteScope(), {
                 id: userId,
             }),
+            select: memberSelect(organizationId),
+        });
+    }
 
+    async findDeletedById(userId: string) {
+        const organizationId = getActiveOrgId();
+
+        return this.prisma.user.findFirst({
+            where: addWhere(deletedTenantMembershipScope(), {
+                id: userId,
+            }),
             select: memberSelect(organizationId),
         });
     }
@@ -138,7 +95,7 @@ export class MemberRepository {
         const organizationId = getActiveOrgId();
 
         const user = await this.prisma.user.findFirst({
-            where: addWhere(activeOrganizationScope(), {
+            where: addWhere(activeTenantSoftDeleteScope(), {
                 id: userId,
             }),
             select: {
@@ -182,10 +139,9 @@ export class MemberRepository {
         });
 
         const member = await this.prisma.user.findFirst({
-            where: addWhere(activeOrganizationScope(), {
+            where: addWhere(activeTenantSoftDeleteScope(), {
                 id: userId,
             }),
-
             select: memberSelect(organizationId),
         });
 
@@ -198,25 +154,45 @@ export class MemberRepository {
         return member;
     }
 
-    async remove(userId: string): Promise<void> {
+    async softRemove(userId: string): Promise<void> {
         const organizationId = getActiveOrgId();
 
-        await this.prisma.usersOrganizationsRoles.delete({
+        await this.prisma.usersOrganizations.update({
             where: {
                 userId_organizationId: {
                     userId,
                     organizationId,
                 },
+            },
+            data: {
+                isDeleted: true,
+                deletedAt: new Date(),
+            },
+        });
+    }
+
+    async restore(userId: string) {
+        const organizationId = getActiveOrgId();
+
+        await this.prisma.usersOrganizations.update({
+            where: {
+                userId_organizationId: {
+                    userId,
+                    organizationId,
+                },
+            },
+            data: {
+                isDeleted: false,
+                deletedAt: null,
             },
         });
 
-        await this.prisma.usersOrganizations.delete({
-            where: {
-                userId_organizationId: {
-                    userId,
-                    organizationId,
-                },
-            },
-        });
+        const member = await this.findById(userId);
+
+        if (!member) {
+            throw new AppException(MemberErrors.NOT_FOUND);
+        }
+
+        return member;
     }
 }

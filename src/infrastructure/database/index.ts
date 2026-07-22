@@ -1,27 +1,28 @@
 export { PrismaModule } from './prisma.module';
 export { PrismaService } from './prisma.service';
 
-export { addWhere, type Scope } from './scopes/addWhere';
 export {
+    addWhere,
+    type Scope,
     organizationScope,
-    activeTenantSoftDeleteScope,
     activeTenantScope,
-} from './scopes/organization-scope';
-export {
-    activeUserScope,
+    activeTenantSoftDeleteScope,
+    deletedTenantMembershipScope,
     organizationUserScope,
     deletedOrganizationUserScope,
-} from './scopes/user-scope';
-
+} from './scopes';
 export {
     getPrismaTransaction,
     runWithPrismaTransaction,
 } from './transactions/transaction-context';
 
-export { userSelectSafe, type UserSafe, type UserCursor } from './selects/user.types';
 export {
+    userSelectSafe,
+    type UserSafe,
+    type UserCursor,
     organizationSelectSafe,
     type OrganizationSafe,
-} from './selects/organization.types';
-export { memberSelect } from './selects/member.types';
-export { fileSelect, type FileSafe } from './selects/file.types';
+    memberSelect,
+    fileSelect,
+    type FileSafe,
+} from './selects';

@@ -2,7 +2,7 @@ import { applyDecorators, SetMetadata } from '@nestjs/common';
 import { ApiBearerAuth, ApiExtension } from '@nestjs/swagger';
 
 import { ROLES_KEY } from '~/common/security/constants';
-import { SWAGGER_AUTH } from '~/common/api/swagger/swagger.constants';
+import { SWAGGER_AUTH } from '~/common/api';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
 
 export const Roles = (...roles: AppRole[]) => {

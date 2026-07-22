@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { winstonLogger } from './core/winston.logger';
-import { requestContext } from '~/common/tenancy/request-context/request-context';
-import { AUTH_GUEST } from '~/common/security/auth.types';
+import { requestContext } from '~/common/tenancy';
+import { AUTH_GUEST } from '~/common/security';
 
 type LogInput =
     | string

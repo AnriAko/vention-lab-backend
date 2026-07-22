@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
-import { requestContext } from '~/infrastructure/context/request/request-context';
-import { UsersService } from '~/modules/user/user.service';
-import { UserErrors } from '~/modules/user/user.errors';
+import type { Pagination } from '~/common/api';
+import { LoggerService } from '~/infrastructure/logging';
+import { requestContext } from '~/common/tenancy';
+import { UsersService, UserErrors } from '~/modules/user';
 import { OrganizationRole } from '~/generated/prisma/client';
 
 import { CreateOrganizationDto } from './requests/create-organization.request.dto';
@@ -20,26 +20,12 @@ export class OrganizationService {
         private readonly logger: LoggerService
     ) {}
 
-    async findAll(page: number, limit: number) {
-        const result = await this.organizationRepository.findAllOffset(
-            page,
-            limit
-        );
-        return {
-            items: result.data,
-            pagination: result.meta,
-        };
+    findAll(pagination: Pagination) {
+        return this.organizationRepository.findAll(pagination);
     }
 
-    async findAllDeleted(page: number, limit: number) {
-        const result = await this.organizationRepository.findAllDeletedOffset(
-            page,
-            limit
-        );
-        return {
-            items: result.data,
-            pagination: result.meta,
-        };
+    findAllDeleted(pagination: Pagination) {
+        return this.organizationRepository.findAllDeleted(pagination);
     }
 
     findById(id: string) {
@@ -58,23 +44,14 @@ export class OrganizationService {
         return { organizationRoles };
     }
 
-    async findAllByUserId(userId: string, page: number, limit: number) {
+    async findAllByUserId(userId: string, pagination: Pagination) {
         const userExists = await this.usersService.existsById(userId);
 
         if (!userExists) {
             throw new AppException(UserErrors.NOT_FOUND);
         }
 
-        const result = await this.organizationRepository.findAllByUserIdOffset(
-            userId,
-            page,
-            limit
-        );
-
-        return {
-            items: result.data,
-            pagination: result.meta,
-        };
+        return this.organizationRepository.findAllByUserId(userId, pagination);
     }
 
     async create(dto: CreateOrganizationDto) {

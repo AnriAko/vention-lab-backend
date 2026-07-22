@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { createResponseSchema } from '~/common/dto/response-schema';
+import { createResponseSchema } from '~/common/api';
 import { OrganizationRole } from '~/generated/prisma/enums';
 
 const MemberOutput = z.object({

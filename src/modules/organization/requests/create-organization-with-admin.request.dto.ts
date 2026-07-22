@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { SEED_PASSWORD } from '~/common/swagger/seed-examples';
+import { SEED_PASSWORD } from '~/common/api';
 
 export const CreateOrganizationWithAdmin = z.object({
     organizationName: z

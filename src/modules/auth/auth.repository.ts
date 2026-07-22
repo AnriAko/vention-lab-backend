@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { PrismaService } from '~/infrastructure/database/prisma.service';
-import { userSelectAuth, UserWithPassword } from '~/common/types/auth.types';
+import { PrismaService } from '~/infrastructure/database';
+import { userSelectAuth, UserWithPassword } from '~/common/security';
 
 @Injectable()
 export class AuthRepository {
@@ -11,7 +11,6 @@ export class AuthRepository {
         const user = await this.prisma.user.findUnique({
             where: {
                 email,
-                isDeleted: false,
             },
             select: userSelectAuth,
         });

@@ -1,6 +1,5 @@
 import z from 'zod';
-import { createResponseSchema } from '~/common/dto/response-schema';
-import { tokenSchema } from '~/common/dto/token.response';
+import { createResponseSchema, tokenSchema } from '~/common/api';
 
 export const LoginResponse = createResponseSchema(
     tokenSchema,
