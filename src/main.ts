@@ -13,7 +13,10 @@ import helmet from 'helmet';
 
 import chalk from 'chalk';
 
-import { SWAGGER_API_DESCRIPTION, SWAGGER_AUTH } from '~/common/api/swagger/swagger.constants';
+import {
+    SWAGGER_API_DESCRIPTION,
+    SWAGGER_AUTH,
+} from '~/common/api/swagger/swagger.constants';
 import { AUTH_HEADER } from '~/common/security/auth.types';
 import { AuthCookie } from '~/common/security/auth.constants';
 

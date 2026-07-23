@@ -4,7 +4,10 @@ import { AppException } from '~/common/errors/app-exception';
 import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
 import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
 import { memberSelect } from '~/infrastructure/database/selects/member.types';
-import { activeTenantSoftDeleteScope, deletedTenantMembershipScope } from '~/infrastructure/database/scopes/organization-scope';
+import {
+    activeTenantSoftDeleteScope,
+    deletedTenantMembershipScope,
+} from '~/infrastructure/database/scopes/organization-scope';
 import { addWhere } from '~/infrastructure/database/scopes/addWhere';
 import { OrganizationRole } from '~/generated/prisma/enums';
 import { UserErrors } from '~/modules/user/user.errors';
