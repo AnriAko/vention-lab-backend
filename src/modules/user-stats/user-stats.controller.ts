@@ -1,12 +1,12 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import {
-    ApiEndpoint,
-    PaginationQuery,
-    ApiPaginatedResponse,
-} from '~/common/api';
-import { ApiOrganizationHeader, Roles, AppRole } from '~/common/security';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { PaginationQuery } from '~/common/api/pagination/pagination.schema';
+import { ApiPaginatedResponse } from '~/common/api/pagination/pagination.response';
+import { ApiOrganizationHeader } from '~/common/security/decorators/api-organization-header.decorator';
+import { Roles } from '~/common/security/decorators/roles.decorator';
+import { AppRole } from '~/common/security/permissions/app-role.enum';
 
 import { LeaderboardEntryResponse } from './responses/leaderboard.response';
 import { UserStatsService } from './user-stats.service';

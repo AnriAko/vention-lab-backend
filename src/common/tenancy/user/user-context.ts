@@ -1,5 +1,6 @@
 ﻿import { requestContext } from '../request-context/request-context';
-import { AUTH_GUEST, type AppRole } from '~/common/security';
+import { AUTH_GUEST } from '~/common/security/auth.types';
+import type { AppRole } from '~/common/security/permissions/app-role.enum';
 
 export const setRequestUser = (userId: string) => {
     const store = requestContext.getStore();

@@ -4,18 +4,19 @@ import type { ConfigType } from '@nestjs/config';
 import { Response } from 'express';
 import ms from 'ms';
 
-import { AppException } from '~/common/errors';
-import { AuthRequest } from '~/common/security';
+import { AppException } from '~/common/errors/app-exception';
+import type { AuthRequest } from '~/common/security/auth.types';
 import { AuthRepository } from './auth.repository';
 import { LoginDto } from './requests/login.request.dto';
 import { AuthErrors } from './auth.errors';
 
-import { jwtConfig } from '~/config';
+import { jwtConfig } from '~/config/configuration/jwt.config';
 import { AuthCookie } from './auth.constants';
 import { AuthCookieService } from './auth-cookie.service';
 import { LoginResponse } from './responses/login.response';
-import { Argon2Service } from '~/infrastructure/hashing';
-import { RedisService, RedisPrefix } from '~/infrastructure/cache';
+import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
+import { RedisService } from '~/infrastructure/cache/redis.service';
+import { RedisPrefix } from '~/infrastructure/cache/redis.types';
 
 @Injectable()
 export class AuthService {

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { PrismaModule } from '~/infrastructure/database';
-import { Argon2Module } from '~/infrastructure/hashing';
+import { PrismaModule } from '~/infrastructure/database/prisma.module';
+import { Argon2Module } from '~/infrastructure/hashing/argon2.module';
 import { UsersController } from './user.controller';
 import { UserRepository } from './user.repository';
 import { UsersService } from './user.service';

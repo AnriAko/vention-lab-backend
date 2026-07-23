@@ -4,12 +4,13 @@ import { Inject } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { Reflector } from '@nestjs/core';
 
-import { AppException } from '~/common/errors';
-import { RedisService, RedisPrefix } from '~/infrastructure/cache';
-import { PrismaService } from '~/infrastructure/database';
-import { AuthErrors } from '~/modules/auth';
+import { AppException } from '~/common/errors/app-exception';
+import { RedisService } from '~/infrastructure/cache/redis.service';
+import { RedisPrefix } from '~/infrastructure/cache/redis.types';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { AuthErrors } from '~/modules/auth/auth.errors';
 
-import { jwtConfig } from '~/config';
+import { jwtConfig } from '~/config/configuration/jwt.config';
 import {
     AUTH_HEADER,
     AUTH_SCHEME,
@@ -18,8 +19,8 @@ import {
 } from '~/common/security/auth.types';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
 import { IS_PUBLIC_KEY } from '~/common/security/constants';
-import { parseHeader } from '~/common/utils';
-import { setRequestUser } from '~/common/tenancy';
+import { parseHeader } from '~/common/utils/parse-header';
+import { setRequestUser } from '~/common/tenancy/user/user-context';
 
 @Injectable()
 export class AuthGuard implements CanActivate {

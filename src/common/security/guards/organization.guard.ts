@@ -5,19 +5,19 @@ import {
     IS_PUBLIC_KEY,
     SKIP_ORGANIZATION_KEY,
 } from '~/common/security/constants';
-import { AppException } from '~/common/errors';
+import { AppException } from '~/common/errors/app-exception';
 import { AUTH_HEADER, AuthRequest } from '~/common/security/auth.types';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
 import { OrganizationRole } from '~/generated/prisma/enums';
 
-import { PrismaService } from '~/infrastructure/database';
-import { AuthErrors } from '~/modules/auth';
-import { OrganizationErrors } from '~/modules/organization';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { AuthErrors } from '~/modules/auth/auth.errors';
+import { OrganizationErrors } from '~/modules/organization/organization.errors';
+import { setRequestOrganization } from '~/common/tenancy/organization/organization-context';
 import {
     setRequestRole,
     setRequestUser,
-    setRequestOrganization,
-} from '~/common/tenancy';
+} from '~/common/tenancy/user/user-context';
 
 @Injectable()
 export class OrganizationGuard implements CanActivate {

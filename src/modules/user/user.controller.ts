@@ -1,14 +1,13 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ApiEndpoint, ApiResponse } from '~/common/api';
-import {
-    ApiOrganizationHeader,
-    Roles,
-    SkipOrganization,
-    AppRole,
-} from '~/common/security';
-import { AppException } from '~/common/errors';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { ApiResponse } from '~/common/api/response/response.decorator';
+import { ApiOrganizationHeader } from '~/common/security/decorators/api-organization-header.decorator';
+import { Roles } from '~/common/security/decorators/roles.decorator';
+import { SkipOrganization } from '~/common/security/decorators/skip-organization.decorator';
+import { AppRole } from '~/common/security/permissions/app-role.enum';
+import { AppException } from '~/common/errors/app-exception';
 
 import { CreateUserDto } from './requests/create-user.request.dto';
 import { UpdateUserDto } from './requests/update-user.request.dto';

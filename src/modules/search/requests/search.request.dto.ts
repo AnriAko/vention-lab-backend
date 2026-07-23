@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { PaginationSchema } from '~/common/api';
+import { PaginationSchema } from '~/common/api/pagination/pagination.schema';
 
 export const Search = PaginationSchema.extend({
     query: z

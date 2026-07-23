@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { createResponseSchema } from '~/common/api';
+import { createResponseSchema } from '~/common/api/response/response.schema';
 import { OrganizationRole } from '~/generated/prisma/enums';
 import { OrganizationBase } from './organization.response';
 

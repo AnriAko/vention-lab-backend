@@ -10,20 +10,15 @@ import {
 } from '@nestjs/common';
 import { ApiBody, ApiCookieAuth, ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
-import {
-    ApiEndpoint,
-    MessageResponse,
-    TokenResponse,
-    ApiResponse,
-    SEED_LOGIN_ORG_ADMIN,
-    SEED_LOGIN_OWNER,
-    SWAGGER_AUTH,
-} from '~/common/api';
-import {
-    PublicRoute,
-    SkipOrganization,
-    type AuthRequest,
-} from '~/common/security';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { MessageResponse } from '~/common/api/dto/message.response';
+import { TokenResponse } from '~/common/api/dto/token.response';
+import { ApiResponse } from '~/common/api/response/response.decorator';
+import { SEED_LOGIN_ORG_ADMIN, SEED_LOGIN_OWNER } from '~/common/api/swagger/seed-examples';
+import { SWAGGER_AUTH } from '~/common/api/swagger/swagger.constants';
+import { PublicRoute } from '~/common/security/decorators/public.decorator';
+import { SkipOrganization } from '~/common/security/decorators/skip-organization.decorator';
+import type { AuthRequest } from '~/common/security/auth.types';
 import { AuthService } from './auth.service';
 import { LoginDto } from './requests/login.request.dto';
 import { LoginResponse } from './responses/login.response';

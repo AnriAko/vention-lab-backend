@@ -2,15 +2,15 @@ import { Module } from '@nestjs/common';
 import { JwtModule as NestJwtModule } from '@nestjs/jwt';
 
 import { ConfigType } from '@nestjs/config';
-import { jwtConfig } from '~/config';
+import { jwtConfig } from '~/config/configuration/jwt.config';
 
-import { Argon2Module } from '~/infrastructure/hashing';
-import { PrismaModule } from '~/infrastructure/database';
+import { Argon2Module } from '~/infrastructure/hashing/argon2.module';
+import { PrismaModule } from '~/infrastructure/database/prisma.module';
 
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
-import { RedisModule } from '~/infrastructure/cache';
+import { RedisModule } from '~/infrastructure/cache/redis.module';
 import { AuthCookieService } from './auth-cookie.service';
 
 @Module({

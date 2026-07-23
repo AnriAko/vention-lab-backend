@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
-import { LoggerService } from '~/infrastructure/logging';
+import { LoggerService } from '~/infrastructure/logging/logger.service';
 import type { Prisma } from '~/generated/prisma/client';
 import { OrganizationRole } from '~/generated/prisma/enums';
 
 import { CreateUserDto } from './requests/create-user.request.dto';
 import { UpdateUserDto } from './requests/update-user.request.dto';
-import { UserSafe } from '~/infrastructure/database';
+import type { UserSafe } from '~/infrastructure/database/selects/user.types';
 import { UserRepository } from './user.repository';
-import { Argon2Service } from '~/infrastructure/hashing';
+import { Argon2Service } from '~/infrastructure/hashing/argon2.service';
 
 @Injectable()
 export class UsersService {

@@ -13,9 +13,9 @@ import helmet from 'helmet';
 
 import chalk from 'chalk';
 
-import { SWAGGER_API_DESCRIPTION, SWAGGER_AUTH } from '~/common/api';
-import { AUTH_HEADER } from '~/common/security';
-import { AuthCookie } from '~/modules/auth';
+import { SWAGGER_API_DESCRIPTION, SWAGGER_AUTH } from '~/common/api/swagger/swagger.constants';
+import { AUTH_HEADER } from '~/common/security/auth.types';
+import { AuthCookie } from '~/common/security/auth.constants';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);

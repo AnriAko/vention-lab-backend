@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import type { Prisma } from '~/generated/prisma/client';
-import { getPrismaTransaction } from '~/infrastructure/database';
+import { getPrismaTransaction } from '~/infrastructure/database/transactions/transaction-context';
 
 @Injectable()
 export class PrismaRlsClient {

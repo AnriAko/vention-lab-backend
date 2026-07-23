@@ -4,11 +4,12 @@ import { HealthCheckService, HealthCheck } from '@nestjs/terminus';
 import { PrismaHealthIndicator } from '@nestjs/terminus';
 import { SkipThrottle } from '@nestjs/throttler';
 
-import { ApiEndpoint, ApiResponse } from '~/common/api';
-import { PublicRoute } from '~/common/security';
-import { PrismaService } from '~/infrastructure/database';
-import { RedisService } from '~/infrastructure/cache';
-import { RabbitmqService } from '~/infrastructure/messaging';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { ApiResponse } from '~/common/api/response/response.decorator';
+import { PublicRoute } from '~/common/security/decorators/public.decorator';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { RedisService } from '~/infrastructure/cache/redis.service';
+import { RabbitmqService } from '~/infrastructure/messaging/rabbitmq.service';
 
 import { HealthCheckResponse } from './responses/health-check.response';
 

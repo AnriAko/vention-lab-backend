@@ -1,8 +1,8 @@
 import { z } from 'zod';
 
-import { createResponseSchema } from '~/common/api';
-import { OrganizationResponse } from '~/modules/organization';
-import { UserResponse } from '~/modules/user';
+import { createResponseSchema } from '~/common/api/response/response.schema';
+import { OrganizationResponse } from '~/modules/organization/responses/organization.response';
+import { UserResponse } from '~/modules/user/responses/user.response';
 
 export const SubstringSearchResponse = createResponseSchema(
     z.object({

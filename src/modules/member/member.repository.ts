@@ -1,17 +1,16 @@
 import { Injectable } from '@nestjs/common';
 
-import { AppException } from '~/common/errors';
-import { PrismaRlsClient, getActiveOrgId } from '~/common/tenancy';
-import {
-    memberSelect,
-    activeTenantSoftDeleteScope,
-    deletedTenantMembershipScope,
-    addWhere,
-} from '~/infrastructure/database';
+import { AppException } from '~/common/errors/app-exception';
+import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
+import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
+import { memberSelect } from '~/infrastructure/database/selects/member.types';
+import { activeTenantSoftDeleteScope, deletedTenantMembershipScope } from '~/infrastructure/database/scopes/organization-scope';
+import { addWhere } from '~/infrastructure/database/scopes/addWhere';
 import { OrganizationRole } from '~/generated/prisma/enums';
-import { UserErrors } from '~/modules/user';
+import { UserErrors } from '~/modules/user/user.errors';
 import { MemberErrors } from './member.errors';
-import { paginatePrisma, type Pagination } from '~/common/api';
+import { paginatePrisma } from '~/common/api/pagination/paginate-prisma';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
 
 @Injectable()
 export class MemberRepository {

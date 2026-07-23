@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import type { Pagination } from '~/common/api';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
 import { UserStatsRepository } from './user-stats.repository';
 
 @Injectable()

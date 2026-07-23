@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import type { Pagination, PaginatedResult } from '~/common/api';
-import { PrismaRlsClient } from '~/common/tenancy';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
+import type { PaginatedResult } from '~/common/api/pagination/pagination.types';
+import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
 import { messageLeaderboardQuery } from './user-stats.queries';
 import type { LeaderboardEntryResponse } from './responses/leaderboard.response';
 

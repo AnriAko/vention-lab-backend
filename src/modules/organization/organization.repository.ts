@@ -1,16 +1,15 @@
 ﻿import { Injectable } from '@nestjs/common';
-import {
-    PrismaService,
-    OrganizationSafe,
-    organizationSelectSafe,
-    type UserSafe,
-} from '~/infrastructure/database';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { organizationSelectSafe } from '~/infrastructure/database/selects/organization.types';
+import type { OrganizationSafe } from '~/infrastructure/database/selects/organization.types';
+import type { UserSafe } from '~/infrastructure/database/selects/user.types';
 import { Prisma } from '~/generated/prisma/client';
 
 import { CreateOrganizationDto } from './requests/create-organization.request.dto';
 import { UpdateOrganizationDto } from './requests/update-organization.request.dto';
 import { OrganizationRole } from '~/generated/prisma/client';
-import { paginatePrisma, type Pagination } from '~/common/api';
+import { paginatePrisma } from '~/common/api/pagination/paginate-prisma';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
 
 @Injectable()
 export class OrganizationsRepository {

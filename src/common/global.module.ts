@@ -3,15 +3,15 @@ import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, APP_GUARD } from '@nestjs/core';
 import { ThrottlerGuard } from '@nestjs/throttler';
 
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
-import { RedisModule } from '~/infrastructure/cache';
-import { PrismaRlsInterceptor } from '~/common/tenancy';
-import {
-    LoggerInterceptor,
-    ApiResponseInterceptor,
-    HttpExceptionFilter,
-    PrismaExceptionFilter,
-} from '~/common/http';
-import { AuthGuard, OrganizationGuard, RolesGuard } from '~/common/security';
+import { RedisModule } from '~/infrastructure/cache/redis.module';
+import { PrismaRlsInterceptor } from '~/common/tenancy/rls/prisma-rls.interceptor';
+import { LoggerInterceptor } from '~/common/http/interceptors/logger.interceptor';
+import { ApiResponseInterceptor } from '~/common/http/interceptors/api-response.interceptor';
+import { HttpExceptionFilter } from '~/common/http/filters/http-exception.filter';
+import { PrismaExceptionFilter } from '~/common/http/filters/prisma-exception.filter';
+import { AuthGuard } from '~/common/security/guards/auth.guard';
+import { OrganizationGuard } from '~/common/security/guards/organization.guard';
+import { RolesGuard } from '~/common/security/guards/roles.guard';
 
 @Module({
     providers: [

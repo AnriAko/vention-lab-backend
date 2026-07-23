@@ -1,7 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { PrismaService } from '~/infrastructure/database';
-import { userSelectAuth, UserWithPassword } from '~/common/security';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { userSelectAuth } from '~/common/security/auth.types';
+import type { UserWithPassword } from '~/common/security/auth.types';
 
 @Injectable()
 export class AuthRepository {

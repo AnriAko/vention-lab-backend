@@ -1,24 +1,20 @@
 ﻿import { Injectable } from '@nestjs/common';
 
-import {
-    PrismaRlsClient,
-    requestContext,
-    getActiveOrgId,
-} from '~/common/tenancy';
+import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
+import { requestContext } from '~/common/tenancy/request-context/request-context';
+import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
 import type { Prisma } from '~/generated/prisma/client';
 
-import {
-    UserSafe,
-    userSelectSafe,
-    organizationUserScope,
-    addWhere,
-} from '~/infrastructure/database';
+import { userSelectSafe } from '~/infrastructure/database/selects/user.types';
+import type { UserSafe } from '~/infrastructure/database/selects/user.types';
+import { organizationUserScope } from '~/infrastructure/database/scopes/user-scope';
+import { addWhere } from '~/infrastructure/database/scopes/addWhere';
 import { CreateUserDto } from './requests/create-user.request.dto';
 import { UpdateUserDto } from './requests/update-user.request.dto';
 
 import { OrganizationRole } from '~/generated/prisma/enums';
 
-import { AppException } from '~/common/errors';
+import { AppException } from '~/common/errors/app-exception';
 import { UserErrors } from './user.errors';
 
 @Injectable()

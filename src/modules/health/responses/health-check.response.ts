@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { createResponseSchema } from '~/common/api';
+import { createResponseSchema } from '~/common/api/response/response.schema';
 
 const HealthIndicator = z.object({
     status: z.string(),

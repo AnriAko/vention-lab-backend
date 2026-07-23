@@ -9,16 +9,16 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import {
-    ApiEndpoint,
-    EmptyResponse,
-    PaginationQuery,
-    ApiPaginatedResponse,
-    ApiResponse,
-    SEED_USERS,
-} from '~/common/api';
-import { ApiOrganizationHeader, Roles, AppRole } from '~/common/security';
-import { AppException } from '~/common/errors';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { EmptyResponse } from '~/common/api/dto/empty.response';
+import { PaginationQuery } from '~/common/api/pagination/pagination.schema';
+import { ApiPaginatedResponse } from '~/common/api/pagination/pagination.response';
+import { ApiResponse } from '~/common/api/response/response.decorator';
+import { SEED_USERS } from '~/common/api/swagger/seed-examples';
+import { ApiOrganizationHeader } from '~/common/security/decorators/api-organization-header.decorator';
+import { Roles } from '~/common/security/decorators/roles.decorator';
+import { AppRole } from '~/common/security/permissions/app-role.enum';
+import { AppException } from '~/common/errors/app-exception';
 
 import { MemberService } from './member.service';
 import { MemberErrors } from './member.errors';

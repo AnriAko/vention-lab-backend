@@ -1,4 +1,4 @@
-import { getActiveOrgId } from '~/common/tenancy';
+import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
 
 export const organizationUserScope = () => ({
     organizations: {

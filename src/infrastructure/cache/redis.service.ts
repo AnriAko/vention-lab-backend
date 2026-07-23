@@ -8,8 +8,8 @@ import type { ConfigType } from '@nestjs/config';
 import chalk from 'chalk';
 import Redis from 'ioredis';
 import { RedisPrefix } from '~/infrastructure/cache/redis.types';
-import { redisConfig } from '~/config';
-import { LoggerService } from '~/infrastructure/logging';
+import { redisConfig } from '~/config/configuration/redis.config';
+import { LoggerService } from '~/infrastructure/logging/logger.service';
 
 @Injectable()
 export class RedisService implements OnModuleInit, OnModuleDestroy {

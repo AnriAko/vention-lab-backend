@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { AppException } from '~/common/errors';
-import type { Pagination } from '~/common/api';
-import { LoggerService } from '~/infrastructure/logging';
+import { AppException } from '~/common/errors/app-exception';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
+import { LoggerService } from '~/infrastructure/logging/logger.service';
 import { MemberRepository } from './member.repository';
 import { MemberErrors } from './member.errors';
 import { UpdateMemberRoleDto } from './requests/update-member-role.request.dto';

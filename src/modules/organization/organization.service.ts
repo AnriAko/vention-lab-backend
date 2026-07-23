@@ -1,10 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import { AppException } from '~/common/errors';
-import type { Pagination } from '~/common/api';
-import { LoggerService } from '~/infrastructure/logging';
-import { requestContext } from '~/common/tenancy';
-import { UsersService, UserErrors } from '~/modules/user';
+import { AppException } from '~/common/errors/app-exception';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
+import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { requestContext } from '~/common/tenancy/request-context/request-context';
+import { UsersService } from '~/modules/user/user.service';
+import { UserErrors } from '~/modules/user/user.errors';
 import { OrganizationRole } from '~/generated/prisma/client';
 
 import { CreateOrganizationDto } from './requests/create-organization.request.dto';

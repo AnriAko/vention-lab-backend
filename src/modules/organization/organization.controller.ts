@@ -10,15 +10,15 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import {
-    ApiEndpoint,
-    PaginationQuery,
-    ApiPaginatedResponse,
-    ApiResponse,
-    SEED_ORGANIZATIONS,
-} from '~/common/api';
-import { Roles, SkipOrganization, AppRole } from '~/common/security';
-import { AppException } from '~/common/errors';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { PaginationQuery } from '~/common/api/pagination/pagination.schema';
+import { ApiPaginatedResponse } from '~/common/api/pagination/pagination.response';
+import { ApiResponse } from '~/common/api/response/response.decorator';
+import { SEED_ORGANIZATIONS } from '~/common/api/swagger/seed-examples';
+import { Roles } from '~/common/security/decorators/roles.decorator';
+import { SkipOrganization } from '~/common/security/decorators/skip-organization.decorator';
+import { AppRole } from '~/common/security/permissions/app-role.enum';
+import { AppException } from '~/common/errors/app-exception';
 
 import { OrganizationService } from './organization.service';
 import { OrganizationErrors } from './organization.errors';

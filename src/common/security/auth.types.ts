@@ -1,7 +1,11 @@
 import type { Request } from 'express';
-import type { AppRole } from '~/common/security/permissions/app-role.enum';
-import { UserSafe, userSelectSafe } from '~/infrastructure/database';
-import type { AuthCookie } from '~/modules/auth';
+
+import { AuthCookie } from './auth.constants';
+import type { AppRole } from './permissions/app-role.enum';
+import {
+    type UserSafe,
+    userSelectSafe,
+} from '~/infrastructure/database/selects/user.types';
 
 export type AuthUser = {
     userId: string;
@@ -18,10 +22,6 @@ export interface AuthRequest extends Request {
 export type JwtPayload = {
     sub: string;
 };
-
-export const AUTH_COOKIE = {
-    REFRESH_TOKEN: 'refreshToken',
-} as const;
 
 export const AUTH_HEADER = {
     AUTHORIZATION: 'authorization',
@@ -43,3 +43,5 @@ export const userSelectAuth = {
     ...userSelectSafe,
     password: true,
 } as const;
+
+export { AuthCookie };

@@ -1,8 +1,11 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ApiEndpoint, ApiResponse } from '~/common/api';
-import { ApiOrganizationHeader, Roles, AppRole } from '~/common/security';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { ApiResponse } from '~/common/api/response/response.decorator';
+import { ApiOrganizationHeader } from '~/common/security/decorators/api-organization-header.decorator';
+import { Roles } from '~/common/security/decorators/roles.decorator';
+import { AppRole } from '~/common/security/permissions/app-role.enum';
 
 import { SearchDto } from './requests/search.request.dto';
 import { SearchResponse } from './responses/search.response';

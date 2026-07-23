@@ -1,6 +1,6 @@
 import type { Prisma } from '~/generated/prisma/client';
 
-import { requestContext } from '~/common/tenancy';
+import { requestContext } from '~/common/tenancy/request-context/request-context';
 
 export const getPrismaTransaction = ():
     | Prisma.TransactionClient

@@ -2,7 +2,7 @@ import { Injectable, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { PrismaClient, Prisma } from '~/generated/prisma/client';
 import { ConfigService } from '@nestjs/config';
-import { LoggerService } from '~/infrastructure/logging';
+import { LoggerService } from '~/infrastructure/logging/logger.service';
 
 import {
     QueryEvent,

@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { SEED_PASSWORD, SEED_USERS } from '~/common/api';
+import { SEED_PASSWORD, SEED_USERS } from '~/common/api/swagger/seed-examples';
 
 export const UpdateUser = z
     .object({

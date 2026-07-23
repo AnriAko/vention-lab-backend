@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { SearchDto } from './requests/search.request.dto';
-import { PrismaRlsClient } from '~/common/tenancy';
+import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
 import { searchOrganizationsQuery, searchUsersQuery } from './search.query';
-import { userSelectSafe } from '~/infrastructure/database';
+import { userSelectSafe } from '~/infrastructure/database/selects/user.types';
 
 @Injectable()
 export class SearchRepository {
