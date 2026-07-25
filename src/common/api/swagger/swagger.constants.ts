@@ -1,6 +1,7 @@
 import { AUTH_HEADER } from '~/common/security/auth.types';
 import { AuthCookie } from '~/common/security/auth.constants';
 import {
+    SEED_FILES,
     SEED_LOGIN_MEMBER,
     SEED_LOGIN_ORG_ADMIN,
     SEED_LOGIN_OWNER,
@@ -60,6 +61,8 @@ Multi-tenant NestJS API with JWT auth, organization scoping (\`${AUTH_HEADER.ORG
 | Owner user | \`${SEED_USERS.owner.id}\` |
 | CatFans admin | \`${SEED_ORGANIZATIONS.catFans.adminId}\` |
 | Demo member (user1) | \`${SEED_USERS.demoMember.id}\` |
+| Owner sales report file | \`${SEED_FILES.ownerSalesReport.id}\` (\`${SEED_FILES.ownerSalesReport.name}\`) |
+| Owner team budget file | \`${SEED_FILES.ownerTeamBudget.id}\` (\`${SEED_FILES.ownerTeamBudget.name}\`) |
 
 ### Roles
 

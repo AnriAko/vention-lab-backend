@@ -4,7 +4,7 @@ import { PrismaClient } from '../../src/generated/prisma/client';
 import {
     SEED_ORGANIZATIONS,
     SEED_USERS,
-} from '../../src/common/swagger/seed-examples';
+} from '../../src/common/api/swagger/seed-examples';
 
 const TOTAL_MESSAGES = 500;
 const BATCH_SIZE = 100;

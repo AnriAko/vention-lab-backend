@@ -3,6 +3,7 @@ import {
     ExecutionContext,
     Injectable,
     NestInterceptor,
+    StreamableFile,
 } from '@nestjs/common';
 import { Observable, map } from 'rxjs';
 
@@ -14,7 +15,7 @@ function isAlreadyWrapped(value: unknown): value is ApiSuccessEnvelope {
         typeof value === 'object' &&
         value !== null &&
         'success' in value &&
-        (value as { success: unknown }).success === true &&
+        value.success === true &&
         'data' in value &&
         'timestamp' in value
     );
@@ -28,7 +29,7 @@ export class ApiResponseInterceptor implements NestInterceptor {
     ): Observable<unknown> {
         return next.handle().pipe(
             map((data) => {
-                if (isAlreadyWrapped(data)) {
+                if (data instanceof StreamableFile || isAlreadyWrapped(data)) {
                     return data;
                 }
 

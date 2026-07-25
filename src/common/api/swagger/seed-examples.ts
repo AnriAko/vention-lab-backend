@@ -53,3 +53,23 @@ export const SEED_LOGIN_MEMBER = {
     email: SEED_USERS.demoMember.email,
     password: SEED_PASSWORD,
 } as const;
+
+export const SEED_FILES = {
+    ownerSalesReport: {
+        id: 'f1111111-1111-4111-8111-111111111111',
+        name: 'owner-sales-report.xlsx',
+        storageKey: 'seed-owner-sales-report.xlsx',
+        ownerId: SEED_USERS.owner.id,
+        organizationId: SEED_ORGANIZATIONS.catFans.id,
+        contentType:
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    },
+    ownerTeamBudget: {
+        id: 'f2222222-2222-4222-8222-222222222222',
+        name: 'owner-team-budget.xls',
+        storageKey: 'seed-owner-team-budget.xls',
+        ownerId: SEED_USERS.owner.id,
+        organizationId: SEED_ORGANIZATIONS.catFans.id,
+        contentType: 'application/vnd.ms-excel',
+    },
+} as const;

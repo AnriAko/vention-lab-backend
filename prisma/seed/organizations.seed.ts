@@ -1,6 +1,6 @@
 import { PrismaClient } from '../../src/generated/prisma/client';
 
-import { SEED_ORGANIZATIONS } from '../../src/common/swagger/seed-examples';
+import { SEED_ORGANIZATIONS } from '../../src/common/api/swagger/seed-examples';
 
 const ORGANIZATIONS = Object.values(SEED_ORGANIZATIONS);
 

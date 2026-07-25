@@ -10,7 +10,7 @@ import {
     SEED_ORGANIZATIONS,
     SEED_PASSWORD,
     SEED_USERS,
-} from '../../src/common/swagger/seed-examples';
+} from '../../src/common/api/swagger/seed-examples';
 
 const TOTAL_USERS = 10_000;
 const BATCH_SIZE = 5000;
