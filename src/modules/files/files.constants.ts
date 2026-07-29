@@ -1,7 +1,3 @@
-import path from 'node:path';
-
-export const FILES_STORAGE_DIR = path.join(process.cwd(), 'files');
-
 export const FILE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
 export const ALLOWED_FILE_TYPES = {

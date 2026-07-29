@@ -8,7 +8,7 @@ import { AUTH_GUEST } from '~/common/security/auth.types';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 
 import { FileErrors } from './files.errors';
-import { FileStorageService } from './file-storage.service';
+import { FileStorageService } from '~/infrastructure/file-storage/file-storage.service';
 import { FilesRepository } from './files.repository';
 import type { MulterUploadedFile } from './types/uploaded-file.type';
 import { calculateSha256 } from './utils/calculate-sha256';

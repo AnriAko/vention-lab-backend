@@ -25,6 +25,10 @@ export const envSchema = z.object({
     ARGON2_TOKEN_MEMORY_COST: z.coerce.number().default(16384), // 2 ** 14
     ARGON2_TOKEN_TIME_COST: z.coerce.number().default(2),
     ARGON2_TOKEN_PARALLELISM: z.coerce.number().default(1),
+
+    FIREBASE_PROJECT_ID: z.string(),
+    FIREBASE_STORAGE_BUCKET: z.string(),
+    FIREBASE_SERVICE_ACCOUNT_PATH: z.string(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -65,4 +69,10 @@ export type Argon2Config = {
         timeCost: number;
         parallelism: number;
     };
+};
+
+export type FirebaseConfig = {
+    projectId: Env['FIREBASE_PROJECT_ID'];
+    storageBucket: Env['FIREBASE_STORAGE_BUCKET'];
+    serviceAccountPath: Env['FIREBASE_SERVICE_ACCOUNT_PATH'];
 };

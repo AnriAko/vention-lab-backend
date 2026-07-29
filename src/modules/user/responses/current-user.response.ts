@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { createResponseSchema } from '~/common/api/response/response.schema';
 import { UserResponse } from './user.response';

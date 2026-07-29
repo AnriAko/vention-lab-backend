@@ -43,7 +43,9 @@ lerna-debug.log*
 .env.production.local
 .env.local
 
-# Uploaded files
+# Firebase service account credentials
+/credentials
+
 /files
 
 # temp directory
