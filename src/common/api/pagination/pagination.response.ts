@@ -20,7 +20,7 @@ export function createPaginatedSchema<T extends z.ZodTypeAny>(item: T) {
         pagination: PaginationMetaSchema,
     });
 }
-
+//TODO move cache to cache module
 const paginatedResponseCache = new WeakMap<
     ResponseSchema,
     ResponseSchema<ReturnType<typeof createPaginatedSchema>>
