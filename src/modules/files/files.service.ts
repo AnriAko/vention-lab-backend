@@ -14,6 +14,7 @@ import type { MulterUploadedFile } from './types/uploaded-file.type';
 import { calculateSha256 } from './utils/calculate-sha256';
 import { validateUploadedFile } from './utils/validate-uploaded-file';
 import { buildStoredFileName } from '~/modules/files/utils/build-stored-filename';
+import { buildContentDisposition } from '~/modules/files/utils/build-content-disposition';
 
 @Injectable()
 export class FilesService {
@@ -45,9 +46,7 @@ export class FilesService {
 
         return new StreamableFile(stream, {
             type: file.contentType,
-            disposition: this.fileStorageService.buildContentDisposition(
-                file.name
-            ),
+            disposition: buildContentDisposition(file.name),
             length: file.size,
         });
     }
