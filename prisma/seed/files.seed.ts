@@ -1,4 +1,6 @@
 import { createHash } from 'node:crypto';
+import { promisify } from 'node:util';
+import { gzip as zlibGzip } from 'node:zlib';
 
 import { FileStatus, PrismaClient } from '../../src/generated/prisma/client';
 import { faker } from '@faker-js/faker';
@@ -13,6 +15,8 @@ import {
     initializeFirebaseAdmin,
 } from '../../src/infrastructure/file-storage/firebase-admin.app';
 import { loadPrismaEnv } from '../../src/config/prisma/prisma-env';
+
+const gzip = promisify(zlibGzip);
 
 const TOTAL_FILES = 200;
 const BATCH_SIZE = 100;
@@ -35,8 +39,9 @@ async function seedOwnerExampleFiles(prisma: PrismaClient) {
     for (const file of Object.values(SEED_FILES)) {
         const content = Buffer.from(`seed-file:${file.id}:${file.name}\n`);
         const checksum = createHash('sha256').update(content).digest('hex');
+        const compressed = await gzip(content);
 
-        await bucket.file(file.storageKey).save(content);
+        await bucket.file(file.storageKey).save(compressed);
 
         await prisma.file.create({
             data: {
@@ -114,7 +119,7 @@ export async function seedFiles(prisma: PrismaClient) {
             status: FileStatus.PROCESSED,
             contentType:
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            storageKey: `${faker.string.uuid()}.xlsx`,
+            storageKey: `${faker.string.uuid()}.xlsx.gz`,
             processingError: null,
         });
 

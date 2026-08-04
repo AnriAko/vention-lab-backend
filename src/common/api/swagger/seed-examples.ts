@@ -58,7 +58,7 @@ export const SEED_FILES = {
     ownerSalesReport: {
         id: 'f1111111-1111-4111-8111-111111111111',
         name: 'owner-sales-report.xlsx',
-        storageKey: 'seed-owner-sales-report.xlsx',
+        storageKey: 'seed-owner-sales-report.xlsx.gz',
         ownerId: SEED_USERS.owner.id,
         organizationId: SEED_ORGANIZATIONS.catFans.id,
         contentType:
@@ -67,7 +67,7 @@ export const SEED_FILES = {
     ownerTeamBudget: {
         id: 'f2222222-2222-4222-8222-222222222222',
         name: 'owner-team-budget.xls',
-        storageKey: 'seed-owner-team-budget.xls',
+        storageKey: 'seed-owner-team-budget.xls.gz',
         ownerId: SEED_USERS.owner.id,
         organizationId: SEED_ORGANIZATIONS.catFans.id,
         contentType: 'application/vnd.ms-excel',

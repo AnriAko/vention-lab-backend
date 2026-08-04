@@ -95,7 +95,7 @@ export class FilesController {
         summary: 'Upload file',
         roles: [AppRole.USER],
         description:
-            'Uploads a single file (`multipart/form-data`, field name `file`). Validates MIME type and extension, computes SHA-256, deduplicates by checksum within the organization, and stores new files in Firebase Storage.\n\n' +
+            'Uploads a single file (`multipart/form-data`, field name `file`). Validates MIME type and extension, computes SHA-256, deduplicates by checksum within the organization, gzip-compresses the payload, and stores it in Firebase Storage. Downloads decompress transparently so clients receive the original file.\n\n' +
             'Validation errors: `FILE_REQUIRED`, `FILE_EMPTY`, `FILE_TOO_LARGE`, `FILE_INVALID_TYPE`, `FILE_INVALID_EXTENSION`, `FILE_TYPE_MISMATCH`.',
     })
     @ApiConsumes('multipart/form-data')

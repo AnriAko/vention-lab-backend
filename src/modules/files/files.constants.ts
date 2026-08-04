@@ -1,5 +1,7 @@
 export const FILE_MAX_SIZE_BYTES = 10 * 1024 * 1024;
 
+export const COMPRESSED_STORAGE_SUFFIX = '.gz';
+
 export const ALLOWED_FILE_TYPES = {
     'application/vnd.ms-excel': ['.xls'],
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
