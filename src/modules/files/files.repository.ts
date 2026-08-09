@@ -60,7 +60,7 @@ export class FilesRepository {
                 contentType: data.contentType,
                 checksum: data.checksum,
                 storageKey: data.storageKey,
-                status: data.status ?? FileStatus.PROCESSED,
+                status: data.status ?? FileStatus.UPLOADED,
             },
             select: fileSelect,
         });
