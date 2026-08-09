@@ -43,4 +43,19 @@ export const FileErrors = {
         message: 'Failed to store file',
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
     },
+    INVALID_ENCODING: {
+        code: 'FILE_INVALID_ENCODING',
+        message: 'File encoding is invalid or unsupported',
+        statusCode: HttpStatus.BAD_REQUEST,
+    },
+    INFECTED: {
+        code: 'FILE_INFECTED',
+        message: 'File failed antivirus scan',
+        statusCode: HttpStatus.UNPROCESSABLE_ENTITY,
+    },
+    AV_UNAVAILABLE: {
+        code: 'FILE_AV_UNAVAILABLE',
+        message: 'Antivirus service is unavailable',
+        statusCode: HttpStatus.SERVICE_UNAVAILABLE,
+    },
 } as const satisfies Record<string, AppErrorDefinition>;

@@ -5,14 +5,16 @@ import type { Pagination } from '~/common/api/pagination/pagination.schema';
 import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { AUTH_GUEST } from '~/common/security/auth.types';
+import { ClamAvService } from '~/infrastructure/antivirus/clamav.service';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
-
-import { FileErrors } from './files.errors';
 import { FileStorageService } from '~/infrastructure/file-storage/file-storage.service';
+
+import { FILE_ENCODING_GZIP } from './files.constants';
+import { FileErrors } from './files.errors';
 import { FilesRepository } from './files.repository';
 import type { MulterUploadedFile } from './types/uploaded-file.type';
 import { calculateSha256 } from './utils/calculate-sha256';
-import { gzipBuffer } from './utils/compress-buffer';
+import { gunzipBuffer } from './utils/gunzip-buffer';
 import { openStoredReadStream } from './utils/decompress-stream';
 import { validateUploadedFile } from './utils/validate-uploaded-file';
 import { buildStoredFileName } from '~/modules/files/utils/build-stored-filename';
@@ -23,6 +25,7 @@ export class FilesService {
     constructor(
         private readonly filesRepository: FilesRepository,
         private readonly fileStorageService: FileStorageService,
+        private readonly clamAvService: ClamAvService,
         private readonly logger: LoggerService
     ) {}
 
@@ -55,10 +58,40 @@ export class FilesService {
         });
     }
 
-    async uploadFile(file: MulterUploadedFile | undefined) {
-        const validated = validateUploadedFile(file);
-        const checksum = calculateSha256(validated.buffer);
+    async uploadFile(
+        file: MulterUploadedFile | undefined,
+        fileEncoding?: string
+    ) {
+        if (!file) {
+            throw new AppException(FileErrors.REQUIRED);
+        }
 
+        const encoding = fileEncoding?.trim().toLowerCase();
+        const isGzipEncoded = encoding === FILE_ENCODING_GZIP;
+
+        if (encoding && !isGzipEncoded) {
+            throw new AppException(FileErrors.INVALID_ENCODING, {
+                details: {
+                    encoding: fileEncoding,
+                    allowedEncodings: [FILE_ENCODING_GZIP],
+                },
+            });
+        }
+
+        const storedBuffer = file.buffer;
+        const contentBuffer = isGzipEncoded
+            ? await gunzipBuffer(file.buffer)
+            : file.buffer;
+
+        const validated = validateUploadedFile({
+            ...file,
+            buffer: contentBuffer,
+            size: contentBuffer.length,
+        });
+
+        await this.clamAvService.scanBuffer(validated.buffer);
+
+        const checksum = calculateSha256(validated.buffer);
         const existing = await this.filesRepository.findByChecksum(checksum);
 
         if (existing) {
@@ -70,10 +103,12 @@ export class FilesService {
 
         const ownerId = this.getActiveUserId();
         const organizationId = getActiveOrgId();
-        const storageKey = buildStoredFileName(validated.extension);
-        const compressed = await gzipBuffer(validated.buffer);
+        const storageKey = buildStoredFileName(
+            validated.extension,
+            isGzipEncoded
+        );
 
-        await this.fileStorageService.writeFile(storageKey, compressed);
+        await this.fileStorageService.writeFile(storageKey, storedBuffer);
 
         try {
             const created = await this.filesRepository.create({
@@ -87,7 +122,7 @@ export class FilesService {
             });
 
             this.logger.log(
-                `[FilesService] uploaded fileId=${created.id} storageKey=${storageKey} originalSize=${validated.size} storedSize=${compressed.length}`
+                `[FilesService] uploaded fileId=${created.id} storageKey=${storageKey} originalSize=${validated.size} storedSize=${storedBuffer.length} encoding=${encoding ?? 'identity'}`
             );
 
             return created;

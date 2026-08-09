@@ -7,6 +7,22 @@ services:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: postgres
             POSTGRES_DB: app_db
+        command:
+            - postgres
+            - -c
+            - shared_buffers=128MB
+            - -c
+            - effective_cache_size=384MB
+            - -c
+            - work_mem=16MB
+            - -c
+            - maintenance_work_mem=64MB
+            - -c
+            - max_connections=100
+            - -c
+            - wal_buffers=16MB
+            - -c
+            - random_page_cost=1.1
         ports:
             - '5432:5432'
         volumes:
@@ -19,8 +35,18 @@ services:
             timeout: 5s
             retries: 5
             start_period: 10s
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.00'
+                    memory: 768M
+                reservations:
+                    cpus: '0.25'
+                    memory: 384M
 
+    # Optional: npm run docker:dev:tools
     pgadmin:
+        profiles: [tools]
         image: dpage/pgadmin4
         restart: always
         environment:
@@ -41,6 +67,14 @@ services:
             interval: 30s
             timeout: 10s
             retries: 3
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.50'
+                    memory: 384M
+                reservations:
+                    cpus: '0.10'
+                    memory: 128M
 
     redis:
         image: redis:7
@@ -56,6 +90,14 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.50'
+                    memory: 256M
+                reservations:
+                    cpus: '0.10'
+                    memory: 64M
 
     rabbitmq:
         image: rabbitmq:4-management
@@ -72,12 +114,49 @@ services:
             interval: 15s
             timeout: 10s
             retries: 5
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.75'
+                    memory: 512M
+                reservations:
+                    cpus: '0.20'
+                    memory: 256M
+
+    # Optional / heavy (~2GB): npm run docker:dev:av
+    clamav:
+        profiles: [antivirus]
+        image: clamav/clamav:stable
+        restart: always
+        environment:
+            CLAMD_CONF_ConcurrentDatabaseReload: 'no'
+        ports:
+            - '3310:3310'
+        volumes:
+            - clamav-data:/var/lib/clamav
+        networks:
+            - backend
+        healthcheck:
+            test: ['CMD-SHELL', 'clamdscan --ping || exit 1']
+            interval: 60s
+            timeout: 15s
+            retries: 10
+            start_period: 240s
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.00'
+                    memory: 2G
+                reservations:
+                    cpus: '0.25'
+                    memory: 1536M
 
 volumes:
     postgres-data:
     pgadmin-data:
     redis-data:
     rabbitmq-data:
+    clamav-data:
 
 networks:
     backend:
