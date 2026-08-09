@@ -86,7 +86,7 @@ model File {
 
     name            String
     size            Int
-    status          FileStatus @default(PROCESSED)
+    status          FileStatus @default(UPLOADED)
     contentType     String
     checksum        String     @default("")
     storageKey      String
@@ -139,7 +139,8 @@ enum OrganizationRole {
 }
 
 enum FileStatus {
-    PROCESSED
-    PROCESSING
-    ERROR
+   UPLOADED
+   PROCESSING
+   PROCESSED
+   ERROR
 }

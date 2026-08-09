@@ -50,7 +50,7 @@ async function seedOwnerExampleFiles(prisma: PrismaClient) {
                 organizationId: file.organizationId,
                 name: file.name,
                 size: content.length,
-                status: FileStatus.PROCESSED,
+                status: FileStatus.UPLOADED,
                 contentType: file.contentType,
                 checksum,
                 storageKey: file.storageKey,
@@ -116,7 +116,7 @@ export async function seedFiles(prisma: PrismaClient) {
                 min: 1000,
                 max: 5_000_000,
             }),
-            status: FileStatus.PROCESSED,
+            status: FileStatus.UPLOADED,
             contentType:
                 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
             storageKey: `${faker.string.uuid()}.xlsx.gz`,
