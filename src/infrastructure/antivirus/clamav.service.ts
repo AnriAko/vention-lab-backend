@@ -53,9 +53,7 @@ export class ClamAvService implements OnModuleInit {
             await this.scanner.ping();
 
             console.log(
-                chalk.green('[System]') +
-                    ' ' +
-                    chalk.white('ClamAV connected')
+                chalk.green('[System]') + ' ' + chalk.white('ClamAV connected')
             );
         } catch (error) {
             this.scanner = null;

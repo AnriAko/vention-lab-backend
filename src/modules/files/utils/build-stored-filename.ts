@@ -12,7 +12,5 @@ export const buildStoredFileName = (
 
     const baseName = `${randomUUID()}${safeExtension}`;
 
-    return compressed
-        ? `${baseName}${COMPRESSED_STORAGE_SUFFIX}`
-        : baseName;
+    return compressed ? `${baseName}${COMPRESSED_STORAGE_SUFFIX}` : baseName;
 };
