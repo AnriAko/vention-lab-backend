@@ -102,4 +102,48 @@ export class ClamAvService implements OnModuleInit {
             throw new AppException(FileErrors.AV_UNAVAILABLE);
         }
     }
+
+    async checkHealth(): Promise<{
+        status: 'up' | 'down';
+        enabled: boolean;
+        message: string;
+    }> {
+        if (!this.config.enabled) {
+            return {
+                status: 'up',
+                enabled: false,
+                message:
+                    'Antivirus is not running (CLAMAV_ENABLED=false). File uploads skip virus scanning.',
+            };
+        }
+
+        if (!this.scanner) {
+            return {
+                status: 'down',
+                enabled: true,
+                message:
+                    'Antivirus is enabled but ClamAV is not connected or failed to initialize.',
+            };
+        }
+
+        try {
+            await this.scanner.ping();
+            return {
+                status: 'up',
+                enabled: true,
+                message: 'Antivirus is running and responding to health checks.',
+            };
+        } catch (error) {
+            this.logger.error(
+                `ClamAV health check failed: ${error instanceof Error ? error.message : String(error)}`
+            );
+
+            return {
+                status: 'down',
+                enabled: true,
+                message:
+                    'Antivirus is enabled but ClamAV did not respond to the health check.',
+            };
+        }
+    }
 }
