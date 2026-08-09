@@ -131,7 +131,8 @@ export class ClamAvService implements OnModuleInit {
             return {
                 status: 'up',
                 enabled: true,
-                message: 'Antivirus is running and responding to health checks.',
+                message:
+                    'Antivirus is running and responding to health checks.',
             };
         } catch (error) {
             this.logger.error(
