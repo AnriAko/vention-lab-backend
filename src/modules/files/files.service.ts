@@ -8,10 +8,13 @@ import { AUTH_GUEST } from '~/common/security/auth.types';
 import { ClamAvService } from '~/infrastructure/antivirus/clamav.service';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 import { FileStorageService } from '~/infrastructure/file-storage/file-storage.service';
+import { FileProcessingPublisher } from '~/infrastructure/messaging/file-processing/file-processing.publisher';
+import { FileStatus } from '~/generated/prisma/enums';
 
 import { FILE_ENCODING_GZIP } from './files.constants';
 import { FileErrors } from './files.errors';
 import { FilesRepository } from './files.repository';
+import { FilesStatusNotifier } from './files-status.notifier';
 import type { MulterUploadedFile } from './types/uploaded-file.type';
 import { calculateSha256 } from './utils/calculate-sha256';
 import { gunzipBuffer } from './utils/gunzip-buffer';
@@ -26,6 +29,8 @@ export class FilesService {
         private readonly filesRepository: FilesRepository,
         private readonly fileStorageService: FileStorageService,
         private readonly clamAvService: ClamAvService,
+        private readonly fileProcessingPublisher: FileProcessingPublisher,
+        private readonly statusNotifier: FilesStatusNotifier,
         private readonly logger: LoggerService
     ) {}
 
@@ -110,8 +115,9 @@ export class FilesService {
 
         await this.fileStorageService.writeFile(storageKey, storedBuffer);
 
+        let uploaded;
         try {
-            const created = await this.filesRepository.create({
+            uploaded = await this.filesRepository.create({
                 ownerId,
                 organizationId,
                 name: validated.originalName,
@@ -119,17 +125,59 @@ export class FilesService {
                 contentType: validated.mimeType,
                 checksum,
                 storageKey,
+                status: FileStatus.UPLOADED,
             });
-
-            this.logger.log(
-                `[FilesService] uploaded fileId=${created.id} storageKey=${storageKey} originalSize=${validated.size} storedSize=${storedBuffer.length} encoding=${encoding ?? 'identity'}`
-            );
-
-            return created;
         } catch (error) {
             await this.fileStorageService.remove(storageKey);
             throw error;
         }
+
+        this.statusNotifier.notify({
+            fileId: uploaded.id,
+            organizationId,
+            status: FileStatus.UPLOADED,
+            error: null,
+        });
+
+        try {
+            await this.fileProcessingPublisher.publishStorageFinalized({
+                fileId: uploaded.id,
+                storageKey: uploaded.storageKey,
+                originalFilename: uploaded.name,
+                contentType: uploaded.contentType,
+                size: uploaded.size,
+                organizationId: uploaded.organizationId,
+                ownerId: uploaded.ownerId,
+                publishedAt: new Date().toISOString(),
+            });
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to enqueue file for processing';
+
+            uploaded = await this.filesRepository.updateStatus(uploaded.id, {
+                status: FileStatus.FAILED,
+                processingError: message,
+            });
+
+            this.statusNotifier.notify({
+                fileId: uploaded.id,
+                organizationId,
+                status: FileStatus.FAILED,
+                error: message,
+            });
+
+            this.logger.error(
+                `[FilesService] publish failed fileId=${uploaded.id} ${message}`
+            );
+        }
+
+        this.logger.log(
+            `[FilesService] uploaded fileId=${uploaded.id} storageKey=${storageKey} originalSize=${validated.size} storedSize=${storedBuffer.length} encoding=${encoding ?? 'identity'} status=${uploaded.status}`
+        );
+
+        return uploaded;
     }
 
     async remove(id: string): Promise<null> {

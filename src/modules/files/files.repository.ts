@@ -8,6 +8,7 @@ import { addWhere } from '~/infrastructure/database/scopes/addWhere';
 import { activeTenantScope } from '~/infrastructure/database/scopes/organization-scope';
 import { fileSelect } from '~/infrastructure/database/selects/file.types';
 import { FileStatus } from '~/generated/prisma/enums';
+import type { FileSafe } from '~/infrastructure/database/selects/file.types';
 
 export type CreateFileData = {
     ownerId: string;
@@ -61,6 +62,26 @@ export class FilesRepository {
                 checksum: data.checksum,
                 storageKey: data.storageKey,
                 status: data.status ?? FileStatus.UPLOADED,
+            },
+            select: fileSelect,
+        });
+    }
+
+    updateStatus(
+        id: string,
+        data: {
+            status: FileStatus;
+            processingError?: string | null;
+        }
+    ): Promise<FileSafe> {
+        return this.prisma.file.update({
+            where: { id },
+            data: {
+                status: data.status,
+                processingError:
+                    data.processingError === undefined
+                        ? undefined
+                        : data.processingError,
             },
             select: fileSelect,
         });
