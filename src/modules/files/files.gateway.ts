@@ -144,7 +144,10 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
 
         const [scheme, value] = header.split(' ');
-        if (scheme?.toLowerCase() !== AUTH_SCHEME.BEARER.toLowerCase() || !value) {
+        if (
+            scheme?.toLowerCase() !== AUTH_SCHEME.BEARER.toLowerCase() ||
+            !value
+        ) {
             return undefined;
         }
 
