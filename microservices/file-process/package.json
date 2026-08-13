@@ -1,0 +1,35 @@
+{
+    "name": "file-process",
+    "version": "0.0.1",
+    "private": true,
+    "license": "UNLICENSED",
+    "scripts": {
+        "build": "nest build",
+        "start": "cross-env NODE_ENV=production node dist/main",
+        "start:dev": "cross-env NODE_ENV=development nest start --watch",
+        "start:prod": "cross-env NODE_ENV=production node dist/main",
+        "docker:build": "docker build -f dockerfile -t vention-file-process ../..",
+        "docker:up": "docker compose -f ../../compose.dev.yml up -d --build file-process",
+        "docker:down": "docker compose -f ../../compose.dev.yml stop file-process",
+        "docker:logs": "docker compose -f ../../compose.dev.yml logs -f file-process"
+    },
+    "dependencies": {
+        "@nestjs/common": "^11.1.27",
+        "@nestjs/config": "^4.0.4",
+        "@nestjs/core": "^11.1.27",
+        "amqplib": "^2.0.1",
+        "cross-env": "^10.1.0",
+        "exceljs": "^4.4.0",
+        "firebase-admin": "^14.2.0",
+        "reflect-metadata": "^0.2.2",
+        "rxjs": "^7.8.1",
+        "zod": "^4.4.3"
+    },
+    "devDependencies": {
+        "@nestjs/cli": "^11.0.0",
+        "@nestjs/schematics": "^11.0.0",
+        "@types/amqplib": "^0.10.8",
+        "@types/node": "^24.13.3",
+        "typescript": "^5.7.3"
+    }
+}
