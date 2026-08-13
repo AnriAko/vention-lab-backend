@@ -55,6 +55,7 @@ model UsersOrganizations {
     organizationId String
     isDeleted      Boolean   @default(false)
     deletedAt      DateTime?
+    moneySpent     Decimal   @default(0) @db.Decimal(19, 4)
 
     user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
     organization Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
@@ -139,8 +140,8 @@ enum OrganizationRole {
 }
 
 enum FileStatus {
-   UPLOADED
-   PROCESSING
-   PROCESSED
-   ERROR
+    UPLOADED
+    PROCESSING
+    COMPLETED
+    FAILED
 }
