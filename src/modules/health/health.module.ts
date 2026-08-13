@@ -4,7 +4,7 @@ import { PrismaModule } from '~/infrastructure/database/prisma.module';
 import { RedisModule } from '~/infrastructure/cache/redis.module';
 import { RabbitmqModule } from '~/infrastructure/messaging/rabbitmq.module';
 import { PrismaHealthIndicator } from '@nestjs/terminus';
-import { HealthController } from '~/modules/health/health.controller';
+import { HealthController } from './health.controller';
 
 @Module({
     imports: [TerminusModule, PrismaModule, RedisModule, RabbitmqModule],

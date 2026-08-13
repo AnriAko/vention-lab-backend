@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
-import { AppException } from '~/common/errors';
+import { AppException } from '~/common/errors/app-exception';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 import { MemberRepository } from './member.repository';
 import { MemberErrors } from './member.errors';
@@ -13,34 +14,20 @@ export class MemberService {
         private readonly logger: LoggerService
     ) {}
 
-    async findAll(page: number, limit: number) {
-        const result = await this.memberRepository.findAllOffset(page, limit);
-        return {
-            items: result.data,
-            pagination: result.meta,
-        };
+    findAll(pagination: Pagination) {
+        return this.memberRepository.findAll(pagination);
     }
 
-    async findAllDeleted(page: number, limit: number) {
-        const result = await this.memberRepository.findAllDeletedOffset(
-            page,
-            limit
-        );
-        return {
-            items: result.data,
-            pagination: result.meta,
-        };
+    findAllDeleted(pagination: Pagination) {
+        return this.memberRepository.findAllDeleted(pagination);
     }
 
-    async findAllAdmins(page: number, limit: number) {
-        const result = await this.memberRepository.findAllAdminsOffset(
-            page,
-            limit
-        );
-        return {
-            items: result.data,
-            pagination: result.meta,
-        };
+    findAllAdmins(pagination: Pagination) {
+        return this.memberRepository.findAllAdmins(pagination);
+    }
+
+    findById(userId: string) {
+        return this.memberRepository.findById(userId);
     }
 
     async assignRole(userId: string, dto: UpdateMemberRoleDto) {
@@ -60,10 +47,28 @@ export class MemberService {
             throw new AppException(MemberErrors.NOT_FOUND);
         }
 
-        await this.memberRepository.remove(userId);
+        await this.memberRepository.softRemove(userId);
 
-        this.logger.log(`[MemberService] removed userId=${userId}`);
+        this.logger.log(
+            `[MemberService] soft-removed userId=${userId} from organization`
+        );
 
         return null;
+    }
+
+    async restore(userId: string) {
+        const member = await this.memberRepository.findDeletedById(userId);
+
+        if (!member) {
+            throw new AppException(MemberErrors.NOT_FOUND);
+        }
+
+        const restored = await this.memberRepository.restore(userId);
+
+        this.logger.log(
+            `[MemberService] restored userId=${userId} in organization`
+        );
+
+        return restored;
     }
 }

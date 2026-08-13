@@ -7,8 +7,8 @@ import {
 import type { ConfigType } from '@nestjs/config';
 import chalk from 'chalk';
 import Redis from 'ioredis';
-import { RedisPrefix } from '~/common/types/redis.types';
-import { redisConfig } from '~/config';
+import { RedisPrefix } from '~/infrastructure/cache/redis.types';
+import { redisConfig } from '~/config/configuration/redis.config';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 
 @Injectable()

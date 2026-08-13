@@ -4,7 +4,7 @@ import { z } from 'zod';
 import {
     SEED_ORGANIZATIONS,
     SEED_PASSWORD,
-} from '~/common/swagger/seed-examples';
+} from '~/common/api/swagger/seed-examples';
 
 export const CreateUser = z.object({
     email: z.email().meta({

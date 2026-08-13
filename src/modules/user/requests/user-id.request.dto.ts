@@ -1,7 +1,7 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { SEED_USERS } from '~/common/swagger/seed-examples';
+import { SEED_USERS } from '~/common/api/swagger/seed-examples';
 
 export const UserId = z.object({
     id: z.uuid().meta({

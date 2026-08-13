@@ -9,19 +9,21 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ApiEndpoint } from '~/common/decorators/api-endpoint.decorator';
-import { ApiOrganizationHeader } from '~/common/decorators/api-organization-header.decorator';
-import { Roles } from '~/common/decorators/roles.decorator';
-import { EmptyResponse } from '~/common/dto/empty.response';
-import { OffsetPaginationQuery } from '~/common/dto/pagination.request';
-import { ApiResponse } from '~/common/dto/response-schema';
-import { AppRole } from '~/common/types/app-role.enum';
-import { SEED_USERS } from '~/common/swagger/seed-examples';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { EmptyResponse } from '~/common/api/dto/empty.response';
+import { PaginationQuery } from '~/common/api/pagination/pagination.schema';
+import { ApiPaginatedResponse } from '~/common/api/pagination/pagination.response';
+import { ApiResponse } from '~/common/api/response/response.decorator';
+import { SEED_USERS } from '~/common/api/swagger/seed-examples';
+import { ApiOrganizationHeader } from '~/common/security/decorators/api-organization-header.decorator';
+import { Roles } from '~/common/security/decorators/roles.decorator';
+import { AppRole } from '~/common/security/permissions/app-role.enum';
+import { AppException } from '~/common/errors/app-exception';
 
 import { MemberService } from './member.service';
+import { MemberErrors } from './member.errors';
 import { memberParamsDto } from './requests/member-id.request.dto';
 import { UpdateMemberRoleDto } from './requests/update-member-role.request.dto';
-import { MemberListResponse } from './responses/organization-member-list.response';
 import { MemberResponse } from './responses/organization-member.response';
 
 @ApiTags('members')
@@ -36,11 +38,11 @@ export class MemberController {
         summary: 'List members',
         roles: [AppRole.ADMIN],
         description:
-            'Offset-paginated members of the active organization (`x-organization-id`). Sorted by name.',
+            'Offset-paginated active members of the organization (`x-organization-id`). Sorted by name.',
     })
-    @ApiResponse(MemberListResponse)
-    findAll(@Query() dto: OffsetPaginationQuery) {
-        return this.memberService.findAll(dto.page, dto.limit);
+    @ApiPaginatedResponse(MemberResponse)
+    findAll(@Query() query: PaginationQuery) {
+        return this.memberService.findAll(query);
     }
 
     @Get('deleted')
@@ -48,11 +50,11 @@ export class MemberController {
         summary: 'List soft-deleted members',
         roles: [AppRole.ADMIN],
         description:
-            'Offset-paginated soft-deleted users that still have membership in the active organization (`x-organization-id`).',
+            'Offset-paginated members soft-removed from the active organization (`x-organization-id`). Membership is kept for restore.',
     })
-    @ApiResponse(MemberListResponse)
-    findAllDeleted(@Query() dto: OffsetPaginationQuery) {
-        return this.memberService.findAllDeleted(dto.page, dto.limit);
+    @ApiPaginatedResponse(MemberResponse)
+    findAllDeleted(@Query() query: PaginationQuery) {
+        return this.memberService.findAllDeleted(query);
     }
 
     @Get('admins')
@@ -60,18 +62,33 @@ export class MemberController {
         summary: 'List organization admins',
         roles: [AppRole.ADMIN],
         description:
-            'Offset-paginated members with `ADMIN` role in the active organization (`x-organization-id`). Sorted by name.',
+            'Offset-paginated active members with `ADMIN` role in the organization (`x-organization-id`). Sorted by name.',
     })
-    @ApiResponse(MemberListResponse)
-    findAllAdmins(@Query() dto: OffsetPaginationQuery) {
-        return this.memberService.findAllAdmins(dto.page, dto.limit);
+    @ApiPaginatedResponse(MemberResponse)
+    findAllAdmins(@Query() query: PaginationQuery) {
+        return this.memberService.findAllAdmins(query);
+    }
+
+    @Get(':userId')
+    @ApiEndpoint({
+        summary: 'Get member by id',
+        roles: [AppRole.ADMIN],
+        description: `Returns an active member of the organization. Seeded demo member id: \`${SEED_USERS.demoMember.id}\`.`,
+    })
+    @ApiResponse(MemberResponse)
+    async findById(@Param() params: memberParamsDto) {
+        const member = await this.memberService.findById(params.userId);
+        if (!member) {
+            throw new AppException(MemberErrors.NOT_FOUND);
+        }
+        return member;
     }
 
     @Patch(':userId/role')
     @ApiEndpoint({
         summary: 'Assign member role',
         roles: [AppRole.ADMIN],
-        description: `Upserts membership and sets organization role (\`USER\` or \`ADMIN\`) for the user in the active organization. Seeded demo member id: \`${SEED_USERS.demoMember.id}\`.`,
+        description: `Upserts membership and sets organization role (\`USER\` or \`ADMIN\`) for an active member. Seeded demo member id: \`${SEED_USERS.demoMember.id}\`.`,
     })
     @ApiResponse(MemberResponse)
     assignRole(
@@ -81,12 +98,24 @@ export class MemberController {
         return this.memberService.assignRole(params.userId, dto);
     }
 
-    @Delete(':userId')
+    @Patch(':userId/restore')
     @ApiEndpoint({
-        summary: 'Remove member from organization',
+        summary: 'Restore soft-deleted member',
         roles: [AppRole.ADMIN],
         description:
-            'Removes membership (and role) for the user in the active organization (`x-organization-id`).',
+            'Restores a soft-removed membership in the active organization. Previous role is preserved.',
+    })
+    @ApiResponse(MemberResponse)
+    restore(@Param() params: memberParamsDto) {
+        return this.memberService.restore(params.userId);
+    }
+
+    @Delete(':userId')
+    @ApiEndpoint({
+        summary: 'Soft-remove member from organization',
+        roles: [AppRole.ADMIN],
+        description:
+            'Soft-removes the user from the active organization (`x-organization-id`). Access to other organizations is unchanged. Role is preserved for restore.',
     })
     @ApiResponse(EmptyResponse)
     remove(@Param() params: memberParamsDto) {

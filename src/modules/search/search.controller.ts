@@ -1,16 +1,16 @@
 import { Controller, Get, Query } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 
-import { ApiEndpoint } from '~/common/decorators/api-endpoint.decorator';
-import { ApiOrganizationHeader } from '~/common/decorators/api-organization-header.decorator';
-import { Roles } from '~/common/decorators/roles.decorator';
-import { ApiResponse } from '~/common/dto/response-schema';
-import { AppRole } from '~/common/types/app-role.enum';
+import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
+import { ApiResponse } from '~/common/api/response/response.decorator';
+import { ApiOrganizationHeader } from '~/common/security/decorators/api-organization-header.decorator';
+import { Roles } from '~/common/security/decorators/roles.decorator';
+import { AppRole } from '~/common/security/permissions/app-role.enum';
 
-import { SearchDto } from '~/modules/search/requests/search.request.dto';
-import { SearchResponse } from '~/modules/search/responses/search.response';
-import { SubstringSearchResponse } from '~/modules/search/responses/substring-search.response';
-import { SearchService } from '~/modules/search/search.service';
+import { SearchDto } from './requests/search.request.dto';
+import { SearchResponse } from './responses/search.response';
+import { SubstringSearchResponse } from './responses/substring-search.response';
+import { SearchService } from './search.service';
 
 @ApiTags('search')
 @Roles(AppRole.USER)

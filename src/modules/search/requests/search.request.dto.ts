@@ -1,9 +1,9 @@
 import { createZodDto } from 'nestjs-zod';
 import { z } from 'zod';
 
-import { OffsetPagination } from '~/common/dto/pagination.request';
+import { PaginationSchema } from '~/common/api/pagination/pagination.schema';
 
-export const Search = OffsetPagination.extend({
+export const Search = PaginationSchema.extend({
     query: z
         .string()
         .min(2)

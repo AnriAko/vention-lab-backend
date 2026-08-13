@@ -3,7 +3,7 @@ import { z } from 'zod';
 import {
     createResponseSchema,
     DateTimeResponse,
-} from '~/common/dto/response-schema';
+} from '~/common/api/response/response.schema';
 
 export const UserResponse = createResponseSchema(
     z.object({
@@ -11,7 +11,6 @@ export const UserResponse = createResponseSchema(
         email: z.email(),
         name: z.string(),
         image: z.string(),
-        isDeleted: z.boolean(),
         createdAt: DateTimeResponse,
         updatedAt: DateTimeResponse,
     }),

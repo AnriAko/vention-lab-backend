@@ -1,21 +1,26 @@
 import { Injectable } from '@nestjs/common';
-import { OffsetPagination } from '~/common/dto/pagination.request';
-import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
-import { messageLeaderboardQuery } from '~/modules/user-stats/user-stats.queries';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
+import type { PaginatedResult } from '~/common/api/pagination/pagination.types';
+import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
+import { messageLeaderboardQuery } from './user-stats.queries';
+import type { LeaderboardEntryResponse } from './responses/leaderboard.response';
 
 @Injectable()
 export class UserStatsRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
 
-    async getMessageLeaderboardRaw({ page, limit }: OffsetPagination) {
+    async getMessageLeaderboardRaw({
+        page,
+        limit,
+    }: Pagination): Promise<PaginatedResult<LeaderboardEntryResponse>> {
         const offset = (page - 1) * limit;
-        const [items, total] = await Promise.all([
+        const [data, total] = await Promise.all([
             this.prisma.$queryRaw(messageLeaderboardQuery(limit, offset)),
             this.prisma.user.count(),
         ]);
 
         return {
-            items,
+            data: data as LeaderboardEntryResponse[],
             pagination: {
                 page,
                 limit,
@@ -24,7 +29,10 @@ export class UserStatsRepository {
         };
     }
 
-    async getMessageLeaderboardPrisma({ page, limit }: OffsetPagination) {
+    async getMessageLeaderboardPrisma({
+        page,
+        limit,
+    }: Pagination): Promise<PaginatedResult<LeaderboardEntryResponse>> {
         const users = await this.prisma.user.findMany({
             select: {
                 id: true,
@@ -68,7 +76,7 @@ export class UserStatsRepository {
         const offset = (page - 1) * limit;
 
         return {
-            items: leaderboard.slice(offset, offset + limit),
+            data: leaderboard.slice(offset, offset + limit),
             pagination: {
                 page,
                 limit,

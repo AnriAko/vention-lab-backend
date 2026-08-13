@@ -3,8 +3,8 @@ import type { ConfigType } from '@nestjs/config';
 import { Inject } from '@nestjs/common';
 import argon2 from 'argon2';
 
-import { argon2Config } from '~/config';
-import { HashOptions } from '~/common/types/argon2.types';
+import { argon2Config } from '~/config/configuration/argon2.config';
+import { HashOptions } from '~/infrastructure/hashing/argon2.types';
 
 @Injectable()
 export class Argon2Service {

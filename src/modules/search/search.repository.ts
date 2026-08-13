@@ -1,11 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { SearchDto } from '~/modules/search/requests/search.request.dto';
-import { PrismaRlsClient } from '~/infrastructure/database/prisma-rls.client';
-import {
-    searchOrganizationsQuery,
-    searchUsersQuery,
-} from '~/modules/search/search.query';
-import { userSelectSafe } from '~/common/types/user.types';
+import { SearchDto } from './requests/search.request.dto';
+import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
+import { searchOrganizationsQuery, searchUsersQuery } from './search.query';
+import { userSelectSafe } from '~/infrastructure/database/selects/user.types';
 
 @Injectable()
 export class SearchRepository {
@@ -44,7 +41,11 @@ export class SearchRepository {
                         },
                     },
                 ],
-                isDeleted: false,
+                organizations: {
+                    some: {
+                        isDeleted: false,
+                    },
+                },
             },
             skip: offset,
             take: limit,

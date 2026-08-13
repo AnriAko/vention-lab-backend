@@ -1,3 +1,1 @@
-export enum AuthCookie {
-    REFRESH_TOKEN = 'refresh_token',
-}
+export { AuthCookie } from '~/common/security/auth.constants';

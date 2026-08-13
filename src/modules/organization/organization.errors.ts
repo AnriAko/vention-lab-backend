@@ -1,6 +1,6 @@
 import { HttpStatus } from '@nestjs/common';
 
-import type { AppErrorDefinition } from '~/common/errors';
+import type { AppErrorDefinition } from '~/common/errors/app-exception';
 
 export const OrganizationErrors = {
     NOT_FOUND: {

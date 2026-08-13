@@ -1,66 +1,46 @@
-import { Injectable } from '@nestjs/common';
+﻿import { Injectable } from '@nestjs/common';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
+import { organizationSelectSafe } from '~/infrastructure/database/selects/organization.types';
+import type { OrganizationSafe } from '~/infrastructure/database/selects/organization.types';
+import type { UserSafe } from '~/infrastructure/database/selects/user.types';
 import { Prisma } from '~/generated/prisma/client';
-import {
-    OrganizationSafe,
-    organizationSelectSafe,
-} from '~/common/types/organization.types';
-import type { UserSafe } from '~/common/types/user.types';
 
 import { CreateOrganizationDto } from './requests/create-organization.request.dto';
 import { UpdateOrganizationDto } from './requests/update-organization.request.dto';
 import { OrganizationRole } from '~/generated/prisma/client';
+import { paginatePrisma } from '~/common/api/pagination/paginate-prisma';
+import type { Pagination } from '~/common/api/pagination/pagination.schema';
 
 @Injectable()
 export class OrganizationsRepository {
     constructor(private readonly prisma: PrismaService) {}
 
-    async findAllOffset(page: number, limit: number) {
-        const skip = (page - 1) * limit;
-
-        const [organizations, total] = await Promise.all([
-            this.prisma.organization.findMany({
-                where: { isDeleted: false },
-                select: organizationSelectSafe,
-                skip,
-                take: limit,
-                orderBy: { name: 'asc' },
-            }),
-            this.prisma.organization.count({ where: { isDeleted: false } }),
-        ]);
-
-        return {
-            data: organizations,
-            meta: {
-                page,
-                limit,
-                total,
+    findAll(pagination: Pagination) {
+        return paginatePrisma({
+            pagination,
+            model: this.prisma.organization,
+            where: {
+                isDeleted: false,
             },
-        };
+            select: organizationSelectSafe,
+            orderBy: {
+                name: 'asc',
+            },
+        });
     }
 
-    async findAllDeletedOffset(page: number, limit: number) {
-        const skip = (page - 1) * limit;
-
-        const [organizations, total] = await Promise.all([
-            this.prisma.organization.findMany({
-                where: { isDeleted: true },
-                select: organizationSelectSafe,
-                skip,
-                take: limit,
-                orderBy: { name: 'asc' },
-            }),
-            this.prisma.organization.count({ where: { isDeleted: true } }),
-        ]);
-
-        return {
-            data: organizations,
-            meta: {
-                page,
-                limit,
-                total,
+    findAllDeleted(pagination: Pagination) {
+        return paginatePrisma({
+            pagination,
+            model: this.prisma.organization,
+            where: {
+                isDeleted: true,
             },
-        };
+            select: organizationSelectSafe,
+            orderBy: {
+                name: 'asc',
+            },
+        });
     }
 
     findById(id: string): Promise<OrganizationSafe | null> {
@@ -72,45 +52,49 @@ export class OrganizationsRepository {
         });
     }
 
-    async findAllByUserIdOffset(userId: string, page: number, limit: number) {
-        const skip = (page - 1) * limit;
-
-        const where = {
-            userId,
-            organization: { isDeleted: false },
-        } as const;
-
-        const [memberships, total] = await Promise.all([
-            this.prisma.usersOrganizationsRoles.findMany({
-                where,
-                skip,
-                take: limit,
-                orderBy: { organization: { name: 'asc' } },
-                select: {
-                    role: true,
-                    organization: {
-                        select: organizationSelectSafe,
+    findAllByUserId(userId: string, pagination: Pagination) {
+        return paginatePrisma({
+            pagination,
+            model: this.prisma.usersOrganizationsRoles,
+            where: {
+                userId,
+                organization: {
+                    isDeleted: false,
+                    users: {
+                        some: {
+                            userId,
+                            isDeleted: false,
+                        },
                     },
                 },
-            }),
-            this.prisma.usersOrganizationsRoles.count({ where }),
-        ]);
-
-        return {
-            data: memberships,
-            meta: {
-                page,
-                limit,
-                total,
             },
-        };
+            orderBy: {
+                organization: {
+                    name: 'asc',
+                },
+            },
+            select: {
+                role: true,
+                organization: {
+                    select: organizationSelectSafe,
+                },
+            },
+        });
     }
 
     findMembershipsByUserId(userId: string) {
         return this.prisma.usersOrganizationsRoles.findMany({
             where: {
                 userId,
-                organization: { isDeleted: false },
+                organization: {
+                    isDeleted: false,
+                    users: {
+                        some: {
+                            userId,
+                            isDeleted: false,
+                        },
+                    },
+                },
             },
             orderBy: { organization: { name: 'asc' } },
             select: {

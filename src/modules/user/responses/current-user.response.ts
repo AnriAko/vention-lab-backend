@@ -1,6 +1,6 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 
-import { createResponseSchema } from '~/common/dto/response-schema';
+import { createResponseSchema } from '~/common/api/response/response.schema';
 import { UserResponse } from './user.response';
 
 export const CurrentUserResponse = createResponseSchema(

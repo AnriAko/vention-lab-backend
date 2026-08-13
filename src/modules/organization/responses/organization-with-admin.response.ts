@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-import { createResponseSchema } from '~/common/dto/response-schema';
+import { createResponseSchema } from '~/common/api/response/response.schema';
 import { OrganizationResponse } from './organization.response';
 import { UserResponse } from '~/modules/user/responses/user.response';
 
