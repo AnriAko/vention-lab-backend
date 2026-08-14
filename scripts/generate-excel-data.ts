@@ -3,7 +3,10 @@ import path from 'node:path';
 
 import ExcelJS from 'exceljs';
 
+import { SEED_ORGANIZATIONS } from '../src/common/api/swagger/seed-examples';
 import { disconnect, prisma } from '../prisma/client';
+
+const CAT_FANS_ORGANIZATION_ID = SEED_ORGANIZATIONS.catFans.id;
 
 const OUTPUT_DIR = path.join(process.cwd(), 'excel-data');
 const DEFAULT_ROW_COUNT = 100;
@@ -56,6 +59,7 @@ async function loadMemberships(): Promise<MembershipRow[]> {
     const memberships = await prisma.usersOrganizations.findMany({
         where: {
             isDeleted: false,
+            organizationId: CAT_FANS_ORGANIZATION_ID,
             organization: {
                 isDeleted: false,
             },
@@ -101,7 +105,7 @@ async function generateWorkbook(
 
         sheet.addRow([
             membership.userEmail,
-            membership.organizationId,
+            CAT_FANS_ORGANIZATION_ID,
             randomFloat(1, 50_000, 2),
             date.toISOString().slice(0, 10),
         ]);
@@ -133,11 +137,11 @@ async function main() {
 
     if (!memberships.length) {
         throw new Error(
-            'No active user–organization memberships found. Seed the database first (npm run prisma:seed).'
+            'No active CatFans memberships found. Seed the database first (npm run prisma:seed).'
         );
     }
 
-    console.log(`Loaded ${memberships.length} memberships from DB`);
+    console.log(`Loaded ${memberships.length} CatFans memberships from DB`);
 
     const outputPath = await generateWorkbook(memberships, rowCount);
 

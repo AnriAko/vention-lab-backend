@@ -8,10 +8,12 @@ RUN npm install
 COPY microservices/file-process/ ./
 COPY shared /shared
 
-RUN mkdir -p src/shared/file-processing \
-    && cp -R /shared/file-processing/. src/shared/file-processing/
+RUN mkdir -p src/shared/file-processing src/shared/rabbitmq \
+    && cp -R /shared/file-processing/. src/shared/file-processing/ \
+    && cp -R /shared/rabbitmq/. src/shared/rabbitmq/ \
+    && rm -f tsconfig.build.tsbuildinfo tsconfig.tsbuildinfo
 
-RUN npm run build
+RUN npm run build && test -f dist/main.js
 
 FROM node:26-alpine AS runner
 
