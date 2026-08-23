@@ -2,6 +2,7 @@ import {
     Controller,
     Delete,
     Get,
+    Headers,
     Param,
     Post,
     Query,
@@ -12,6 +13,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import {
     ApiBody,
     ApiConsumes,
+    ApiHeader,
     ApiOkResponse,
     ApiProduces,
     ApiTags,
@@ -29,7 +31,11 @@ import { ApiOrganizationHeader } from '~/common/security/decorators/api-organiza
 import { Roles } from '~/common/security/decorators/roles.decorator';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
 
-import { FILE_MAX_SIZE_BYTES } from './files.constants';
+import {
+    FILE_ENCODING_GZIP,
+    FILE_ENCODING_HEADER,
+    FILE_MAX_SIZE_BYTES,
+} from './files.constants';
 import { FilesService } from './files.service';
 import { FileParamsDto } from './requests/file-id.request.dto';
 import { FileQuery } from './requests/file-query.dto';
@@ -61,7 +67,7 @@ export class FilesController {
     @ApiEndpoint({
         summary: 'Download file',
         roles: [AppRole.USER],
-        description: `Streams the stored file binary for a file in the active organization. Seeded owner examples: \`${SEED_FILES.ownerSalesReport.id}\` (\`${SEED_FILES.ownerSalesReport.name}\`), \`${SEED_FILES.ownerTeamBudget.id}\` (\`${SEED_FILES.ownerTeamBudget.name}\`).`,
+        description: `Streams the stored file binary for a file in the active organization. Seeded owner examples: \`${SEED_FILES.ownerSalesReport.id}\` (\`${SEED_FILES.ownerSalesReport.name}\`), \`${SEED_FILES.ownerTeamBudget.id}\` (\`${SEED_FILES.ownerTeamBudget.name}\`). Gzip-stored objects are decompressed transparently.`,
     })
     @ApiProduces(
         'application/vnd.ms-excel',
@@ -95,8 +101,17 @@ export class FilesController {
         summary: 'Upload file',
         roles: [AppRole.USER],
         description:
-            'Uploads a single file (`multipart/form-data`, field name `file`). Validates MIME type and extension, computes SHA-256, deduplicates by checksum within the organization, gzip-compresses the payload, and stores it in Firebase Storage. Downloads decompress transparently so clients receive the original file.\n\n' +
-            'Validation errors: `FILE_REQUIRED`, `FILE_EMPTY`, `FILE_TOO_LARGE`, `FILE_INVALID_TYPE`, `FILE_INVALID_EXTENSION`, `FILE_TYPE_MISMATCH`.',
+            'Uploads a single file (`multipart/form-data`, field name `file`). When `x-file-encoding: gzip` is set, the part body is gzip-compressed: the server gunzips for validation, SHA-256, and ClamAV scan, then stores the original gzip bytes in Firebase with a `.gz` storage key. Downloads decompress transparently.\n\n' +
+            'Validation/scan errors: `FILE_REQUIRED`, `FILE_EMPTY`, `FILE_TOO_LARGE`, `FILE_INVALID_TYPE`, `FILE_INVALID_EXTENSION`, `FILE_TYPE_MISMATCH`, `FILE_INVALID_ENCODING`, `FILE_INFECTED`, `FILE_AV_UNAVAILABLE`.',
+    })
+    @ApiHeader({
+        name: FILE_ENCODING_HEADER,
+        required: false,
+        description: `Set to \`${FILE_ENCODING_GZIP}\` when the multipart file bytes are gzip-compressed.`,
+        schema: {
+            type: 'string',
+            enum: [FILE_ENCODING_GZIP],
+        },
     })
     @ApiConsumes('multipart/form-data')
     @ApiBody({
@@ -107,7 +122,8 @@ export class FilesController {
                 file: {
                     type: 'string',
                     format: 'binary',
-                    description: 'File to upload',
+                    description:
+                        'File to upload (gzip-compressed when x-file-encoding is gzip). Original filename and MIME stay on the part.',
                 },
             },
         },
@@ -121,8 +137,11 @@ export class FilesController {
             },
         })
     )
-    uploadFile(@UploadedFile() file: MulterUploadedFile) {
-        return this.filesService.uploadFile(file);
+    uploadFile(
+        @UploadedFile() file: MulterUploadedFile,
+        @Headers(FILE_ENCODING_HEADER) fileEncoding?: string
+    ) {
+        return this.filesService.uploadFile(file, fileEncoding);
     }
 
     @Delete(':id')

@@ -7,6 +7,7 @@ import { SkipThrottle } from '@nestjs/throttler';
 import { ApiEndpoint } from '~/common/api/decorators/api-endpoint.decorator';
 import { ApiResponse } from '~/common/api/response/response.decorator';
 import { PublicRoute } from '~/common/security/decorators/public.decorator';
+import { ClamAvService } from '~/infrastructure/antivirus/clamav.service';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { RabbitmqService } from '~/infrastructure/messaging/rabbitmq.service';
@@ -23,7 +24,8 @@ export class HealthController {
         private readonly prismaIndicator: PrismaHealthIndicator,
         private readonly prisma: PrismaService,
         private readonly redis: RedisService,
-        private readonly rabbitmq: RabbitmqService
+        private readonly rabbitmq: RabbitmqService,
+        private readonly clamAv: ClamAvService
     ) {}
 
     @Get()
@@ -32,7 +34,7 @@ export class HealthController {
         summary: 'Health check',
         guest: true,
         description:
-            'Infrastructure probe for database, Redis, and RabbitMQ. No authentication.',
+            'Infrastructure probe for database, Redis, RabbitMQ, and antivirus (ClamAV). No authentication.',
     })
     @ApiResponse(HealthCheckResponse)
     check() {
@@ -50,6 +52,17 @@ export class HealthController {
                         : 'down',
                 },
             }),
+            async () => {
+                const antivirus = await this.clamAv.checkHealth();
+
+                return {
+                    antivirus: {
+                        status: antivirus.status,
+                        enabled: antivirus.enabled,
+                        message: antivirus.message,
+                    },
+                };
+            },
         ]);
     }
 }

@@ -29,6 +29,14 @@ export const envSchema = z.object({
     FIREBASE_PROJECT_ID: z.string(),
     FIREBASE_STORAGE_BUCKET: z.string(),
     FIREBASE_SERVICE_ACCOUNT_PATH: z.string(),
+
+    CLAMAV_ENABLED: z
+        .string()
+        .default('true')
+        .transform((value) => value.toLowerCase() === 'true'),
+    CLAMAV_HOST: z.string().default('localhost'),
+    CLAMAV_PORT: z.coerce.number().default(3310),
+    CLAMAV_TIMEOUT_MS: z.coerce.number().default(60_000),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -75,4 +83,11 @@ export type FirebaseConfig = {
     projectId: Env['FIREBASE_PROJECT_ID'];
     storageBucket: Env['FIREBASE_STORAGE_BUCKET'];
     serviceAccountPath: Env['FIREBASE_SERVICE_ACCOUNT_PATH'];
+};
+
+export type ClamAvConfig = {
+    enabled: boolean;
+    host: Env['CLAMAV_HOST'];
+    port: Env['CLAMAV_PORT'];
+    timeoutMs: Env['CLAMAV_TIMEOUT_MS'];
 };

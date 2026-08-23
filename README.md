@@ -173,6 +173,57 @@ Stop production environment:
 npm run docker:prod:down
 ```
 
+### File-process worker image
+
+```bash
+npm run docker:build:worker
+```
+
+---
+
+## Excel file processing pipeline
+
+Flow: API upload → Firebase → RabbitMQ job → `file-process` worker (download/parse only) → RabbitMQ reply → API updates DB + WebSocket.
+
+Details and RabbitMQ glossary: [`microservices/file-process/file-process.md`](microservices/file-process/file-process.md)
+
+### Status lifecycle
+
+`UPLOADED` → `PROCESSING` → `COMPLETED` | `FAILED`
+
+Frontend may show a local `uploading` state while the HTTP upload is in flight; that is not a backend DB status.
+
+### Run worker locally
+
+```bash
+npm run docker:dev
+npm run shared:sync
+cp credentials/firebase-service-account.json microservices/file-process/credentials/
+cd microservices/file-process
+cp .env.example .env.development.local   # adjust if needed
+npm install
+npm run start:dev
+```
+
+### Run worker via Docker
+
+```bash
+# put service account JSON in microservices/file-process/credentials/
+npm run worker:docker:up
+```
+
+From the worker package: `npm run docker:up` / `npm run docker:logs` / `npm run docker:build`
+
+### WebSocket (frontend)
+
+- Namespace: `/files`
+- Auth: `{ token, organizationId }`
+- Event: `file.status` → `{ fileId, status, error }`
+
+### Excel columns
+
+`User email` | `Organization` | `Transaction size` | `Date` (`npm run excel:generate`)
+
 ---
 
 ## API Documentation
@@ -208,8 +259,11 @@ src/
   modules/
   infrastructure/
   config/
-  shared/
   main.ts
+shared/
+  file-processing/
+microservices/
+  file-process/
 ```
 
 ---

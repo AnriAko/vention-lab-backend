@@ -4,6 +4,8 @@ import { createResponseSchema } from '~/common/api/response/response.schema';
 
 const HealthIndicator = z.object({
     status: z.string(),
+    enabled: z.boolean().optional(),
+    message: z.string().optional(),
 });
 
 export const HealthCheckResponse = createResponseSchema(

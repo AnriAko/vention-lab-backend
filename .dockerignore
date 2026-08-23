@@ -12,3 +12,6 @@ changelog.md
 .env
 .env.*
 logs
+*.tsbuildinfo
+coverage
+excel-data

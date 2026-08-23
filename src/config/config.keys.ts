@@ -1,6 +1,7 @@
 export const ConfigKeys = {
     APP: 'app',
     ARGON2: 'argon2',
+    CLAMAV: 'clamav',
     DATABASE: 'database',
     FIREBASE: 'firebase',
     JWT: 'jwt',

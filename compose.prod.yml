@@ -13,6 +13,8 @@ services:
                 condition: service_healthy
             rabbitmq:
                 condition: service_healthy
+            clamav:
+                condition: service_healthy
         networks:
             - backend
         healthcheck:
@@ -28,6 +30,14 @@ services:
             timeout: 10s
             retries: 5
             start_period: 30s
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.00'
+                    memory: 768M
+                reservations:
+                    cpus: '0.25'
+                    memory: 384M
 
     db:
         image: postgres:17
@@ -37,6 +47,22 @@ services:
             POSTGRES_USER: postgres
             POSTGRES_PASSWORD: postgres
             POSTGRES_DB: app_db
+        command:
+            - postgres
+            - -c
+            - shared_buffers=128MB
+            - -c
+            - effective_cache_size=384MB
+            - -c
+            - work_mem=16MB
+            - -c
+            - maintenance_work_mem=64MB
+            - -c
+            - max_connections=100
+            - -c
+            - wal_buffers=16MB
+            - -c
+            - random_page_cost=1.1
         ports:
             - '5432:5432'
         volumes:
@@ -49,6 +75,14 @@ services:
             timeout: 5s
             retries: 5
             start_period: 10s
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.00'
+                    memory: 768M
+                reservations:
+                    cpus: '0.25'
+                    memory: 384M
 
     pgadmin:
         image: dpage/pgadmin4
@@ -65,6 +99,14 @@ services:
             - pgadmin-data:/var/lib/pgadmin
         networks:
             - backend
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.50'
+                    memory: 384M
+                reservations:
+                    cpus: '0.10'
+                    memory: 128M
 
     redis:
         image: redis:7
@@ -80,6 +122,14 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.50'
+                    memory: 256M
+                reservations:
+                    cpus: '0.10'
+                    memory: 64M
 
     rabbitmq:
         image: rabbitmq:4-management
@@ -96,12 +146,77 @@ services:
             interval: 15s
             timeout: 10s
             retries: 5
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.75'
+                    memory: 512M
+                reservations:
+                    cpus: '0.20'
+                    memory: 256M
+
+    clamav:
+        image: clamav/clamav:stable
+        restart: always
+        environment:
+            CLAMD_CONF_ConcurrentDatabaseReload: 'no'
+        ports:
+            - '3310:3310'
+        volumes:
+            - clamav-data:/var/lib/clamav
+        networks:
+            - backend
+        healthcheck:
+            test: ['CMD-SHELL', 'clamdscan --ping || exit 1']
+            interval: 60s
+            timeout: 15s
+            retries: 10
+            start_period: 240s
+        deploy:
+            resources:
+                limits:
+                    cpus: '1.00'
+                    memory: 2G
+                reservations:
+                    cpus: '0.25'
+                    memory: 1536M
+
+    file-process:
+        build:
+            context: .
+            dockerfile: microservices/file-process/dockerfile
+        image: vention-file-process
+        restart: always
+        env_file:
+            - .env.production.local
+        environment:
+            NODE_ENV: production
+            RABBITMQ_HOST: rabbitmq
+            FIREBASE_SERVICE_ACCOUNT_PATH: ./credentials/firebase-service-account.json
+        volumes:
+            - ./microservices/file-process/credentials:/app/credentials:ro
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+            api:
+                condition: service_healthy
+        networks:
+            - backend
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.75'
+                    memory: 512M
+                reservations:
+                    cpus: '0.20'
+                    memory: 256M
 
 volumes:
     postgres-data:
     pgadmin-data:
     redis-data:
     rabbitmq-data:
+    clamav-data:
 
 networks:
     backend:
