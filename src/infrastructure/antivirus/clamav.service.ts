@@ -8,6 +8,8 @@ import { AppException } from '~/common/errors/app-exception';
 import { clamavConfig } from '~/config/configuration/clamav.config';
 import { FileErrors } from '~/modules/files/files.errors';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { CLAMAV_HEALTH_MESSAGE } from './clamav.constants';
+import type { ClamAvHealth } from './types/clamav-health.type';
 
 @Injectable()
 export class ClamAvService implements OnModuleInit {
@@ -103,17 +105,12 @@ export class ClamAvService implements OnModuleInit {
         }
     }
 
-    async checkHealth(): Promise<{
-        status: 'up' | 'down';
-        enabled: boolean;
-        message: string;
-    }> {
+    async checkHealth(): Promise<ClamAvHealth> {
         if (!this.config.enabled) {
             return {
                 status: 'up',
                 enabled: false,
-                message:
-                    'Antivirus is not running (CLAMAV_ENABLED=false). File uploads skip virus scanning.',
+                message: CLAMAV_HEALTH_MESSAGE.DISABLED,
             };
         }
 
@@ -121,8 +118,7 @@ export class ClamAvService implements OnModuleInit {
             return {
                 status: 'down',
                 enabled: true,
-                message:
-                    'Antivirus is enabled but ClamAV is not connected or failed to initialize.',
+                message: CLAMAV_HEALTH_MESSAGE.DISCONNECTED,
             };
         }
 
@@ -131,8 +127,7 @@ export class ClamAvService implements OnModuleInit {
             return {
                 status: 'up',
                 enabled: true,
-                message:
-                    'Antivirus is running and responding to health checks.',
+                message: CLAMAV_HEALTH_MESSAGE.UP,
             };
         } catch (error) {
             this.logger.error(
@@ -142,8 +137,7 @@ export class ClamAvService implements OnModuleInit {
             return {
                 status: 'down',
                 enabled: true,
-                message:
-                    'Antivirus is enabled but ClamAV did not respond to the health check.',
+                message: CLAMAV_HEALTH_MESSAGE.UNREACHABLE,
             };
         }
     }

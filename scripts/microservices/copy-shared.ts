@@ -4,6 +4,7 @@ import {
     mkdirSync,
     readdirSync,
     statSync,
+    unlinkSync,
 } from 'node:fs';
 import path from 'node:path';
 
@@ -46,12 +47,22 @@ export function copyShared(input: CopySharedInput): void {
 
     mkdirSync(dest, { recursive: true });
 
-    for (const file of readdirSync(src)) {
-        const from = path.join(src, file);
-        if (!statSync(from).isFile()) {
+    const srcFiles = new Set(
+        readdirSync(src).filter((file) =>
+            statSync(path.join(src, file)).isFile()
+        )
+    );
+
+    for (const file of srcFiles) {
+        copyFileSync(path.join(src, file), path.join(dest, file));
+    }
+
+    for (const file of readdirSync(dest)) {
+        const destPath = path.join(dest, file);
+        if (!statSync(destPath).isFile() || srcFiles.has(file)) {
             continue;
         }
-        copyFileSync(from, path.join(dest, file));
+        unlinkSync(destPath);
     }
 
     console.log(

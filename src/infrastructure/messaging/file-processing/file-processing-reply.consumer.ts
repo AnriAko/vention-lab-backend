@@ -1,11 +1,11 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import type { ConsumeMessage } from 'amqplib';
 
-import { FILE_PROCESSING_RESULTS_QUEUE } from '@shared/file-processing/constants';
 import {
+    FILE_PROCESSING_RESULTS_QUEUE,
     isFileProcessStatus,
-    type FileProcessResultMessage,
-} from '@shared/file-processing/messages';
+} from '@shared/file-processing/constants';
+import type { FileProcessResultMessage } from '@shared/file-processing/types';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 import { RabbitmqService } from '~/infrastructure/messaging/rabbitmq.service';
 import { FileProcessingResultService } from '~/modules/files/file-processing-result.service';

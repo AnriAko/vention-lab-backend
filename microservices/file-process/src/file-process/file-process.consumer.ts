@@ -8,12 +8,11 @@ import {
     FILE_PROCESSING_RETRY_HEADER,
     FILE_PROCESSING_ROUTING_KEY,
 } from '@shared/file-processing/constants';
-import type { FileProcessJobMessage } from '@shared/file-processing/messages';
+import type { FileProcessJobMessage } from '@shared/file-processing/types';
 import { RabbitmqService } from '~/rabbitmq/rabbitmq.service';
-import {
-    FileProcessService,
-    TransientProcessingError,
-} from './file-process.service';
+
+import { TransientProcessingError } from './file-process.errors';
+import { FileProcessService } from './file-process.service';
 
 @Injectable()
 export class FileProcessConsumer implements OnModuleInit {
@@ -30,25 +29,9 @@ export class FileProcessConsumer implements OnModuleInit {
     }
 
     private async handleMessage(msg: ConsumeMessage): Promise<void> {
-        let job: FileProcessJobMessage;
+        const job = this.parseJob(msg);
 
-        try {
-            job = JSON.parse(
-                msg.content.toString('utf8')
-            ) as FileProcessJobMessage;
-        } catch {
-            this.logger.error('Invalid job JSON');
-            this.rabbitmq.ack(msg);
-            return;
-        }
-
-        if (
-            !job?.fileId ||
-            !job.storageKey ||
-            !job.organizationId ||
-            !job.ownerId
-        ) {
-            this.logger.error('Job missing required fields');
+        if (!job) {
             this.rabbitmq.ack(msg);
             return;
         }
@@ -57,73 +40,154 @@ export class FileProcessConsumer implements OnModuleInit {
         const correlationId = msg.properties.correlationId ?? job.fileId;
 
         try {
-            await this.rabbitmq.reply(
-                msg.properties.replyTo,
-                this.fileProcessService.processingResult(job),
-                { correlationId }
-            );
-
-            const result = await this.fileProcessService.processJob(job);
-
-            await this.rabbitmq.reply(msg.properties.replyTo, result, {
-                correlationId,
-            });
-            this.rabbitmq.ack(msg);
+            await this.processAndAck(msg, job, correlationId);
         } catch (error) {
-            const message =
-                error instanceof Error ? error.message : String(error);
-
-            if (this.fileProcessService.isPermanentError(error)) {
-                await this.rabbitmq.reply(
-                    msg.properties.replyTo,
-                    this.fileProcessService.failedResult(job, message),
-                    { correlationId }
-                );
-                this.rabbitmq.ack(msg);
-                return;
-            }
-
-            if (!(error instanceof TransientProcessingError)) {
-                this.logger.error(
-                    `Unexpected error fileId=${job.fileId}: ${message}`
-                );
-            }
-
-            if (retryCount + 1 >= FILE_PROCESSING_MAX_RETRIES) {
-                this.logger.error(
-                    `Retry exhausted fileId=${job.fileId} retries=${retryCount}`
-                );
-                await this.rabbitmq.reply(
-                    msg.properties.replyTo,
-                    this.fileProcessService.failedResult(
-                        job,
-                        `Processing failed after retries: ${message}`
-                    ),
-                    { correlationId }
-                );
-                this.rabbitmq.nack(msg, false);
-                return;
-            }
-
-            this.logger.warn(
-                `Transient failure fileId=${job.fileId} retry=${retryCount + 1}`
-            );
-
-            await this.rabbitmq.publish(
-                FILE_PROCESSING_EXCHANGE,
-                FILE_PROCESSING_ROUTING_KEY,
+            await this.handleFailure(
+                msg,
                 job,
-                {
-                    correlationId,
-                    replyTo: msg.properties.replyTo,
-                    headers: {
-                        ...(msg.properties.headers ?? {}),
-                        [FILE_PROCESSING_RETRY_HEADER]: retryCount + 1,
-                    },
-                }
+                correlationId,
+                retryCount,
+                error
             );
-            this.rabbitmq.ack(msg);
         }
+    }
+
+    private parseJob(msg: ConsumeMessage): FileProcessJobMessage | null {
+        let job: FileProcessJobMessage;
+
+        try {
+            job = JSON.parse(
+                msg.content.toString('utf8')
+            ) as FileProcessJobMessage;
+        } catch {
+            this.logger.error('Invalid job JSON');
+            return null;
+        }
+
+        if (!this.isValidJob(job)) {
+            this.logger.error('Job missing required fields');
+            return null;
+        }
+
+        return job;
+    }
+
+    private isValidJob(job: FileProcessJobMessage): boolean {
+        return Boolean(
+            job?.fileId && job.storageKey && job.organizationId && job.ownerId
+        );
+    }
+
+    private async processAndAck(
+        msg: ConsumeMessage,
+        job: FileProcessJobMessage,
+        correlationId: string
+    ): Promise<void> {
+        await this.rabbitmq.reply(
+            msg.properties.replyTo,
+            this.fileProcessService.processingResult(job),
+            { correlationId }
+        );
+
+        const result = await this.fileProcessService.processJob(job);
+
+        await this.rabbitmq.reply(msg.properties.replyTo, result, {
+            correlationId,
+        });
+        this.rabbitmq.ack(msg);
+    }
+
+    private async handleFailure(
+        msg: ConsumeMessage,
+        job: FileProcessJobMessage,
+        correlationId: string,
+        retryCount: number,
+        error: unknown
+    ): Promise<void> {
+        const message = error instanceof Error ? error.message : String(error);
+
+        if (this.fileProcessService.isPermanentError(error)) {
+            await this.replyFailed(msg, job, correlationId, message);
+            this.rabbitmq.ack(msg);
+            return;
+        }
+
+        if (!(error instanceof TransientProcessingError)) {
+            this.logger.error(
+                `Unexpected error fileId=${job.fileId}: ${message}`
+            );
+        }
+
+        if (retryCount + 1 >= FILE_PROCESSING_MAX_RETRIES) {
+            await this.handleRetryExhausted(
+                msg,
+                job,
+                correlationId,
+                retryCount,
+                message
+            );
+            return;
+        }
+
+        await this.republishWithRetry(msg, job, correlationId, retryCount);
+    }
+
+    private async replyFailed(
+        msg: ConsumeMessage,
+        job: FileProcessJobMessage,
+        correlationId: string,
+        error: string
+    ): Promise<void> {
+        await this.rabbitmq.reply(
+            msg.properties.replyTo,
+            this.fileProcessService.failedResult(job, error),
+            { correlationId }
+        );
+    }
+
+    private async handleRetryExhausted(
+        msg: ConsumeMessage,
+        job: FileProcessJobMessage,
+        correlationId: string,
+        retryCount: number,
+        message: string
+    ): Promise<void> {
+        this.logger.error(
+            `Retry exhausted fileId=${job.fileId} retries=${retryCount}`
+        );
+        await this.replyFailed(
+            msg,
+            job,
+            correlationId,
+            `Processing failed after retries: ${message}`
+        );
+        this.rabbitmq.nack(msg, false);
+    }
+
+    private async republishWithRetry(
+        msg: ConsumeMessage,
+        job: FileProcessJobMessage,
+        correlationId: string,
+        retryCount: number
+    ): Promise<void> {
+        this.logger.warn(
+            `Transient failure fileId=${job.fileId} retry=${retryCount + 1}`
+        );
+
+        await this.rabbitmq.publish(
+            FILE_PROCESSING_EXCHANGE,
+            FILE_PROCESSING_ROUTING_KEY,
+            job,
+            {
+                correlationId,
+                replyTo: msg.properties.replyTo,
+                headers: {
+                    ...(msg.properties.headers ?? {}),
+                    [FILE_PROCESSING_RETRY_HEADER]: retryCount + 1,
+                },
+            }
+        );
+        this.rabbitmq.ack(msg);
     }
 
     private getRetryCount(msg: ConsumeMessage): number {

@@ -1,33 +1,23 @@
 import { Injectable, Logger } from '@nestjs/common';
 
+import { FileProcessStatus } from '@shared/file-processing/constants';
+import type {
+    FileProcessJobMessage,
+    FileProcessResultMessage,
+    FileProcessResultPayload,
+} from '@shared/file-processing/types';
+
+import { ExcelValidationError } from './excel-validation.error';
+import { ExcelParserService } from './excel-parser.service';
 import {
-    FileProcessStatus,
-    type FileProcessJobMessage,
-    type FileProcessResultMessage,
-} from '@shared/file-processing/messages';
-import {
-    ExcelParserService,
-    ExcelValidationError,
-} from './excel-parser.service';
+    PermanentProcessingError,
+    TransientProcessingError,
+} from './file-process.errors';
 import {
     FileStorageService,
     InvalidStorageKeyError,
     StorageObjectNotFoundError,
 } from './file-storage.service';
-
-export class PermanentProcessingError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'PermanentProcessingError';
-    }
-}
-
-export class TransientProcessingError extends Error {
-    constructor(message: string) {
-        super(message);
-        this.name = 'TransientProcessingError';
-    }
-}
 
 @Injectable()
 export class FileProcessService {
@@ -106,10 +96,7 @@ export class FileProcessService {
 
     private buildResult(
         job: FileProcessJobMessage,
-        result: Pick<
-            FileProcessResultMessage,
-            'status' | 'success' | 'error' | 'totals'
-        >
+        result: FileProcessResultPayload
     ): FileProcessResultMessage {
         return {
             fileId: job.fileId,

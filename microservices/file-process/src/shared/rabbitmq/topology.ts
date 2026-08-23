@@ -1,17 +1,6 @@
-import type { Channel, Options } from 'amqplib';
+import type { Channel } from 'amqplib';
 
-export type RabbitmqTopology = {
-    exchanges: Array<{
-        name: string;
-        type: 'direct' | 'topic' | 'fanout' | 'headers';
-        options?: Options.AssertExchange;
-    }>;
-    queues: Array<{
-        name: string;
-        options?: Options.AssertQueue;
-        bindings: Array<{ exchange: string; routingKey: string }>;
-    }>;
-};
+import type { RabbitmqTopology } from './types';
 
 export async function assertRabbitmqTopology(
     channel: Channel,

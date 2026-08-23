@@ -18,3 +18,19 @@ export const FILE_STATUS_WS_NAMESPACE = '/files';
 export const FILE_STATUS_WS_SUBSCRIBE_EVENT = 'subscribe';
 export const FILE_STATUS_WS_ORG_ROOM_PREFIX = 'org:';
 export const FILE_PROCESSING_GZIP_SUFFIX = '.gz';
+
+export enum FileProcessStatus {
+    PROCESSING = 'PROCESSING',
+    COMPLETED = 'COMPLETED',
+    FAILED = 'FAILED',
+}
+
+export function isFileProcessStatus(
+    value: unknown
+): value is FileProcessStatus {
+    return (
+        value === FileProcessStatus.PROCESSING ||
+        value === FileProcessStatus.COMPLETED ||
+        value === FileProcessStatus.FAILED
+    );
+}

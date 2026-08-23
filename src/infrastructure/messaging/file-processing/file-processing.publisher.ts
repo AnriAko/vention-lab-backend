@@ -5,7 +5,7 @@ import {
     FILE_PROCESSING_RESULTS_QUEUE,
     FILE_PROCESSING_ROUTING_KEY,
 } from '@shared/file-processing/constants';
-import type { FileProcessJobMessage } from '@shared/file-processing/messages';
+import type { FileProcessJobMessage } from '@shared/file-processing/types';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 import { RabbitmqService } from '~/infrastructure/messaging/rabbitmq.service';
 
