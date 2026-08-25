@@ -1,5 +1,7 @@
 import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
+import { GraphQLModule } from '@nestjs/graphql';
+import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { ThrottlerModule } from '@nestjs/throttler';
 import { configLoaders } from '~/config/config-loaders';
 import { validateEnv } from '~/config/validate-env';
@@ -16,6 +18,7 @@ import { LoggerMiddleware } from '~/common/http/middleware/logger.middleware';
 import { UserStatsModule } from '~/modules/user-stats/user-stats.module';
 import { SearchModule } from '~/modules/search/search.module';
 import { FilesModule } from '~/modules/files/files.module';
+import { ChatModule } from '~/modules/chat/chat.module';
 
 @Module({
     imports: [
@@ -45,6 +48,17 @@ import { FilesModule } from '~/modules/files/files.module';
         UserStatsModule,
         SearchModule,
         FilesModule,
+        GraphQLModule.forRoot<ApolloDriverConfig>({
+            driver: ApolloDriver,
+            autoSchemaFile: true,
+            sortSchema: true,
+            path: 'graphql',
+            useGlobalPrefix: true,
+            graphiql: true,
+            playground: false,
+            context: ({ req, res }) => ({ req, res }),
+        }),
+        ChatModule,
     ],
 })
 export class AppModule implements NestModule {

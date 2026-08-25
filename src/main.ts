@@ -24,7 +24,42 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
     app.setGlobalPrefix('api');
 
-    app.use(helmet());
+    const isDevelopment = process.env.NODE_ENV !== 'production';
+
+    // GraphiQL loads React + GraphiQL from public CDNs (e.g. unpkg). Helmet's
+    // default CSP only allows 'self', which leaves GraphiQL stuck on "Loading...".
+    // Keep full Helmet + default CSP in production; relax only what GraphiQL needs in development.
+    app.use(
+        isDevelopment
+            ? helmet({
+                  contentSecurityPolicy: {
+                      directives: {
+                          scriptSrc: [
+                              "'self'",
+                              "'unsafe-inline'",
+                              "'unsafe-eval'",
+                              'https://unpkg.com',
+                              'https://cdn.jsdelivr.net',
+                          ],
+                          styleSrc: [
+                              "'self'",
+                              "'unsafe-inline'",
+                              'https://unpkg.com',
+                              'https://cdn.jsdelivr.net',
+                              'https://fonts.googleapis.com',
+                          ],
+                          fontSrc: [
+                              "'self'",
+                              'https:',
+                              'data:',
+                              'https://fonts.gstatic.com',
+                          ],
+                          imgSrc: ["'self'", 'data:', 'https:'],
+                      },
+                  },
+              })
+            : helmet()
+    );
     app.use(cookieParser());
 
     const openApiDoc: OpenAPIObject = SwaggerModule.createDocument(

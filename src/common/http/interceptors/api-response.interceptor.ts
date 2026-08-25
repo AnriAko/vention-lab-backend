@@ -8,6 +8,7 @@ import {
 import { Observable, map } from 'rxjs';
 
 import type { ApiSuccessEnvelope } from '~/common/api/response/response.types';
+import { isGraphqlContext } from '~/common/security/utils/execution-context';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 
 function isAlreadyWrapped(value: unknown): value is ApiSuccessEnvelope {
@@ -27,6 +28,10 @@ export class ApiResponseInterceptor implements NestInterceptor {
         context: ExecutionContext,
         next: CallHandler
     ): Observable<unknown> {
+        if (isGraphqlContext(context)) {
+            return next.handle();
+        }
+
         return next.handle().pipe(
             map((data) => {
                 if (data instanceof StreamableFile || isAlreadyWrapped(data)) {

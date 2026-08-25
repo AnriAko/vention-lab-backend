@@ -2,8 +2,8 @@ import { CanActivate, ExecutionContext, Injectable } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { IS_PUBLIC_KEY, ROLES_KEY } from '~/common/security/constants';
 
-import { AuthRequest } from '~/common/security/auth.types';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
+import { getRequest } from '~/common/security/utils/execution-context';
 
 const ROLE_RANK: Record<AppRole, number> = {
     [AppRole.AUTHENTICATED_USER]: 0,
@@ -31,7 +31,7 @@ export class RolesGuard implements CanActivate {
             context.getClass(),
         ]);
 
-        const request = context.switchToHttp().getRequest<AuthRequest>();
+        const request = getRequest(context);
 
         if (!roles?.length) {
             return true;

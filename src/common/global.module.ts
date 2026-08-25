@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_FILTER, APP_INTERCEPTOR, APP_PIPE, APP_GUARD } from '@nestjs/core';
-import { ThrottlerGuard } from '@nestjs/throttler';
+import { AppThrottlerGuard } from '~/common/security/guards/app-throttler.guard';
 
 import { ZodSerializerInterceptor, ZodValidationPipe } from 'nestjs-zod';
 import { RedisModule } from '~/infrastructure/cache/redis.module';
@@ -45,7 +45,7 @@ import { RolesGuard } from '~/common/security/guards/roles.guard';
         },
         {
             provide: APP_GUARD,
-            useClass: ThrottlerGuard,
+            useClass: AppThrottlerGuard,
         },
         {
             provide: APP_GUARD,

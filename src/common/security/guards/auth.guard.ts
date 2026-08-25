@@ -21,6 +21,7 @@ import { AppRole } from '~/common/security/permissions/app-role.enum';
 import { IS_PUBLIC_KEY } from '~/common/security/constants';
 import { parseHeader } from '~/common/utils/parse-header';
 import { setRequestUser } from '~/common/tenancy/user/user-context';
+import { getRequest } from '~/common/security/utils/execution-context';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -44,7 +45,7 @@ export class AuthGuard implements CanActivate {
             return true;
         }
 
-        const request = context.switchToHttp().getRequest<AuthRequest>();
+        const request = getRequest(context);
 
         const token = this.extractToken(request);
 

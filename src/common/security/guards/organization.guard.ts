@@ -18,6 +18,7 @@ import {
     setRequestRole,
     setRequestUser,
 } from '~/common/tenancy/user/user-context';
+import { getRequest } from '~/common/security/utils/execution-context';
 
 @Injectable()
 export class OrganizationGuard implements CanActivate {
@@ -45,7 +46,7 @@ export class OrganizationGuard implements CanActivate {
             return true;
         }
 
-        const request = context.switchToHttp().getRequest<AuthRequest>();
+        const request = getRequest(context);
 
         const organizationId = this.readHeader(
             request,

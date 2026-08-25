@@ -10,6 +10,10 @@ import { Request, Response } from 'express';
 import { ApiErrorResponse } from '~/common/api/dto/error.response';
 import { AppException } from '~/common/errors/app-exception';
 import { CommonErrors } from '~/common/errors/common-errors';
+import {
+    isGraphqlHost,
+    toGraphQLError,
+} from '~/common/http/filters/to-graphql-error';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 
@@ -18,6 +22,14 @@ export class HttpExceptionFilter implements ExceptionFilter {
     constructor(private readonly logger: LoggerService) {}
 
     catch(exception: unknown, host: ArgumentsHost) {
+        if (isGraphqlHost(host)) {
+            const graphqlError = toGraphQLError(exception);
+            this.logger.error(
+                `[GRAPHQL ERROR] ${graphqlError.extensions.statusCode as number} ${String(graphqlError.extensions.code)} ${graphqlError.message}`
+            );
+            return graphqlError;
+        }
+
         const ctx = host.switchToHttp();
         const res = ctx.getResponse<Response>();
         const req = ctx.getRequest<Request>();

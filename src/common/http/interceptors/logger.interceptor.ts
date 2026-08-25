@@ -5,7 +5,9 @@ import {
     NestInterceptor,
 } from '@nestjs/common';
 import { tap } from 'rxjs';
-import { Response } from 'express';
+import { GqlExecutionContext } from '@nestjs/graphql';
+import type { Response } from 'express';
+import { isGraphqlContext } from '~/common/security/utils/execution-context';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 
 @Injectable()
@@ -13,11 +15,38 @@ export class LoggerInterceptor implements NestInterceptor {
     constructor(private readonly logger: LoggerService) {}
 
     intercept(context: ExecutionContext, next: CallHandler) {
+        const start = Date.now();
+
+        if (isGraphqlContext(context)) {
+            const gqlContext = GqlExecutionContext.create(context);
+            const info = gqlContext.getInfo<{ fieldName?: string }>();
+            const operationName = info.fieldName ?? 'unknown';
+
+            return next.handle().pipe(
+                tap({
+                    next: () => {
+                        this.logger.log(
+                            `[GraphQL] ${operationName} ${Date.now() - start}ms`
+                        );
+                    },
+                    error: (err: unknown) => {
+                        const message =
+                            err instanceof Error
+                                ? err.message
+                                : 'Unknown error';
+
+                        this.logger.error(
+                            `[GraphQL] ${operationName} ERROR ${Date.now() - start}ms ${message}`
+                        );
+                    },
+                })
+            );
+        }
+
         const http = context.switchToHttp();
         const req = http.getRequest<any>();
         const res = http.getResponse<Response>();
         const label = 'HTTP';
-        const start = Date.now();
 
         return next.handle().pipe(
             tap({
