@@ -158,7 +158,10 @@ export class ChatService {
             throw new AppException(ChatErrors.USER_NOT_IN_ORGANIZATION);
         }
 
-        const alreadyMember = await this.chatRepository.isMember(chatId, userId);
+        const alreadyMember = await this.chatRepository.isMember(
+            chatId,
+            userId
+        );
 
         if (alreadyMember) {
             throw new AppException(ChatErrors.ALREADY_MEMBER);

@@ -64,8 +64,7 @@ export function validateUploadedFile(
     }
 
     const mimeType = file.mimetype?.toLowerCase() as
-        | AllowedMimeType
-        | undefined;
+        AllowedMimeType | undefined;
     const originalName = sanitizeOriginalName(file.originalname ?? '');
     const extension = normalizeExtension(originalName);
 

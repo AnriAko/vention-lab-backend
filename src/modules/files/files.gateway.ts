@@ -58,14 +58,12 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
                 auth.token ??
                 this.extractBearer(
                     client.handshake.headers[AUTH_HEADER.AUTHORIZATION] as
-                        | string
-                        | undefined
+                        string | undefined
                 );
             const organizationId =
                 auth.organizationId ??
                 (client.handshake.headers[AUTH_HEADER.ORGANIZATION_ID] as
-                    | string
-                    | undefined) ??
+                    string | undefined) ??
                 (client.handshake.query.organizationId as string | undefined);
 
             if (!token || !organizationId) {

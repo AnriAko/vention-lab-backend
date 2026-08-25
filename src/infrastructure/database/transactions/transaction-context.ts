@@ -3,8 +3,7 @@ import type { Prisma } from '~/generated/prisma/client';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 
 export const getPrismaTransaction = ():
-    | Prisma.TransactionClient
-    | undefined => {
+    Prisma.TransactionClient | undefined => {
     return requestContext.getStore()?.transaction;
 };
 

@@ -1,4 +1,9 @@
-import { Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import {
+    Catch,
+    ArgumentsHost,
+    HttpException,
+    HttpStatus,
+} from '@nestjs/common';
 import { Request, Response } from 'express';
 import { Prisma } from '~/generated/prisma/client';
 
