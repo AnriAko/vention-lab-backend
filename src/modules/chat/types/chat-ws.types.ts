@@ -32,3 +32,8 @@ export type ChatTypingPayload = {
     chatId: string;
     userId: string;
 };
+
+export type ChatMessageDeletedPayload = {
+    chatId: string;
+    messageId: string;
+};

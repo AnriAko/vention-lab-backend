@@ -29,11 +29,13 @@ import {
 } from './chat.constants';
 import { ChatService } from './chat.service';
 import { CHAT_WS_EVENTS } from './chat.ws.constants';
+import { WsDeleteMessageSchema } from './requests/ws-delete-message.request.dto';
 import { WsJoinChatSchema } from './requests/ws-join-chat.request.dto';
 import { WsSendMessageSchema } from './requests/ws-send-message.request.dto';
 import { WsTypingSchema } from './requests/ws-typing.request.dto';
 import type {
     ChatMessageAck,
+    ChatMessageDeletedPayload,
     ChatRoomJoinResult,
     ChatSocket,
     ChatSocketAuth,
@@ -116,6 +118,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             client.data.userId = payload.sub;
             client.data.organizationId = organizationId;
             client.data.role = role;
+
+            client.emit(CHAT_WS_EVENTS.READY, {
+                userId: payload.sub,
+            });
 
             this.logger.log(
                 `[ChatGateway] connected userId=${payload.sub} org=${organizationId} sid=${client.id}`
@@ -222,6 +228,35 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             } satisfies ChatMessageAck);
 
             client.to(room).emit(CHAT_WS_EVENTS.MESSAGE, message);
+
+            return { ok: true };
+        } catch (error) {
+            this.emitError(client, error);
+            return { ok: false };
+        }
+    }
+
+    @SubscribeMessage(CHAT_WS_EVENTS.MESSAGE_DELETE)
+    async deleteMessage(
+        @ConnectedSocket() client: ChatSocket,
+        @MessageBody() body: unknown
+    ): Promise<{ ok: boolean }> {
+        try {
+            const { messageId } = parseInput(WsDeleteMessageSchema, body);
+            const chatId = await this.runAsSocketTenant(client, () =>
+                this.chatService.hardDeleteOwnedMessage(messageId)
+            );
+
+            const payload: ChatMessageDeletedPayload = {
+                chatId,
+                messageId,
+            };
+
+            client.emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
+            client.to(buildChatRoomName(chatId)).emit(
+                CHAT_WS_EVENTS.MESSAGE_DELETED,
+                payload
+            );
 
             return { ok: true };
         } catch (error) {

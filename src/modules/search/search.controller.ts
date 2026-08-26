@@ -10,6 +10,7 @@ import { AppRole } from '~/common/security/permissions/app-role.enum';
 import { SearchDto } from './requests/search.request.dto';
 import { SearchResponse } from './responses/search.response';
 import { SubstringSearchResponse } from './responses/substring-search.response';
+import { UserSearchResponse } from './responses/user-search.response';
 import { SearchService } from './search.service';
 
 @ApiTags('search')
@@ -18,6 +19,18 @@ import { SearchService } from './search.service';
 @Controller('search')
 export class SearchController {
     constructor(private readonly service: SearchService) {}
+
+    @Get('users')
+    @ApiEndpoint({
+        summary: 'Search users in the active organization',
+        roles: [AppRole.USER],
+        description:
+            'Case-insensitive name/email search among active members of the current organization (`x-organization-id`). Requires at least 2 characters. Returns only `id`, `name`, and `email`.',
+    })
+    @ApiResponse(UserSearchResponse)
+    searchUsers(@Query() dto: SearchDto) {
+        return this.service.searchUsers(dto);
+    }
 
     @Get('full-text')
     @ApiEndpoint({

@@ -214,6 +214,11 @@ export class ChatService {
 
     async deleteMessage(id: string): Promise<boolean> {
         const messageId = parseInput(MessageIdSchema, { id }).id;
+        await this.hardDeleteOwnedMessage(messageId);
+        return true;
+    }
+
+    async hardDeleteOwnedMessage(messageId: string): Promise<string> {
         const currentUserId = this.getCurrentUserId();
         const message = await this.chatRepository.findMessageById(messageId);
 
@@ -231,7 +236,7 @@ export class ChatService {
 
         this.logger.log(`[ChatService] hard deleted message id=${messageId}`);
 
-        return true;
+        return message.chatId;
     }
 
     async assertMemberAccess(chatId: string, userId: string): Promise<void> {

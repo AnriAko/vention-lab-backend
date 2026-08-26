@@ -29,4 +29,12 @@ export class SearchService {
             organizations,
         };
     }
+
+    async searchUsers(dto: SearchDto) {
+        const users = await this.repository.searchOrganizationUsers(dto);
+
+        return {
+            users,
+        };
+    }
 }
