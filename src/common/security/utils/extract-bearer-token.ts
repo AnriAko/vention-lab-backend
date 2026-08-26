@@ -7,10 +7,7 @@ export function extractBearerToken(header?: string): string | undefined {
 
     const [scheme, value] = header.split(' ');
 
-    if (
-        scheme?.toLowerCase() !== AUTH_SCHEME.BEARER.toLowerCase() ||
-        !value
-    ) {
+    if (scheme?.toLowerCase() !== AUTH_SCHEME.BEARER.toLowerCase() || !value) {
         return undefined;
     }
 
