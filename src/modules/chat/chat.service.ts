@@ -205,19 +205,11 @@ export class ChatService {
         const { chatId, content } = parseInput(CreateMessageSchema, input);
         const senderId = this.getCurrentUserId();
 
-        await this.requireChatMembership(chatId);
-
-        const message = await this.chatRepository.createMessage(
+        return this.createMessageForUser({
             chatId,
+            content,
             senderId,
-            content
-        );
-
-        this.logger.log(
-            `[ChatService] created message id=${message.id} chatId=${chatId}`
-        );
-
-        return toMessageResponse(message);
+        });
     }
 
     async deleteMessage(id: string): Promise<boolean> {
@@ -242,6 +234,43 @@ export class ChatService {
         return true;
     }
 
+    async assertMemberAccess(chatId: string, userId: string): Promise<void> {
+        await this.requireChatMembershipForUser(chatId, userId);
+    }
+
+    async createMessageForUser(input: {
+        chatId: string;
+        content: string;
+        senderId: string;
+    }): Promise<MessageResponse> {
+        await this.requireChatMembershipForUser(input.chatId, input.senderId);
+
+        const message = await this.chatRepository.createMessage(
+            input.chatId,
+            input.senderId,
+            input.content
+        );
+
+        this.logger.log(
+            `[ChatService] created message id=${message.id} chatId=${input.chatId}`
+        );
+
+        return toMessageResponse(message);
+    }
+
+    async getPeerParticipantIds(
+        chatId: string,
+        userId: string
+    ): Promise<string[]> {
+        await this.requireChatMembershipForUser(chatId, userId);
+
+        const members = await this.chatRepository.findMembers(chatId);
+
+        return members
+            .map((membership) => membership.userId)
+            .filter((memberId) => memberId !== userId);
+    }
+
     private getCurrentUserId(): string {
         const userId = requestContext.getStore()?.userId;
 
@@ -253,10 +282,16 @@ export class ChatService {
     }
 
     private async requireChatMembership(chatId: string) {
-        const chat = await this.chatRepository.findByIdForUser(
+        const chat = await this.requireChatMembershipForUser(
             chatId,
             this.getCurrentUserId()
         );
+
+        return chat;
+    }
+
+    private async requireChatMembershipForUser(chatId: string, userId: string) {
+        const chat = await this.chatRepository.findByIdForUser(chatId, userId);
 
         if (!chat) {
             throw new AppException(ChatErrors.NOT_FOUND);

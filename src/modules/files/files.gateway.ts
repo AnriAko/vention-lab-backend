@@ -19,11 +19,8 @@ import {
     FILE_STATUS_WS_SUBSCRIBE_EVENT,
 } from '@shared/file-processing/constants';
 import { jwtConfig } from '~/config/configuration/jwt.config';
-import {
-    AUTH_HEADER,
-    AUTH_SCHEME,
-    type JwtPayload,
-} from '~/common/security/auth.types';
+import { AUTH_HEADER, type JwtPayload } from '~/common/security/auth.types';
+import { extractBearerToken } from '~/common/security/utils/extract-bearer-token';
 import { LoggerService } from '~/infrastructure/logging/logger.service';
 import type { FileStatusNotification } from '~/modules/files/files-status.notifier';
 
@@ -56,9 +53,10 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const auth = (client.handshake.auth ?? {}) as SocketAuth;
             const token =
                 auth.token ??
-                this.extractBearer(
+                extractBearerToken(
                     client.handshake.headers[AUTH_HEADER.AUTHORIZATION] as
-                        string | undefined
+                        | string
+                        | undefined
                 );
             const organizationId =
                 auth.organizationId ??
@@ -134,21 +132,5 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
     private orgRoom(organizationId: string): string {
         return `${FILE_STATUS_WS_ORG_ROOM_PREFIX}${organizationId}`;
-    }
-
-    private extractBearer(header?: string): string | undefined {
-        if (!header) {
-            return undefined;
-        }
-
-        const [scheme, value] = header.split(' ');
-        if (
-            scheme?.toLowerCase() !== AUTH_SCHEME.BEARER.toLowerCase() ||
-            !value
-        ) {
-            return undefined;
-        }
-
-        return value;
     }
 }
