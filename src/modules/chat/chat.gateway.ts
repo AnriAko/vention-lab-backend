@@ -253,10 +253,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             };
 
             client.emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
-            client.to(buildChatRoomName(chatId)).emit(
-                CHAT_WS_EVENTS.MESSAGE_DELETED,
-                payload
-            );
+            client
+                .to(buildChatRoomName(chatId))
+                .emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
 
             return { ok: true };
         } catch (error) {
