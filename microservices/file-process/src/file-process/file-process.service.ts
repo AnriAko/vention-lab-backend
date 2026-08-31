@@ -7,8 +7,6 @@ import type {
     FileProcessResultPayload,
 } from '@shared/file-processing/types';
 
-import { ExcelValidationError } from './excel-validation.error';
-import { ExcelParserService } from './excel-parser.service';
 import {
     PermanentProcessingError,
     TransientProcessingError,
@@ -18,6 +16,7 @@ import {
     InvalidStorageKeyError,
     StorageObjectNotFoundError,
 } from './file-storage.service';
+import { ExcelProcessService } from '~/file-process/processors/excel/excel.service';
 
 @Injectable()
 export class FileProcessService {
@@ -25,7 +24,8 @@ export class FileProcessService {
 
     constructor(
         private readonly fileStorage: FileStorageService,
-        private readonly excelParser: ExcelParserService
+        private readonly excelProcessService: ExcelProcessService
+        // private readonly mdProcessService: MdProcessService
     ) {}
 
     async processJob(
@@ -33,22 +33,31 @@ export class FileProcessService {
     ): Promise<FileProcessResultMessage> {
         try {
             const buffer = await this.fileStorage.getFileBuffer(job.storageKey);
-            const totals = await this.excelParser.parseAndAggregate(
-                buffer,
-                job.storageKey,
-                job.organizationId
-            );
 
-            this.logger.log(
-                `Parsed fileId=${job.fileId} users=${totals.length}`
-            );
+            const extension = this.getExtension(job.storageKey);
 
-            return this.buildResult(job, {
-                status: FileProcessStatus.COMPLETED,
-                success: true,
-                error: null,
-                totals,
-            });
+            let result: FileProcessResultPayload;
+
+            switch (extension) {
+                case 'xlsx':
+                case 'xls':
+                    result = await this.excelProcessService.process(
+                        buffer,
+                        job
+                    );
+                    break;
+
+                // case 'md':
+                //     result = await this.mdProcessService.process(buffer, job);
+                //     break;
+
+                default:
+                    throw new PermanentProcessingError(
+                        `Unsupported file extension: .${extension}`
+                    );
+            }
+
+            return this.buildResult(job, result);
         } catch (error) {
             if (this.isPermanentError(error)) {
                 return this.failedResult(
@@ -62,6 +71,16 @@ export class FileProcessService {
 
             throw new TransientProcessingError(message);
         }
+    }
+
+    private getExtension(storageKey: string): string {
+        const extension = storageKey.split('.').pop()?.toLowerCase();
+
+        if (!extension) {
+            throw new PermanentProcessingError('File extension is missing');
+        }
+
+        return extension;
     }
 
     failedResult(
@@ -87,7 +106,6 @@ export class FileProcessService {
 
     isPermanentError(error: unknown): boolean {
         return (
-            error instanceof ExcelValidationError ||
             error instanceof PermanentProcessingError ||
             error instanceof InvalidStorageKeyError ||
             error instanceof StorageObjectNotFoundError

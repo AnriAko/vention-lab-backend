@@ -34,3 +34,10 @@ export function isFileProcessStatus(
         value === FileProcessStatus.FAILED
     );
 }
+
+export enum FileType {
+    EXCEL = 'excel',
+    MD = 'md',
+    // PDF = 'pdf',
+    // TXT = 'txt',
+}

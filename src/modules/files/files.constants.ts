@@ -12,7 +12,7 @@ export const ALLOWED_FILE_TYPES = {
         '.xlsx',
     ],
     // 'application/pdf': ['.pdf'],
-    // 'text/markdown': ['.md'],
+    'text/markdown': ['.md'],
 } as const satisfies Record<string, readonly string[]>;
 
 export type AllowedMimeType = keyof typeof ALLOWED_FILE_TYPES;
