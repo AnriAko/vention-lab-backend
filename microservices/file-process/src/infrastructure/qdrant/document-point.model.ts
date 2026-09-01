@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const DOCUMENTS_COLLECTION = 'documents';
 
-export const DOCUMENTS_VECTOR_SIZE = 1536;
+export const DOCUMENTS_VECTOR_SIZE = 1024;
 
 export const DOCUMENT_PAYLOAD_FIELDS = {
     ORGANIZATION_ID: 'organizationId',

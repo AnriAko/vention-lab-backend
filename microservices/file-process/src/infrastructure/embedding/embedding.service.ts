@@ -1,21 +1,49 @@
-import { Injectable } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 
-import { DOCUMENTS_VECTOR_SIZE } from '../qdrant/document-point.model';
+import { DOCUMENTS_VECTOR_SIZE } from '~/infrastructure/qdrant/document-point.model';
+
+import { InvalidEmbeddingDimensionError } from './embedding.errors';
+import {
+    EMBEDDING_PROVIDER,
+    type EmbeddingProvider,
+} from './embedding.provider';
 
 @Injectable()
 export class EmbeddingService {
-    async embed(_text: string): Promise<number[]> {
-        // TODO: implement real embedding provider
-        return new Array(DOCUMENTS_VECTOR_SIZE).fill(0);
+    constructor(
+        @Inject(EMBEDDING_PROVIDER)
+        private readonly provider: EmbeddingProvider
+    ) {}
+
+    async embed(text: string): Promise<number[]> {
+        const vector = await this.provider.embed(text);
+        this.validateDimension(vector);
+
+        return vector;
     }
 
     async embedBatch(texts: string[]): Promise<number[][]> {
-        const vectors: number[][] = [];
+        const vectors = await this.provider.embedBatch(texts);
 
-        for (const text of texts) {
-            vectors.push(await this.embed(text));
+        for (const vector of vectors) {
+            this.validateDimension(vector);
         }
 
         return vectors;
+    }
+
+    private validateDimension(vector: number[]): void {
+        const actual = vector?.length ?? 0;
+
+        if (actual === 0) {
+            throw new InvalidEmbeddingDimensionError(DOCUMENTS_VECTOR_SIZE, 0);
+        }
+
+        if (actual !== DOCUMENTS_VECTOR_SIZE) {
+            throw new InvalidEmbeddingDimensionError(
+                DOCUMENTS_VECTOR_SIZE,
+                actual
+            );
+        }
     }
 }

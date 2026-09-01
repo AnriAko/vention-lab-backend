@@ -23,7 +23,13 @@ export const envSchema = z
             .default(1000),
         CHUNKING_OVERLAP: z.coerce.number().int().nonnegative().default(150),
 
-        EMBEDDING_BATCH_SIZE: z.coerce.number().int().positive().default(32),
+        OLLAMA_HOST: z.string().url(),
+        OLLAMA_EMBEDDING_MODEL: z.string().min(1),
+        OLLAMA_EMBEDDING_BATCH_SIZE: z.coerce
+            .number()
+            .int()
+            .positive()
+            .default(32),
     })
     .superRefine((env, ctx) => {
         if (env.CHUNKING_OVERLAP >= env.CHUNKING_MAX_CHUNK_SIZE) {
