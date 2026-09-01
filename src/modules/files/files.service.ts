@@ -6,7 +6,7 @@ import { getActiveOrgId } from '~/common/tenancy/organization/organization-conte
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { AUTH_GUEST } from '~/common/security/auth.types';
 import { ClamAvService } from '~/infrastructure/antivirus/clamav.service';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { LoggerService } from '~/shared/logger';
 import { FileStorageService } from '~/infrastructure/file-storage/file-storage.service';
 import { FileProcessingPublisher } from '~/infrastructure/messaging/file-processing/file-processing.publisher';
 import { FileStatus } from '~/generated/prisma/enums';

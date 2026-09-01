@@ -3,6 +3,6 @@
     "compilerOptions": {
         "incremental": false
     },
-    "include": ["src/**/*", "shared/**/*"],
+    "include": ["src/**/*"],
     "exclude": ["node_modules", "dist", "microservices", "test", "**/*spec.ts"]
 }

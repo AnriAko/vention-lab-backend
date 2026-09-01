@@ -1,71 +1,84 @@
-import { Inject, Injectable } from '@nestjs/common';
-import type { ConfigType } from '@nestjs/config';
-import type { Bucket } from '@google-cloud/storage';
+import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors/app-exception';
-import { firebaseConfig } from '~/config/configuration/firebase.config';
 import { FileErrors } from '~/modules/files/files.errors';
-
 import {
-    getFirebaseStorageBucket,
-    initializeFirebaseAdmin,
-} from './firebase-admin.app';
-import { validateStorageKey } from './utils/validate-storage-key';
+    FileStorageService as SharedFileStorageService,
+    InvalidStorageKeyError,
+    StorageObjectNotFoundError,
+    StorageWriteError,
+} from '~/shared/file-storage';
 
 @Injectable()
 export class FileStorageService {
-    private readonly bucket: Bucket;
+    constructor(private readonly storage: SharedFileStorageService) {}
 
-    constructor(
-        @Inject(firebaseConfig.KEY)
-        private readonly config: ConfigType<typeof firebaseConfig>
-    ) {
-        initializeFirebaseAdmin({
-            projectId: this.config.projectId!,
-            storageBucket: this.config.storageBucket!,
-            serviceAccountPath: this.config.serviceAccountPath!,
-        });
-
-        this.bucket = getFirebaseStorageBucket(this.config.storageBucket);
+    writeFile(storageKey: string, buffer: Buffer): Promise<string> {
+        return this.mapStorageErrors(
+            () => this.storage.writeFile(storageKey, buffer),
+            { invalidKey: FileErrors.STORAGE_ERROR }
+        );
     }
 
-    async writeFile(storageKey: string, buffer: Buffer): Promise<string> {
-        validateStorageKey(storageKey);
-
-        const file = this.bucket.file(storageKey);
-
-        try {
-            await file.save(buffer);
-        } catch {
-            await file.delete({ ignoreNotFound: true }).catch(() => undefined);
-            throw new AppException(FileErrors.STORAGE_ERROR);
-        }
-
-        return storageKey;
-    }
-
-    async assertExists(storageKey: string): Promise<string> {
-        validateStorageKey(storageKey);
-
-        const file = this.bucket.file(storageKey);
-        const [exists] = await file.exists();
-
-        if (!exists) {
-            throw new AppException(FileErrors.NOT_FOUND);
-        }
-
-        return storageKey;
+    assertExists(storageKey: string): Promise<string> {
+        return this.mapStorageErrors(
+            () => this.storage.assertExists(storageKey),
+            {
+                invalidKey: FileErrors.STORAGE_ERROR,
+                notFound: FileErrors.NOT_FOUND,
+            }
+        );
     }
 
     openReadStream(storageKey: string) {
-        validateStorageKey(storageKey);
-
-        return this.bucket.file(storageKey).createReadStream();
+        try {
+            return this.storage.openReadStream(storageKey);
+        } catch (error) {
+            this.rethrowMapped(error, {
+                invalidKey: FileErrors.STORAGE_ERROR,
+            });
+        }
     }
 
-    async remove(storageKey: string): Promise<void> {
-        validateStorageKey(storageKey);
+    remove(storageKey: string): Promise<void> {
+        return this.mapStorageErrors(() => this.storage.remove(storageKey), {
+            invalidKey: FileErrors.STORAGE_ERROR,
+        });
+    }
 
-        await this.bucket.file(storageKey).delete({ ignoreNotFound: true });
+    private async mapStorageErrors<T>(
+        action: () => Promise<T>,
+        codes: {
+            invalidKey?: (typeof FileErrors)[keyof typeof FileErrors];
+            notFound?: (typeof FileErrors)[keyof typeof FileErrors];
+        }
+    ): Promise<T> {
+        try {
+            return await action();
+        } catch (error) {
+            this.rethrowMapped(error, codes);
+        }
+    }
+
+    private rethrowMapped(
+        error: unknown,
+        codes: {
+            invalidKey?: (typeof FileErrors)[keyof typeof FileErrors];
+            notFound?: (typeof FileErrors)[keyof typeof FileErrors];
+        }
+    ): never {
+        if (error instanceof InvalidStorageKeyError && codes.invalidKey) {
+            throw new AppException(codes.invalidKey);
+        }
+
+        if (error instanceof StorageObjectNotFoundError && codes.notFound) {
+            throw new AppException(codes.notFound);
+        }
+
+        if (error instanceof StorageWriteError && codes.invalidKey) {
+            throw new AppException(codes.invalidKey);
+        }
+
+        throw error;
     }
 }

@@ -21,7 +21,7 @@ import { OrganizationRole } from '~/generated/prisma/enums';
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { RedisPrefix } from '~/infrastructure/cache/redis.types';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { LoggerService } from '~/shared/logger';
 
 import {
     CHAT_WS_DEDUPLICATION_TTL_SECONDS,

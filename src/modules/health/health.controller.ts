@@ -10,7 +10,7 @@ import { PublicRoute } from '~/common/security/decorators/public.decorator';
 import { ClamAvService } from '~/infrastructure/antivirus/clamav.service';
 import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { RedisService } from '~/infrastructure/cache/redis.service';
-import { RabbitmqService } from '~/infrastructure/messaging/rabbitmq.service';
+import { RabbitmqService } from '~/shared/rabbitmq';
 
 import { HealthCheckResponse } from './responses/health-check.response';
 

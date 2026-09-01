@@ -4,10 +4,11 @@ import type { ConsumeMessage } from 'amqplib';
 import {
     FILE_PROCESSING_RESULTS_QUEUE,
     isFileProcessStatus,
-} from '@shared/file-processing/constants';
-import type { FileProcessResultMessage } from '@shared/file-processing/types';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
-import { RabbitmqService } from '~/infrastructure/messaging/rabbitmq.service';
+} from '~/shared/file-processing/constants';
+import type { FileProcessResultMessage } from '~/shared/file-processing/types';
+import { fileProcessTopology } from '~/shared/file-processing';
+import { LoggerService } from '~/shared/logger';
+import { RabbitmqService } from '~/shared/rabbitmq';
 import { FileProcessingResultService } from '~/modules/files/file-processing-result.service';
 
 @Injectable()
@@ -19,6 +20,8 @@ export class FileProcessingReplyConsumer implements OnModuleInit {
     ) {}
 
     async onModuleInit(): Promise<void> {
+        await this.rabbitmq.assertTopology(fileProcessTopology);
+
         await this.rabbitmq.consume(FILE_PROCESSING_RESULTS_QUEUE, (msg) =>
             this.handleResult(msg)
         );

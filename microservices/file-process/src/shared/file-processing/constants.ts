@@ -41,3 +41,8 @@ export enum FileType {
     // PDF = 'pdf',
     // TXT = 'txt',
 }
+
+export const FileExtensions = {
+    EXCEL: ['xlsx', 'xls', 'xlsm'],
+    MD: ['md'],
+};

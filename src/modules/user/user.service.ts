@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { LoggerService } from '~/shared/logger';
 import type { Prisma } from '~/generated/prisma/client';
 import { OrganizationRole } from '~/generated/prisma/enums';
 

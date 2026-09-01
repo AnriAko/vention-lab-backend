@@ -13,7 +13,7 @@ import {
 import {
     getFirebaseStorageBucket,
     initializeFirebaseAdmin,
-} from '../../src/infrastructure/file-storage/firebase-admin.app';
+} from '../../shared/firebase/firebase-admin.app';
 import { loadPrismaEnv } from '../../src/config/prisma/prisma-env';
 
 const gzip = promisify(zlibGzip);
@@ -30,7 +30,7 @@ function initializeSeedFirebaseStorage() {
         serviceAccountPath: process.env.FIREBASE_SERVICE_ACCOUNT_PATH!,
     });
 
-    return getFirebaseStorageBucket();
+    return getFirebaseStorageBucket(process.env.FIREBASE_STORAGE_BUCKET!);
 }
 
 async function seedOwnerExampleFiles(prisma: PrismaClient) {

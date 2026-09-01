@@ -4,7 +4,7 @@ import { AppException } from '~/common/errors/app-exception';
 import { AUTH_GUEST } from '~/common/security/auth.types';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { AuthErrors } from '~/modules/auth/auth.errors';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { LoggerService } from '~/shared/logger';
 
 import { CHAT_MAX_MEMBERS } from './chat.constants';
 import { ChatErrors } from './chat.errors';

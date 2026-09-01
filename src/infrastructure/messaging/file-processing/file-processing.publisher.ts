@@ -4,10 +4,11 @@ import {
     FILE_PROCESSING_EXCHANGE,
     FILE_PROCESSING_RESULTS_QUEUE,
     FILE_PROCESSING_ROUTING_KEY,
-} from '@shared/file-processing/constants';
-import type { FileProcessJobMessage } from '@shared/file-processing/types';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
-import { RabbitmqService } from '~/infrastructure/messaging/rabbitmq.service';
+} from '~/shared/file-processing/constants';
+import type { FileProcessJobMessage } from '~/shared/file-processing/types';
+import { fileProcessTopology } from '~/shared/file-processing';
+import { LoggerService } from '~/shared/logger';
+import { RabbitmqService } from '~/shared/rabbitmq';
 
 @Injectable()
 export class FileProcessingPublisher {
@@ -17,6 +18,8 @@ export class FileProcessingPublisher {
     ) {}
 
     async publishStorageFinalized(job: FileProcessJobMessage): Promise<void> {
+        await this.rabbitmq.assertTopology(fileProcessTopology);
+
         const published = await this.rabbitmq.publish(
             FILE_PROCESSING_EXCHANGE,
             FILE_PROCESSING_ROUTING_KEY,

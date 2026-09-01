@@ -8,7 +8,7 @@ import { tap } from 'rxjs';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import type { Response } from 'express';
 import { isGraphqlContext } from '~/common/security/utils/execution-context';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { LoggerService } from '~/shared/logger';
 
 @Injectable()
 export class LoggerInterceptor implements NestInterceptor {

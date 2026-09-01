@@ -1,6 +1,13 @@
-import type { MicroserviceSharedSyncConfig } from './copy-shared';
+import type { SharedSyncConfig } from './copy-shared';
 
-export const fileProcess: MicroserviceSharedSyncConfig = {
-    microservice: 'file-process',
-    sharedPackages: ['file-processing', 'rabbitmq'],
+export const fileProcess: SharedSyncConfig = {
+    destDir: 'microservices/file-process/src/shared',
+    sharedPackages: [
+        'file-processing',
+        'rabbitmq',
+        'qdrant',
+        'firebase',
+        'logger',
+        'file-storage',
+    ],
 };

@@ -9,7 +9,7 @@ import {
     FILE_PROCESSING_RESULTS_ROUTING_KEY,
     FILE_PROCESSING_ROUTING_KEY,
 } from './constants';
-import type { RabbitmqTopology } from '@shared/rabbitmq';
+import type { RabbitmqTopology } from '../rabbitmq';
 
 export const fileProcessTopology: RabbitmqTopology = {
     exchanges: [

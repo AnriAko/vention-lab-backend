@@ -15,7 +15,7 @@ import {
     toGraphQLError,
 } from '~/common/http/filters/to-graphql-error';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
-import { LoggerService } from '~/infrastructure/logging/logger.service';
+import { LoggerService } from '~/shared/logger';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
