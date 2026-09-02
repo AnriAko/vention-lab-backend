@@ -213,11 +213,11 @@ services:
                     cpus: '0.25'
                     memory: 1536M
 
-    file-process:
+    file-worker:
         build:
             context: .
-            dockerfile: microservices/file-process/dockerfile
-        image: vention-file-process
+            dockerfile: microservices/file-worker/dockerfile
+        image: vention-file-worker
         restart: always
         env_file:
             - .env.production.local
@@ -226,7 +226,7 @@ services:
             RABBITMQ_HOST: rabbitmq
             FIREBASE_SERVICE_ACCOUNT_PATH: ./credentials/firebase-service-account.json
         volumes:
-            - ./microservices/file-process/credentials:/app/credentials:ro
+            - ./microservices/file-worker/credentials:/app/credentials:ro
         depends_on:
             rabbitmq:
                 condition: service_healthy

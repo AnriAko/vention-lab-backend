@@ -177,11 +177,11 @@ services:
                     cpus: '0.25'
                     memory: 1536M
 
-    file-process:
+    file-worker:
         build:
             context: .
-            dockerfile: microservices/file-process/dockerfile
-        image: vention-file-process
+            dockerfile: microservices/file-worker/dockerfile
+        image: vention-file-worker
         restart: always
         env_file:
             - .env.development.local
@@ -189,7 +189,7 @@ services:
             NODE_ENV: development
             RABBITMQ_HOST: rabbitmq
         volumes:
-            - ./microservices/file-process/credentials:/app/credentials:ro
+            - ./microservices/file-worker/credentials:/app/credentials:ro
         depends_on:
             rabbitmq:
                 condition: service_healthy

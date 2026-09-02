@@ -17,7 +17,7 @@ import {
     FILE_STATUS_WS_NAMESPACE,
     FILE_STATUS_WS_ORG_ROOM_PREFIX,
     FILE_STATUS_WS_SUBSCRIBE_EVENT,
-} from '~/shared/file-processing/constants';
+} from '~/shared/file-worker-contract/constants';
 import { jwtConfig } from '~/config/configuration/jwt.config';
 import { AUTH_HEADER, type JwtPayload } from '~/common/security/auth.types';
 import { extractBearerToken } from '~/common/security/utils/extract-bearer-token';

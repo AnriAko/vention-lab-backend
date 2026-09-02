@@ -8,7 +8,8 @@ import { AUTH_GUEST } from '~/common/security/auth.types';
 import { ClamAvService } from '~/infrastructure/antivirus/clamav.service';
 import { LoggerService } from '~/shared/logger';
 import { FileStorageService } from '~/infrastructure/file-storage/file-storage.service';
-import { FileProcessingPublisher } from '~/infrastructure/messaging/file-processing/file-processing.publisher';
+import { FileDeletionPublisher } from '~/infrastructure/messaging/file-worker/file-deletion.publisher';
+import { FileProcessingPublisher } from '~/infrastructure/messaging/file-worker/file-processing.publisher';
 import { FileStatus } from '~/generated/prisma/enums';
 
 import { FILE_ENCODING_GZIP } from './files.constants';
@@ -30,6 +31,7 @@ export class FilesService {
         private readonly fileStorageService: FileStorageService,
         private readonly clamAvService: ClamAvService,
         private readonly fileProcessingPublisher: FileProcessingPublisher,
+        private readonly fileDeletionPublisher: FileDeletionPublisher,
         private readonly statusNotifier: FilesStatusNotifier,
         private readonly logger: LoggerService
     ) {}
@@ -182,6 +184,14 @@ export class FilesService {
 
     async remove(id: string): Promise<null> {
         const file = await this.findById(id);
+
+        if (
+            file.status === FileStatus.UPLOADED ||
+            file.status === FileStatus.PROCESSING
+        ) {
+            throw new AppException(FileErrors.PROCESSING_IN_PROGRESS);
+        }
+
         const remainingRefs = await this.filesRepository.countByStorageKey(
             file.storageKey,
             file.id
@@ -191,6 +201,21 @@ export class FilesService {
 
         if (remainingRefs === 0) {
             await this.fileStorageService.remove(file.storageKey);
+        }
+
+        try {
+            await this.fileDeletionPublisher.publishDelete({
+                fileId: file.id,
+            });
+        } catch (error) {
+            const message =
+                error instanceof Error
+                    ? error.message
+                    : 'Failed to enqueue file delete';
+
+            this.logger.error(
+                `[FilesService] delete publish failed fileId=${file.id} ${message}`
+            );
         }
 
         this.logger.log(

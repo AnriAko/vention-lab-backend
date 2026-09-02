@@ -173,7 +173,7 @@ Stop production environment:
 npm run docker:prod:down
 ```
 
-### File-process worker image
+### File-worker image
 
 ```bash
 npm run docker:build:worker
@@ -181,11 +181,9 @@ npm run docker:build:worker
 
 ---
 
-## Excel file processing pipeline
+## File processing pipeline
 
-Flow: API upload → Firebase → RabbitMQ job → `file-process` worker (download/parse only) → RabbitMQ reply → API updates DB + WebSocket.
-
-Details and RabbitMQ glossary: [`microservices/file-process/file-process.md`](microservices/file-process/file-process.md)
+Flow: API upload → Firebase → RabbitMQ process job → `file-worker` (Excel parse / Markdown ingestion) → RabbitMQ reply → API updates DB + WebSocket. File delete → RabbitMQ delete job → worker cleans Qdrant vectors.
 
 ### Status lifecycle
 
@@ -198,8 +196,8 @@ Frontend may show a local `uploading` state while the HTTP upload is in flight; 
 ```bash
 npm run docker:dev
 npm run shared:sync
-cp credentials/firebase-service-account.json microservices/file-process/credentials/
-cd microservices/file-process
+cp credentials/firebase-service-account.json microservices/file-worker/credentials/
+cd microservices/file-worker
 cp .env.example .env.development.local   # adjust if needed
 npm install
 npm run start:dev
@@ -208,7 +206,7 @@ npm run start:dev
 ### Run worker via Docker
 
 ```bash
-# put service account JSON in microservices/file-process/credentials/
+# put service account JSON in microservices/file-worker/credentials/
 npm run worker:docker:up
 ```
 
@@ -261,9 +259,9 @@ src/
   config/
   main.ts
 shared/
-  file-processing/
+  file-worker-contract/
 microservices/
-  file-process/
+  file-worker/
 ```
 
 ---

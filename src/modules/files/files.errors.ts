@@ -58,4 +58,9 @@ export const FileErrors = {
         message: 'Antivirus service is unavailable',
         statusCode: HttpStatus.SERVICE_UNAVAILABLE,
     },
+    PROCESSING_IN_PROGRESS: {
+        code: 'FILE_PROCESSING_IN_PROGRESS',
+        message: 'File cannot be deleted while it is being processed',
+        statusCode: HttpStatus.CONFLICT,
+    },
 } as const satisfies Record<string, AppErrorDefinition>;

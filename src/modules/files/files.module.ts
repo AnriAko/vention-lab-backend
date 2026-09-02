@@ -3,8 +3,9 @@ import { Module } from '@nestjs/common';
 import { AntivirusModule } from '~/infrastructure/antivirus/antivirus.module';
 import { PrismaModule } from '~/infrastructure/database/prisma.module';
 import { FileStorageModule } from '~/infrastructure/file-storage/file-storage.module';
-import { FileProcessingReplyConsumer } from '~/infrastructure/messaging/file-processing/file-processing-reply.consumer';
-import { FileProcessingPublisher } from '~/infrastructure/messaging/file-processing/file-processing.publisher';
+import { FileProcessingReplyConsumer } from '~/infrastructure/messaging/file-worker/file-processing-reply.consumer';
+import { FileDeletionPublisher } from '~/infrastructure/messaging/file-worker/file-deletion.publisher';
+import { FileProcessingPublisher } from '~/infrastructure/messaging/file-worker/file-processing.publisher';
 import { FileProcessingResultService } from './file-processing-result.service';
 import { FilesController } from './files.controller';
 import { FilesGateway } from './files.gateway';
@@ -22,6 +23,7 @@ import { FilesStatusNotifier } from './files-status.notifier';
         FilesStatusNotifier,
         FileProcessingResultService,
         FileProcessingPublisher,
+        FileDeletionPublisher,
         FileProcessingReplyConsumer,
     ],
     exports: [FilesService, FilesGateway, FilesStatusNotifier],
