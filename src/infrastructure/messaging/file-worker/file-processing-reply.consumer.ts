@@ -22,8 +22,9 @@ export class FileProcessingReplyConsumer implements OnModuleInit {
     async onModuleInit(): Promise<void> {
         await this.rabbitmq.assertTopology(fileWorkerTopology);
 
-        await this.rabbitmq.consume(FILE_WORKER_PROCESSING_RESULTS_QUEUE, (msg) =>
-            this.handleResult(msg)
+        await this.rabbitmq.consume(
+            FILE_WORKER_PROCESSING_RESULTS_QUEUE,
+            (msg) => this.handleResult(msg)
         );
     }
 

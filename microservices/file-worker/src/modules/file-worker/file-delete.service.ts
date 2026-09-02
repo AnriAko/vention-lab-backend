@@ -10,9 +10,7 @@ import {
 
 @Injectable()
 export class FileDeleteService {
-    constructor(
-        private readonly qdrantDocuments: QdrantDocumentsService
-    ) {}
+    constructor(private readonly qdrantDocuments: QdrantDocumentsService) {}
 
     async deleteJob(job: FileDeleteJobMessage): Promise<void> {
         try {

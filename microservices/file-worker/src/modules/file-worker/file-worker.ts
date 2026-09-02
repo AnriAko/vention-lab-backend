@@ -242,11 +242,9 @@ export class FileWorker implements OnModuleInit {
         correlationId: string,
         error: string
     ): Promise<void> {
-        await this.reply(
-            msg,
-            this.fileWorkerService.failedResult(job, error),
-            { correlationId }
-        );
+        await this.reply(msg, this.fileWorkerService.failedResult(job, error), {
+            correlationId,
+        });
     }
 
     private async handleProcessRetryExhausted(
