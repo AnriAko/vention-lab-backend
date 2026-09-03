@@ -16,10 +16,7 @@ import {
     FileStorageService,
 } from '~/shared/file-storage';
 
-import {
-    PermanentRagError,
-    TransientRagError,
-} from './rag-process.errors';
+import { PermanentRagError, TransientRagError } from './rag-process.errors';
 
 @Injectable()
 export class RagProcessService {

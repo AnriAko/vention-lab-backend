@@ -47,9 +47,7 @@ export class RagWorker implements OnModuleInit {
             this.handleDeleteMessage(msg)
         );
 
-        this.logger.log(
-            `Consuming ${RAG_PROCESS_QUEUE}, ${RAG_DELETE_QUEUE}`
-        );
+        this.logger.log(`Consuming ${RAG_PROCESS_QUEUE}, ${RAG_DELETE_QUEUE}`);
     }
 
     private async handleProcessMessage(msg: ConsumeMessage): Promise<void> {
@@ -243,17 +241,12 @@ export class RagWorker implements OnModuleInit {
             `Transient RAG delete failure fileId=${job.fileId} retry=${retryCount + 1}`
         );
 
-        await this.rabbitmq.publish(
-            RAG_EXCHANGE,
-            RAG_DELETE_ROUTING_KEY,
-            job,
-            {
-                headers: {
-                    ...(msg.properties.headers ?? {}),
-                    [RAG_DELETE_RETRY_HEADER]: retryCount + 1,
-                },
-            }
-        );
+        await this.rabbitmq.publish(RAG_EXCHANGE, RAG_DELETE_ROUTING_KEY, job, {
+            headers: {
+                ...(msg.properties.headers ?? {}),
+                [RAG_DELETE_RETRY_HEADER]: retryCount + 1,
+            },
+        });
         this.rabbitmq.ack(msg);
     }
 

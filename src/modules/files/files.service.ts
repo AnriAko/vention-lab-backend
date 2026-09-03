@@ -157,7 +157,9 @@ export class FilesService {
                 publishedAt: new Date().toISOString(),
             };
 
-            const extension = validated.extension.replace(/^\./, '').toLowerCase();
+            const extension = validated.extension
+                .replace(/^\./, '')
+                .toLowerCase();
 
             if (FileExtensions.EXCEL.includes(extension)) {
                 await this.fileProcessingPublisher.publishStorageFinalized(job);

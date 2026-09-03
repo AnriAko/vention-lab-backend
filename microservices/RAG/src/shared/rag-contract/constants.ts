@@ -28,9 +28,7 @@ export enum RagProcessStatus {
     FAILED = 'FAILED',
 }
 
-export function isRagProcessStatus(
-    value: unknown
-): value is RagProcessStatus {
+export function isRagProcessStatus(value: unknown): value is RagProcessStatus {
     return (
         value === RagProcessStatus.PROCESSING ||
         value === RagProcessStatus.COMPLETED ||
