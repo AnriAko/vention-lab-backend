@@ -1,9 +1,10 @@
 import { syncSharedTarget } from './copy-shared';
-import { fileWorker } from './file-worker';
+import { fileProcess } from './file-process';
 import { mainService } from './main';
+import { rag } from './rag';
 import type { SharedSyncConfig } from './copy-shared';
 
-const configs: SharedSyncConfig[] = [mainService, fileWorker];
+const configs: SharedSyncConfig[] = [mainService, fileProcess, rag];
 
 function main(): void {
     if (configs.length === 0) {

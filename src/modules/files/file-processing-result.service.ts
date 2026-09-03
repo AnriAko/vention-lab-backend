@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
 
-import { FileProcessStatus } from '~/shared/file-worker-contract/constants';
+import { FileProcessStatus } from '~/shared/file-process-contract/constants';
 import type {
     FileProcessResultMessage,
     FileProcessUserTotal,
-} from '~/shared/file-worker-contract/types';
+} from '~/shared/file-process-contract/types';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
 import { PrismaRlsService } from '~/common/tenancy/rls/prisma-rls.service';
 import { FileStatus } from '~/generated/prisma/enums';

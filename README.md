@@ -173,17 +173,22 @@ Stop production environment:
 npm run docker:prod:down
 ```
 
-### File-worker image
+### File-process / RAG worker images
 
 ```bash
 npm run docker:build:worker
+npm run docker:build:rag
 ```
 
 ---
 
 ## File processing pipeline
 
-Flow: API upload → Firebase → RabbitMQ process job → `file-worker` (Excel parse / Markdown ingestion) → RabbitMQ reply → API updates DB + WebSocket. File delete → RabbitMQ delete job → worker cleans Qdrant vectors.
+Flow:
+
+- Excel: API upload → Firebase → RabbitMQ `file.process` → `file-process` (Excel parse) → RabbitMQ reply → API updates DB + WebSocket
+- Markdown: API upload → Firebase → RabbitMQ `rag.process` → `rag` (parse → chunk → embed → Qdrant) → RabbitMQ reply → API updates DB + WebSocket
+- Delete: API delete → RabbitMQ `rag.delete` → `rag` cleans Qdrant vectors by `fileId`
 
 ### Status lifecycle
 
@@ -191,23 +196,35 @@ Flow: API upload → Firebase → RabbitMQ process job → `file-worker` (Excel 
 
 Frontend may show a local `uploading` state while the HTTP upload is in flight; that is not a backend DB status.
 
-### Run worker locally
+### Run file-process locally
 
 ```bash
 npm run docker:dev
 npm run shared:sync
-cp credentials/firebase-service-account.json microservices/file-worker/credentials/
-cd microservices/file-worker
+cp credentials/firebase-service-account.json microservices/file-process/credentials/
+cd microservices/file-process
 cp .env.example .env.development.local   # adjust if needed
 npm install
 npm run start:dev
 ```
 
-### Run worker via Docker
+### Run RAG locally
 
 ```bash
-# put service account JSON in microservices/file-worker/credentials/
+npm run shared:sync
+cp credentials/firebase-service-account.json microservices/rag/credentials/
+cd microservices/rag
+cp .env.example .env.development.local   # adjust if needed
+npm install
+npm run start:dev
+```
+
+### Run workers via Docker
+
+```bash
+# put service account JSON in microservices/file-process/credentials/ and microservices/rag/credentials/
 npm run worker:docker:up
+npm run rag:docker:up
 ```
 
 From the worker package: `npm run docker:up` / `npm run docker:logs` / `npm run docker:build`
@@ -259,9 +276,11 @@ src/
   config/
   main.ts
 shared/
-  file-worker-contract/
+  file-process-contract/
+  rag-contract/
 microservices/
-  file-worker/
+  file-process/
+  rag/
 ```
 
 ---

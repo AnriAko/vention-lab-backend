@@ -213,11 +213,11 @@ services:
                     cpus: '0.25'
                     memory: 1536M
 
-    file-worker:
+    file-process:
         build:
             context: .
-            dockerfile: microservices/file-worker/dockerfile
-        image: vention-file-worker
+            dockerfile: microservices/file-process/dockerfile
+        image: vention-file-process
         restart: always
         env_file:
             - .env.production.local
@@ -226,9 +226,42 @@ services:
             RABBITMQ_HOST: rabbitmq
             FIREBASE_SERVICE_ACCOUNT_PATH: ./credentials/firebase-service-account.json
         volumes:
-            - ./microservices/file-worker/credentials:/app/credentials:ro
+            - ./microservices/file-process/credentials:/app/credentials:ro
         depends_on:
             rabbitmq:
+                condition: service_healthy
+            api:
+                condition: service_healthy
+        networks:
+            - backend
+        deploy:
+            resources:
+                limits:
+                    cpus: '0.75'
+                    memory: 512M
+                reservations:
+                    cpus: '0.20'
+                    memory: 256M
+
+    rag:
+        build:
+            context: .
+            dockerfile: microservices/rag/dockerfile
+        image: vention-rag
+        restart: always
+        env_file:
+            - .env.production.local
+        environment:
+            NODE_ENV: production
+            RABBITMQ_HOST: rabbitmq
+            QDRANT_URL: http://vector-db:6333
+            FIREBASE_SERVICE_ACCOUNT_PATH: ./credentials/firebase-service-account.json
+        volumes:
+            - ./microservices/rag/credentials:/app/credentials:ro
+        depends_on:
+            rabbitmq:
+                condition: service_healthy
+            vector-db:
                 condition: service_healthy
             api:
                 condition: service_healthy

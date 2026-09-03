@@ -1,0 +1,32 @@
+FROM node:26-alpine AS builder
+
+WORKDIR /app
+
+COPY microservices/rag/package*.json ./
+RUN npm install
+
+COPY microservices/rag/ ./
+COPY shared /shared
+
+RUN mkdir -p src/shared/rag-contract src/shared/rabbitmq src/shared/qdrant src/shared/firebase src/shared/logger src/shared/file-storage \
+    && cp -R /shared/rag-contract/. src/shared/rag-contract/ \
+    && cp -R /shared/rabbitmq/. src/shared/rabbitmq/ \
+    && cp -R /shared/qdrant/. src/shared/qdrant/ \
+    && cp -R /shared/firebase/. src/shared/firebase/ \
+    && cp -R /shared/logger/. src/shared/logger/ \
+    && cp -R /shared/file-storage/. src/shared/file-storage/ \
+    && rm -f tsconfig.build.tsbuildinfo tsconfig.tsbuildinfo
+
+RUN npm run build && test -f dist/main.js
+
+FROM node:26-alpine AS runner
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/node_modules ./node_modules
+
+CMD ["node", "dist/main.js"]

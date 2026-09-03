@@ -8,8 +8,11 @@ import { AUTH_GUEST } from '~/common/security/auth.types';
 import { ClamAvService } from '~/infrastructure/antivirus/clamav.service';
 import { LoggerService } from '~/shared/logger';
 import { FileStorageService } from '~/infrastructure/file-storage/file-storage.service';
-import { FileDeletionPublisher } from '~/infrastructure/messaging/file-worker/file-deletion.publisher';
-import { FileProcessingPublisher } from '~/infrastructure/messaging/file-worker/file-processing.publisher';
+import { FileProcessingPublisher } from '~/infrastructure/messaging/file-process/file-processing.publisher';
+import { RagDeletionPublisher } from '~/infrastructure/messaging/rag/rag-deletion.publisher';
+import { RagProcessingPublisher } from '~/infrastructure/messaging/rag/rag-processing.publisher';
+import { FileExtensions } from '~/shared/file-process-contract/constants';
+import { RagFileExtensions } from '~/shared/rag-contract/constants';
 import { FileStatus } from '~/generated/prisma/enums';
 
 import { FILE_ENCODING_GZIP } from './files.constants';
@@ -31,7 +34,8 @@ export class FilesService {
         private readonly fileStorageService: FileStorageService,
         private readonly clamAvService: ClamAvService,
         private readonly fileProcessingPublisher: FileProcessingPublisher,
-        private readonly fileDeletionPublisher: FileDeletionPublisher,
+        private readonly ragProcessingPublisher: RagProcessingPublisher,
+        private readonly ragDeletionPublisher: RagDeletionPublisher,
         private readonly statusNotifier: FilesStatusNotifier,
         private readonly logger: LoggerService
     ) {}
@@ -142,7 +146,7 @@ export class FilesService {
         });
 
         try {
-            await this.fileProcessingPublisher.publishStorageFinalized({
+            const job = {
                 fileId: uploaded.id,
                 storageKey: uploaded.storageKey,
                 originalFilename: uploaded.name,
@@ -151,7 +155,19 @@ export class FilesService {
                 organizationId: uploaded.organizationId,
                 ownerId: uploaded.ownerId,
                 publishedAt: new Date().toISOString(),
-            });
+            };
+
+            const extension = validated.extension.replace(/^\./, '').toLowerCase();
+
+            if (FileExtensions.EXCEL.includes(extension)) {
+                await this.fileProcessingPublisher.publishStorageFinalized(job);
+            } else if (RagFileExtensions.MD.includes(extension)) {
+                await this.ragProcessingPublisher.publishStorageFinalized(job);
+            } else {
+                throw new Error(
+                    `No worker route for file extension: .${extension}`
+                );
+            }
         } catch (error) {
             const message =
                 error instanceof Error
@@ -204,7 +220,7 @@ export class FilesService {
         }
 
         try {
-            await this.fileDeletionPublisher.publishDelete({
+            await this.ragDeletionPublisher.publishDelete({
                 fileId: file.id,
             });
         } catch (error) {
