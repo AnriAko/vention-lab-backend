@@ -1,13 +1,15 @@
 import { Module } from '@nestjs/common';
 
-import { ExcelProcessModule } from '../excel/excel.module';
+import { ExcelProcessModule } from '~/modules/excel/excel.module';
 import { FileStorageModule } from '@vention/shared-file-storage';
 
-import { FileProcessConsumer } from './file-process.consumer';
+import { FileProcessController } from './file-process.controller';
+import { FileProcessStatusPublisher } from './file-process.result.publisher';
 import { FileProcessService } from './file-process.service';
 
 @Module({
     imports: [ExcelProcessModule, FileStorageModule],
-    providers: [FileProcessService, FileProcessConsumer],
+    controllers: [FileProcessController],
+    providers: [FileProcessService, FileProcessStatusPublisher],
 })
 export class FileProcessModule {}

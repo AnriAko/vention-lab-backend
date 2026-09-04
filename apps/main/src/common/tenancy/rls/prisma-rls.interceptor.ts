@@ -8,11 +8,7 @@ import {
     IS_PUBLIC_KEY,
     SKIP_ORGANIZATION_KEY,
 } from '~/common/security/constants';
-import {
-    getWsClient,
-    isWsContext,
-} from '~/common/security/utils/execution-context';
-import { getWsClientUser } from '~/common/security/utils/ws-handshake';
+import { isWsContext } from '~/common/security/utils/execution-context';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { PrismaRlsService } from '~/common/tenancy/rls/prisma-rls.service';
 
@@ -46,7 +42,7 @@ export class PrismaRlsInterceptor implements NestInterceptor {
         }
 
         if (isWsContext(context)) {
-            return this.interceptWs(context, next);
+            return next.handle();
         }
 
         const store = requestContext.getStore();
@@ -61,27 +57,5 @@ export class PrismaRlsInterceptor implements NestInterceptor {
         }
 
         return from(this.prismaRls.withRls(() => lastValueFrom(next.handle())));
-    }
-
-    private interceptWs(
-        context: ExecutionContext,
-        next: CallHandler
-    ): Observable<unknown> {
-        const user = getWsClientUser(getWsClient(context));
-
-        if (!user?.userId || !user.organizationId || !user.role) {
-            return next.handle();
-        }
-
-        return from(
-            this.prismaRls.withTenant(
-                {
-                    userId: user.userId,
-                    organizationId: user.organizationId,
-                    role: user.role,
-                },
-                () => lastValueFrom(next.handle())
-            )
-        );
     }
 }

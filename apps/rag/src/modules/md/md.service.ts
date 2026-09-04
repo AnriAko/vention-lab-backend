@@ -3,8 +3,8 @@ import { Injectable } from '@nestjs/common';
 import { DocumentIngestionService } from '~/infrastructure/documents/document-ingestion.service';
 import { RagProcessStatus } from '@vention/rag-contract';
 import type {
-    RagProcessJobMessage,
-    RagProcessResultPayload,
+    RagFileProcessJobMessage,
+    RagFileProcessResultPayload,
 } from '@vention/rag-contract/types';
 import { LoggerService } from '@vention/shared-logger';
 
@@ -17,8 +17,8 @@ export class MdProcessService {
 
     async process(
         buffer: Buffer,
-        job: RagProcessJobMessage
-    ): Promise<RagProcessResultPayload> {
+        job: RagFileProcessJobMessage
+    ): Promise<RagFileProcessResultPayload> {
         const chunkCount = await this.documentIngestion.ingestMarkdown(buffer, {
             organizationId: job.organizationId,
             documentId: job.fileId,

@@ -4,12 +4,12 @@ import { MdProcessModule } from '../md/md.module';
 import { QdrantDocumentsModule } from '~/infrastructure/qdrant/qdrant.module';
 import { FileStorageModule } from '@vention/shared-file-storage';
 
-import { RagDeleteService } from './rag-delete.service';
-import { RagProcessService } from './rag-process.service';
-import { RagWorker } from './rag.worker';
+import { RagFileDeleteService } from './rag-file-delete.service';
+import { RagFileProcessService } from './rag-file-process.service';
+import { RagFileWorker } from './rag.worker';
 
 @Module({
     imports: [MdProcessModule, QdrantDocumentsModule, FileStorageModule],
-    providers: [RagProcessService, RagDeleteService, RagWorker],
+    providers: [RagFileProcessService, RagFileDeleteService, RagFileWorker],
 })
 export class RagModule {}

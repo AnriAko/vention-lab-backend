@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
+import { AppException } from '~/common/errors/app-exception';
 import { paginatePrisma } from '~/common/api/pagination/paginate-prisma';
 import type { Pagination } from '~/common/api/pagination/pagination.schema';
 import type { PaginatedResult } from '~/common/api/pagination/pagination.types';
@@ -10,8 +11,10 @@ import { addWhere } from '~/infrastructure/database/scopes/addWhere';
 import { activeTenantScope } from '~/infrastructure/database/scopes/organization-scope';
 import { organizationUserScope } from '~/infrastructure/database/scopes/user-scope';
 import {
+    chatMemberUserSelect,
     chatSelect,
     chatUsersSelect,
+    messageScalarsSelect,
     messageSelect,
 } from '~/infrastructure/database/selects/chat.types';
 import type {
@@ -19,6 +22,7 @@ import type {
     ChatUserRecord,
     MessageRecord,
 } from '~/infrastructure/database/selects/chat.types';
+import { ChatErrors } from './chat.errors';
 
 @Injectable()
 export class ChatRepository {
@@ -35,6 +39,25 @@ export class ChatRepository {
                 },
             }),
             select: chatSelect,
+        });
+    }
+
+    findAccessibleByIdForUser(
+        id: string,
+        userId: string
+    ): Promise<{ id: string } | null> {
+        return this.prisma.chat.findFirst({
+            where: addWhere(activeTenantScope(), {
+                id,
+                users: {
+                    some: {
+                        userId,
+                    },
+                },
+            }),
+            select: {
+                id: true,
+            },
         });
     }
 
@@ -206,19 +229,35 @@ export class ChatRepository {
         });
     }
 
-    createMessage(
+    async createMessage(
         chatId: string,
         senderId: string,
         content: string
     ): Promise<MessageRecord> {
-        return this.prisma.message.create({
+        const message = await this.prisma.message.create({
             data: {
                 chatId,
                 senderId,
                 content,
             },
-            select: messageSelect,
+            select: messageScalarsSelect,
         });
+
+        const sender = await this.prisma.user.findFirst({
+            where: addWhere(organizationUserScope(), {
+                id: senderId,
+            }),
+            select: chatMemberUserSelect,
+        });
+
+        if (!sender) {
+            throw new AppException(ChatErrors.USER_NOT_IN_ORGANIZATION);
+        }
+
+        return {
+            ...message,
+            sender,
+        };
     }
 
     async deleteMessage(id: string): Promise<void> {

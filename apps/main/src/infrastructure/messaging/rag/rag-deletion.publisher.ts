@@ -4,7 +4,7 @@ import {
     RAG_DELETE_ROUTING_KEY,
     RAG_EXCHANGE,
 } from '@vention/rag-contract/constants';
-import type { RagDeleteJobMessage } from '@vention/rag-contract/types';
+import type { RagFileDeleteJobMessage } from '@vention/rag-contract/types';
 import { ragTopology } from '@vention/rag-contract';
 import { LoggerService } from '@vention/shared-logger';
 import { RabbitmqService } from '@vention/shared-rabbitmq';
@@ -16,7 +16,7 @@ export class RagDeletionPublisher {
         private readonly logger: LoggerService
     ) {}
 
-    async publishDelete(job: RagDeleteJobMessage): Promise<void> {
+    async publishDelete(job: RagFileDeleteJobMessage): Promise<void> {
         await this.rabbitmq.assertTopology(ragTopology);
 
         const published = await this.rabbitmq.publish(

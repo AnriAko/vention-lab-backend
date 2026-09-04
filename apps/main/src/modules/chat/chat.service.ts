@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors/app-exception';
 import { AUTH_GUEST, type AuthUser } from '~/common/security/auth.types';
+import type { ChatRecord } from '~/infrastructure/database/selects/chat.types';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { RedisPrefix } from '~/infrastructure/cache/redis.types';
@@ -85,7 +86,7 @@ export class ChatService {
 
     async findMembers(chatId: string): Promise<ChatMemberResponse[]> {
         const parsedChatId = parseInput(ChatIdArgSchema, { chatId }).chatId;
-        await this.requireChatMembership(parsedChatId);
+        await this.assertChatMembership(parsedChatId);
 
         const members = await this.chatRepository.findMembers(parsedChatId);
 
@@ -98,7 +99,7 @@ export class ChatService {
         args: ChatMessagesArgs
     ): Promise<PaginatedMessagesResponse> {
         const parsed = parseInput(ChatMessagesSchema, args);
-        await this.requireChatMembership(parsed.chatId);
+        await this.assertChatMembership(parsed.chatId);
 
         const result = await this.chatRepository.findMessages(parsed.chatId, {
             page: parsed.page,
@@ -147,7 +148,7 @@ export class ChatService {
 
     async deleteChat(id: string): Promise<boolean> {
         const chatId = parseInput(ChatIdSchema, { id }).id;
-        await this.requireChatMembership(chatId);
+        await this.assertChatMembership(chatId);
 
         await this.chatRepository.delete(chatId);
 
@@ -158,7 +159,7 @@ export class ChatService {
 
     async addChatMember(input: AddChatMemberDto): Promise<ChatMemberResponse> {
         const { chatId, userId } = parseInput(AddChatMemberSchema, input);
-        await this.requireChatMembership(chatId);
+        await this.assertChatMembership(chatId);
 
         const targetMember =
             await this.chatRepository.findOrganizationMember(userId);
@@ -193,7 +194,7 @@ export class ChatService {
 
     async removeChatMember(input: RemoveChatMemberDto): Promise<boolean> {
         const { chatId, userId } = parseInput(RemoveChatMemberSchema, input);
-        await this.requireChatMembership(chatId);
+        await this.assertChatMembership(chatId);
 
         const isMember = await this.chatRepository.isMember(chatId, userId);
 
@@ -235,7 +236,7 @@ export class ChatService {
             throw new AppException(ChatErrors.MESSAGE_NOT_FOUND);
         }
 
-        await this.requireChatMembership(message.chatId);
+        await this.assertChatMembership(message.chatId);
 
         if (message.senderId !== currentUserId) {
             throw new AppException(ChatErrors.MESSAGE_DELETE_FORBIDDEN);
@@ -252,22 +253,7 @@ export class ChatService {
         user: AuthUser,
         input: WsSendMessage
     ): Promise<{ message: ChatMessageAck['message']; duplicate: boolean }> {
-        await this.assertMemberAccess(input.chatId, user.userId);
-
-        const dedupeKey = input.clientMessageId
-            ? buildMessageDedupeKey({
-                  userId: user.userId,
-                  chatId: input.chatId,
-                  clientMessageId: input.clientMessageId,
-              })
-            : undefined;
-
-        const existing = dedupeKey
-            ? await this.redisService.getJson<ChatMessageAck['message']>(
-                  RedisPrefix.CHAT_MESSAGE_DEDUPE,
-                  dedupeKey
-              )
-            : null;
+        const existing = await this.findDedupedRealtimeMessage(user, input);
 
         if (existing) {
             return {
@@ -282,14 +268,7 @@ export class ChatService {
             senderId: user.userId,
         });
 
-        if (dedupeKey) {
-            await this.redisService.setJson(
-                RedisPrefix.CHAT_MESSAGE_DEDUPE,
-                dedupeKey,
-                message,
-                CHAT_WS_DEDUPLICATION_TTL_SECONDS
-            );
-        }
+        await this.rememberRealtimeMessageDedupe(user, input, message);
 
         return {
             message,
@@ -297,8 +276,51 @@ export class ChatService {
         };
     }
 
+    async findDedupedRealtimeMessage(
+        user: AuthUser,
+        input: WsSendMessage
+    ): Promise<MessageResponse | null> {
+        if (!input.clientMessageId) {
+            return null;
+        }
+
+        const dedupeKey = buildMessageDedupeKey({
+            userId: user.userId,
+            chatId: input.chatId,
+            clientMessageId: input.clientMessageId,
+        });
+
+        return this.redisService.getJson<MessageResponse>(
+            RedisPrefix.CHAT_MESSAGE_DEDUPE,
+            dedupeKey
+        );
+    }
+
+    async rememberRealtimeMessageDedupe(
+        user: AuthUser,
+        input: WsSendMessage,
+        message: MessageResponse
+    ): Promise<void> {
+        if (!input.clientMessageId) {
+            return;
+        }
+
+        const dedupeKey = buildMessageDedupeKey({
+            userId: user.userId,
+            chatId: input.chatId,
+            clientMessageId: input.clientMessageId,
+        });
+
+        await this.redisService.setJson(
+            RedisPrefix.CHAT_MESSAGE_DEDUPE,
+            dedupeKey,
+            message,
+            CHAT_WS_DEDUPLICATION_TTL_SECONDS
+        );
+    }
+
     async assertMemberAccess(chatId: string, userId: string): Promise<void> {
-        await this.requireChatMembershipForUser(chatId, userId);
+        await this.assertChatMembershipForUser(chatId, userId);
     }
 
     async createMessageForUser(input: {
@@ -306,7 +328,7 @@ export class ChatService {
         content: string;
         senderId: string;
     }): Promise<MessageResponse> {
-        await this.requireChatMembershipForUser(input.chatId, input.senderId);
+        await this.assertChatMembershipForUser(input.chatId, input.senderId);
 
         const message = await this.chatRepository.createMessage(
             input.chatId,
@@ -325,7 +347,7 @@ export class ChatService {
         chatId: string,
         userId: string
     ): Promise<string[]> {
-        await this.requireChatMembershipForUser(chatId, userId);
+        await this.assertChatMembershipForUser(chatId, userId);
 
         const members = await this.chatRepository.findMembers(chatId);
 
@@ -344,16 +366,24 @@ export class ChatService {
         return userId;
     }
 
-    private async requireChatMembership(chatId: string) {
-        const chat = await this.requireChatMembershipForUser(
+    private async requireChatMembership(chatId: string): Promise<ChatRecord> {
+        return this.requireChatMembershipForUser(
             chatId,
             this.getCurrentUserId()
         );
-
-        return chat;
     }
 
-    private async requireChatMembershipForUser(chatId: string, userId: string) {
+    private async assertChatMembership(chatId: string): Promise<void> {
+        await this.assertChatMembershipForUser(
+            chatId,
+            this.getCurrentUserId()
+        );
+    }
+
+    private async requireChatMembershipForUser(
+        chatId: string,
+        userId: string
+    ): Promise<ChatRecord> {
         const chat = await this.chatRepository.findByIdForUser(chatId, userId);
 
         if (!chat) {
@@ -361,5 +391,19 @@ export class ChatService {
         }
 
         return chat;
+    }
+
+    private async assertChatMembershipForUser(
+        chatId: string,
+        userId: string
+    ): Promise<void> {
+        const chat = await this.chatRepository.findAccessibleByIdForUser(
+            chatId,
+            userId
+        );
+
+        if (!chat) {
+            throw new AppException(ChatErrors.NOT_FOUND);
+        }
     }
 }

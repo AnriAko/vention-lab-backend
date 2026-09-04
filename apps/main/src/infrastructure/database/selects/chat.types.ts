@@ -22,12 +22,16 @@ export const chatSelect = {
     },
 } as const;
 
-export const messageSelect = {
+export const messageScalarsSelect = {
     id: true,
     chatId: true,
     senderId: true,
     content: true,
     createdAt: true,
+} as const;
+
+export const messageSelect = {
+    ...messageScalarsSelect,
     sender: {
         select: chatMemberUserSelect,
     },

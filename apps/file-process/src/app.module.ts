@@ -20,9 +20,11 @@ import { RabbitmqModule } from '@vention/shared-rabbitmq';
             validate: validateEnv,
             load: configLoaders,
         }),
+
         LoggerModule.forRoot({
             serviceName: 'file-process',
         }),
+
         RabbitmqModule.forRootAsync({
             inject: [rabbitmqConfig.KEY],
             useFactory: (config: ConfigType<typeof rabbitmqConfig>) => ({
@@ -32,6 +34,7 @@ import { RabbitmqModule } from '@vention/shared-rabbitmq';
                 password: config.password!,
             }),
         }),
+
         FirebaseModule.forRootAsync({
             inject: [firebaseConfig.KEY],
             useFactory: (config: ConfigType<typeof firebaseConfig>) => ({
@@ -40,6 +43,7 @@ import { RabbitmqModule } from '@vention/shared-rabbitmq';
                 serviceAccountPath: config.serviceAccountPath!,
             }),
         }),
+
         FileProcessModule,
     ],
 })

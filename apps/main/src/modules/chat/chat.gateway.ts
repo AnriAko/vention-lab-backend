@@ -1,4 +1,9 @@
-import { SetMetadata, UseFilters, UseGuards } from '@nestjs/common';
+import {
+    SetMetadata,
+    UseFilters,
+    UseGuards,
+    UseInterceptors,
+} from '@nestjs/common';
 import {
     ConnectedSocket,
     MessageBody,
@@ -10,12 +15,13 @@ import {
 } from '@nestjs/websockets';
 import type { Server } from 'socket.io';
 
+import { LoggerService } from '@vention/shared-logger';
+
 import { ROLES_KEY } from '~/common/security/constants';
 import { WsAuthGuard } from '~/common/security/guards/ws-auth.guard';
 import { WsOrganizationGuard } from '~/common/security/guards/ws-organization.guard';
 import { WsRolesGuard } from '~/common/security/guards/ws-roles.guard';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
-import { LoggerService } from '@vention/shared-logger';
 
 import { ChatWsExceptionFilter } from './chat-ws.exception-filter';
 import { CHAT_WS_NAMESPACE } from './chat.constants';
@@ -34,6 +40,7 @@ import type {
 } from './types/chat-ws.types';
 import { buildChatRoomName } from './utils/build-chat-room-name';
 import { parseInput } from './utils/parse-input';
+import { WsRlsInterceptor } from './ws-rls-interceptor';
 
 @WebSocketGateway({
     namespace: CHAT_WS_NAMESPACE,
@@ -42,7 +49,6 @@ import { parseInput } from './utils/parse-input';
         credentials: true,
     },
 })
-@UseGuards(WsAuthGuard, WsOrganizationGuard, WsRolesGuard)
 @UseFilters(ChatWsExceptionFilter)
 @SetMetadata(ROLES_KEY, [AppRole.USER])
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
@@ -56,6 +62,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         private readonly wsOrganizationGuard: WsOrganizationGuard
     ) {}
 
+    /**
+     * Authentication and organization authorization happen once
+     * when the WebSocket connection is established.
+     */
     async handleConnection(client: ChatSocket): Promise<void> {
         try {
             await this.wsAuthGuard.authenticate(client);
@@ -66,12 +76,16 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             });
 
             this.logger.log(
-                `[ChatGateway] connected userId=${client.data.user.userId} org=${client.data.user.organizationId} sid=${client.id}`
+                `[ChatGateway] connected userId=${client.data.user.userId} ` +
+                    `org=${client.data.user.organizationId} sid=${client.id}`
             );
         } catch (error) {
             this.logger.warn(
-                `[ChatGateway] auth failed: ${error instanceof Error ? error.message : String(error)}`
+                `[ChatGateway] auth failed: ${
+                    error instanceof Error ? error.message : String(error)
+                }`
             );
+
             client.disconnect(true);
         }
     }
@@ -80,18 +94,26 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.log(`[ChatGateway] disconnected sid=${client.id}`);
     }
 
+    /**
+     * JOIN
+     *
+     * Transport-only: joins the Socket.IO room without a DB/RLS transaction.
+     * Membership authorization for sensitive operations happens in SEND/DELETE
+     * (and GraphQL) inside a single RLS transaction.
+     */
     @SubscribeMessage(CHAT_WS_EVENTS.JOIN)
+    @UseGuards(WsRolesGuard)
     async joinChat(
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
     ): Promise<ChatRoomJoinResult> {
         try {
             const { chatId } = parseInput(WsJoinChatSchema, body);
-            const user = client.data.user;
+            const room = buildChatRoomName(chatId);
 
-            await this.chatService.assertMemberAccess(chatId, user.userId);
-
-            await client.join(buildChatRoomName(chatId));
+            if (!client.rooms.has(room)) {
+                await client.join(room);
+            }
 
             client.emit(CHAT_WS_EVENTS.JOINED, { chatId });
 
@@ -101,6 +123,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             };
         } catch (error) {
             this.emitError(client, error);
+
             return {
                 ok: false,
                 chatId: '',
@@ -108,23 +131,63 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
+    /**
+     * MESSAGE SEND
+     *
+     * WsRolesGuard
+     * WsRlsInterceptor (single RLS transaction)
+     * Redis dedupe
+     * ChatService.createMessageForUser (one membership check)
+     */
     @SubscribeMessage(CHAT_WS_EVENTS.MESSAGE_SEND)
+    @UseGuards(WsRolesGuard)
+    @UseInterceptors(WsRlsInterceptor)
     async sendMessage(
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
     ): Promise<{ ok: boolean }> {
         try {
             const payload = parseInput(WsSendMessageSchema, body);
+
             const user = client.data.user;
             const room = buildChatRoomName(payload.chatId);
 
-            const { message, duplicate } =
-                await this.chatService.sendRealtimeMessage(user, payload);
+            const existing = await this.chatService.findDedupedRealtimeMessage(
+                user,
+                payload
+            );
+
+            if (existing) {
+                client.emit(CHAT_WS_EVENTS.MESSAGE_ACK, {
+                    chatId: payload.chatId,
+                    clientMessageId: payload.clientMessageId,
+                    duplicate: true,
+                    message: existing,
+                } satisfies ChatMessageAck);
+
+                return { ok: true };
+            }
+
+            const message = await this.chatService.createMessageForUser({
+                chatId: payload.chatId,
+                content: payload.content,
+                senderId: user.userId,
+            });
+
+            await this.chatService.rememberRealtimeMessageDedupe(
+                user,
+                payload,
+                message
+            );
+
+            if (!client.rooms.has(room)) {
+                await client.join(room);
+            }
 
             client.emit(CHAT_WS_EVENTS.MESSAGE_ACK, {
                 chatId: payload.chatId,
                 clientMessageId: payload.clientMessageId,
-                duplicate,
+                duplicate: false,
                 message,
             } satisfies ChatMessageAck);
 
@@ -133,17 +196,31 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             return { ok: true };
         } catch (error) {
             this.emitError(client, error);
+
             return { ok: false };
         }
     }
 
+    /**
+     * MESSAGE DELETE
+     *
+     * Connection already authenticated the socket.
+     * RLS and request context are applied by WsRlsInterceptor.
+     *
+     * WsRolesGuard
+     * ChatService
+     * Prisma RLS
+     */
     @SubscribeMessage(CHAT_WS_EVENTS.MESSAGE_DELETE)
+    @UseGuards(WsRolesGuard)
+    @UseInterceptors(WsRlsInterceptor)
     async deleteMessage(
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
     ): Promise<{ ok: boolean }> {
         try {
             const { messageId } = parseInput(WsDeleteMessageSchema, body);
+
             const chatId =
                 await this.chatService.hardDeleteOwnedMessage(messageId);
 
@@ -153,6 +230,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             };
 
             client.emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
+
             client
                 .to(buildChatRoomName(chatId))
                 .emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
@@ -160,10 +238,22 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             return { ok: true };
         } catch (error) {
             this.emitError(client, error);
+
             return { ok: false };
         }
     }
 
+    /**
+     * TYPING
+     *
+     * No authentication guard.
+     * No organization guard.
+     * No RLS.
+     * No database query.
+     *
+     * The socket was already authenticated when connected.
+     * We only allow broadcasting to a room the socket actually joined.
+     */
     @SubscribeMessage(CHAT_WS_EVENTS.TYPING)
     async typing(
         @ConnectedSocket() client: ChatSocket,
@@ -172,6 +262,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return this.forwardTyping(CHAT_WS_EVENTS.TYPING, client, body);
     }
 
+    /**
+     * STOP_TYPING
+     *
+     * Same lightweight path as TYPING.
+     */
     @SubscribeMessage(CHAT_WS_EVENTS.STOP_TYPING)
     async stopTyping(
         @ConnectedSocket() client: ChatSocket,
@@ -187,14 +282,20 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ): Promise<{ ok: boolean }> {
         try {
             const payload = parseInput(WsTypingSchema, body);
+
             const user = client.data.user;
-
-            const peerIds = await this.chatService.getPeerParticipantIds(
-                payload.chatId,
-                user.userId
-            );
-
             const room = buildChatRoomName(payload.chatId);
+
+            /**
+             * Do not query Prisma for every typing event.
+             *
+             * If the socket hasn't joined this chat room,
+             * it cannot broadcast typing into it.
+             */
+            if (!client.rooms.has(room)) {
+                throw new Error('You are not a member of this chat');
+            }
+
             const typingPayload: ChatTypingPayload = {
                 chatId: payload.chatId,
                 userId: user.userId,
@@ -202,15 +303,10 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
             client.to(room).emit(event, typingPayload);
 
-            if (peerIds.length > 1) {
-                this.logger.warn(
-                    `[ChatGateway] room has unexpected peers chatId=${payload.chatId} count=${peerIds.length}`
-                );
-            }
-
             return { ok: true };
         } catch (error) {
             this.emitError(client, error);
+
             return { ok: false };
         }
     }

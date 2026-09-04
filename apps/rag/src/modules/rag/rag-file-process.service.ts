@@ -1,14 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
-import { MdProcessService } from '~/modules/md/md.service';
+import { MdProcessService as MdFileProcessService } from '~/modules/md/md.service';
 import {
     RagFileExtensions,
-    RagProcessStatus,
+    RagProcessStatus as RagFileProcessStatus,
 } from '@vention/rag-contract/constants';
 import type {
-    RagProcessJobMessage,
-    RagProcessResultMessage,
-    RagProcessResultPayload,
+    RagFileProcessJobMessage as RagFileProcessJobMessage,
+    RagProcessResultMessage as RagFileProcessResultMessage,
+    RagFileProcessResultPayload,
 } from '@vention/rag-contract/types';
 import {
     InvalidStorageKeyError,
@@ -16,24 +16,27 @@ import {
     FileStorageService,
 } from '@vention/shared-file-storage';
 
-import { PermanentRagError, TransientRagError } from './rag-process.errors';
+import {
+    PermanentRagError as PermanentRagFileError,
+    TransientRagError as TransientRagFileError,
+} from './rag-file-process.errors';
 
 @Injectable()
-export class RagProcessService {
+export class RagFileProcessService {
     constructor(
         private readonly fileStorage: FileStorageService,
-        private readonly mdProcessService: MdProcessService
+        private readonly mdProcessService: MdFileProcessService
     ) {}
 
     async processJob(
-        job: RagProcessJobMessage
-    ): Promise<RagProcessResultMessage> {
+        job: RagFileProcessJobMessage
+    ): Promise<RagFileProcessResultMessage> {
         try {
             const buffer = await this.fileStorage.getFileBuffer(job.storageKey);
             const extension = this.getExtension(job.storageKey);
 
             if (!RagFileExtensions.MD.includes(extension)) {
-                throw new PermanentRagError(
+                throw new PermanentRagFileError(
                     `Unsupported file extension: .${extension}`
                 );
             }
@@ -51,7 +54,7 @@ export class RagProcessService {
             const message =
                 error instanceof Error ? error.message : 'Unexpected error';
 
-            throw new TransientRagError(message);
+            throw new TransientRagFileError(message);
         }
     }
 
@@ -62,26 +65,28 @@ export class RagProcessService {
         const extension = withoutGzip.split('.').pop()?.toLowerCase();
 
         if (!extension) {
-            throw new PermanentRagError('File extension is missing');
+            throw new PermanentRagFileError('File extension is missing');
         }
 
         return extension;
     }
 
     failedResult(
-        job: RagProcessJobMessage,
+        job: RagFileProcessJobMessage,
         error: string
-    ): RagProcessResultMessage {
+    ): RagFileProcessResultMessage {
         return this.buildResult(job, {
-            status: RagProcessStatus.FAILED,
+            status: RagFileProcessStatus.FAILED,
             success: false,
             error,
         });
     }
 
-    processingResult(job: RagProcessJobMessage): RagProcessResultMessage {
+    processingResult(
+        job: RagFileProcessJobMessage
+    ): RagFileProcessResultMessage {
         return this.buildResult(job, {
-            status: RagProcessStatus.PROCESSING,
+            status: RagFileProcessStatus.PROCESSING,
             success: true,
             error: null,
         });
@@ -89,16 +94,16 @@ export class RagProcessService {
 
     isPermanentError(error: unknown): boolean {
         return (
-            error instanceof PermanentRagError ||
+            error instanceof PermanentRagFileError ||
             error instanceof InvalidStorageKeyError ||
             error instanceof StorageObjectNotFoundError
         );
     }
 
     private buildResult(
-        job: RagProcessJobMessage,
-        result: RagProcessResultPayload
-    ): RagProcessResultMessage {
+        job: RagFileProcessJobMessage,
+        result: RagFileProcessResultPayload
+    ): RagFileProcessResultMessage {
         return {
             fileId: job.fileId,
             organizationId: job.organizationId,

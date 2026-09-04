@@ -1,18 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
 import { QdrantDocumentsService } from '~/infrastructure/qdrant/qdrant-documents.service';
-import type { RagDeleteJobMessage } from '@vention/rag-contract/types';
+import type { RagFileDeleteJobMessage as RagFileDeleteJobMessage } from '@vention/rag-contract/types';
 
 import {
     PermanentDeleteError,
     TransientDeleteError,
-} from './rag-delete.errors';
+} from './rag-file-delete.errors';
 
 @Injectable()
-export class RagDeleteService {
+export class RagFileDeleteService {
     constructor(private readonly qdrantDocuments: QdrantDocumentsService) {}
 
-    async deleteJob(job: RagDeleteJobMessage): Promise<void> {
+    async deleteJob(job: RagFileDeleteJobMessage): Promise<void> {
         try {
             await this.qdrantDocuments.deleteByDocumentId(job.fileId);
         } catch (error) {

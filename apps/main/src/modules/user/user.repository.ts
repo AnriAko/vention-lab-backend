@@ -1,9 +1,11 @@
 ﻿import { Injectable } from '@nestjs/common';
 
+import { AppException } from '~/common/errors/app-exception';
 import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
 import type { Prisma } from '~/generated/prisma/client';
+import { PrismaService } from '~/infrastructure/database/prisma.service';
 
 import { userSelectSafe } from '~/infrastructure/database/selects/user.types';
 import type { UserSafe } from '~/infrastructure/database/selects/user.types';
@@ -14,12 +16,15 @@ import { UpdateUserDto } from './requests/update-user.request.dto';
 
 import { OrganizationRole } from '~/generated/prisma/enums';
 
-import { AppException } from '~/common/errors/app-exception';
 import { UserErrors } from './user.errors';
+import { AuthErrors } from '~/modules/auth/auth.errors';
 
 @Injectable()
 export class UserRepository {
-    constructor(private readonly prisma: PrismaRlsClient) {}
+    constructor(
+        private readonly prisma: PrismaRlsClient,
+        private readonly prismaService: PrismaService
+    ) {}
 
     findById(id: string): Promise<UserSafe | null> {
         return this.prisma.user.findFirst({
@@ -31,7 +36,7 @@ export class UserRepository {
     }
 
     async existsById(id: string): Promise<boolean> {
-        const user = await this.prisma.user.findFirst({
+        const user = await this.prismaService.user.findFirst({
             where: {
                 id,
             },
@@ -47,10 +52,10 @@ export class UserRepository {
         const userId = requestContext.getStore()?.userId;
 
         if (!userId) {
-            throw new Error('Missing user context');
+            throw new AppException(AuthErrors.MISSING_AUTHENTICATED_USER);
         }
 
-        return this.prisma.user.findFirst({
+        return this.prismaService.user.findFirst({
             where: {
                 id: userId,
             },
@@ -59,7 +64,7 @@ export class UserRepository {
     }
 
     findByEmail(email: string): Promise<UserSafe | null> {
-        return this.prisma.user.findFirst({
+        return this.prismaService.user.findFirst({
             where: {
                 email,
             },

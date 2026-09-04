@@ -11,6 +11,7 @@ import { ChatGateway } from './chat.gateway';
 import { ChatRepository } from './chat.repository';
 import { ChatResolver } from './chat.resolver';
 import { ChatService } from './chat.service';
+import { WsRlsContext, WsRlsInterceptor } from './ws-rls-interceptor';
 
 @Module({
     imports: [PrismaModule, RedisModule],
@@ -23,6 +24,8 @@ import { ChatService } from './chat.service';
         WsAuthGuard,
         WsOrganizationGuard,
         WsRolesGuard,
+        WsRlsContext,
+        WsRlsInterceptor,
     ],
     exports: [ChatService],
 })

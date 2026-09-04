@@ -5,7 +5,7 @@ import {
     RAG_PROCESS_RESULTS_QUEUE,
     RAG_PROCESS_ROUTING_KEY,
 } from '@vention/rag-contract/constants';
-import type { RagProcessJobMessage } from '@vention/rag-contract/types';
+import type { RagFileDeleteJobMessage } from '@vention/rag-contract/types';
 import { ragTopology } from '@vention/rag-contract';
 import { LoggerService } from '@vention/shared-logger';
 import { RabbitmqService } from '@vention/shared-rabbitmq';
@@ -17,7 +17,7 @@ export class RagProcessingPublisher {
         private readonly logger: LoggerService
     ) {}
 
-    async publishStorageFinalized(job: RagProcessJobMessage): Promise<void> {
+    async publishStorageFinalized(job: RagFileDeleteJobMessage): Promise<void> {
         await this.rabbitmq.assertTopology(ragTopology);
 
         const published = await this.rabbitmq.publish(
@@ -39,7 +39,7 @@ export class RagProcessingPublisher {
         }
 
         this.logger.log(
-            `[RagProcessingPublisher] published fileId=${job.fileId} storageKey=${job.storageKey}`
+            `[RagProcessingPublisher] published fileId=${job.fileId} storageKey=${job.fileId}` //FIXME - should be Storage key
         );
     }
 }

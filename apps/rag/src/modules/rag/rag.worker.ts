@@ -16,23 +16,23 @@ import {
     RAG_PROCESS_ROUTING_KEY,
 } from '@vention/rag-contract/constants';
 import type {
-    RagDeleteJobMessage,
-    RagProcessJobMessage,
+    RagFileDeleteJobMessage,
+    RagFileProcessJobMessage,
 } from '@vention/rag-contract/types';
 import { LoggerService } from '@vention/shared-logger';
 import { RabbitmqService } from '@vention/shared-rabbitmq';
 
-import { TransientDeleteError } from './rag-delete.errors';
-import { RagDeleteService } from './rag-delete.service';
-import { TransientRagError } from './rag-process.errors';
-import { RagProcessService } from './rag-process.service';
+import { TransientDeleteError } from './rag-file-delete.errors';
+import { RagFileDeleteService } from './rag-file-delete.service';
+import { TransientRagError } from './rag-file-process.errors';
+import { RagFileProcessService } from './rag-file-process.service';
 
 @Injectable()
-export class RagWorker implements OnModuleInit {
+export class RagFileWorker implements OnModuleInit {
     constructor(
         private readonly rabbitmq: RabbitmqService,
-        private readonly ragProcessService: RagProcessService,
-        private readonly ragDeleteService: RagDeleteService,
+        private readonly ragProcessService: RagFileProcessService,
+        private readonly ragDeleteService: RagFileDeleteService,
         private readonly logger: LoggerService
     ) {}
 
@@ -101,13 +101,15 @@ export class RagWorker implements OnModuleInit {
         }
     }
 
-    private parseProcessJob(msg: ConsumeMessage): RagProcessJobMessage | null {
-        let job: RagProcessJobMessage;
+    private parseProcessJob(
+        msg: ConsumeMessage
+    ): RagFileProcessJobMessage | null {
+        let job: RagFileProcessJobMessage;
 
         try {
             job = JSON.parse(
                 msg.content.toString('utf8')
-            ) as RagProcessJobMessage;
+            ) as RagFileProcessJobMessage;
         } catch {
             this.logger.error('Invalid RAG process job JSON');
             return null;
@@ -126,13 +128,15 @@ export class RagWorker implements OnModuleInit {
         return job;
     }
 
-    private parseDeleteJob(msg: ConsumeMessage): RagDeleteJobMessage | null {
-        let job: RagDeleteJobMessage;
+    private parseDeleteJob(
+        msg: ConsumeMessage
+    ): RagFileDeleteJobMessage | null {
+        let job: RagFileDeleteJobMessage;
 
         try {
             job = JSON.parse(
                 msg.content.toString('utf8')
-            ) as RagDeleteJobMessage;
+            ) as RagFileDeleteJobMessage;
         } catch {
             this.logger.error('Invalid RAG delete job JSON');
             return null;
@@ -148,7 +152,7 @@ export class RagWorker implements OnModuleInit {
 
     private async handleProcessFailure(
         msg: ConsumeMessage,
-        job: RagProcessJobMessage,
+        job: RagFileProcessJobMessage,
         correlationId: string,
         retryCount: number,
         error: unknown
@@ -209,7 +213,7 @@ export class RagWorker implements OnModuleInit {
 
     private async handleDeleteFailure(
         msg: ConsumeMessage,
-        job: RagDeleteJobMessage,
+        job: RagFileDeleteJobMessage,
         retryCount: number,
         error: unknown
     ): Promise<void> {
