@@ -42,9 +42,9 @@ export class ClamAvService implements OnModuleInit {
                     active: false,
                 },
                 clamdscan: {
-                    host: this.config.host!,
-                    port: this.config.port!,
-                    timeout: this.config.timeoutMs!,
+                    host: this.config.host,
+                    port: this.config.port,
+                    timeout: this.config.timeoutMs,
                     localFallback: false,
                     active: true,
                     bypassTest: false,

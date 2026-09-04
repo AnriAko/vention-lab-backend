@@ -1,4 +1,4 @@
-import { z } from 'zod';
+import type { z } from 'zod';
 
 import { ApiResponse } from '~/common/api/response/response.decorator';
 import type { ResponseSchema } from '~/common/api/response/response.schema';

@@ -1,6 +1,6 @@
 import type { ChatMemberUser } from '~/infrastructure/database/selects/chat.types';
 
-import { ChatMemberResponse } from '../responses/chat-member.response';
+import type { ChatMemberResponse } from '../responses/chat-member.response';
 
 export function toChatMemberResponse(user: ChatMemberUser): ChatMemberResponse {
     return {

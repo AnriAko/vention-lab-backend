@@ -1,6 +1,6 @@
 import type { MessageRecord } from '~/infrastructure/database/selects/chat.types';
 
-import { MessageResponse } from '../responses/message.response';
+import type { MessageResponse } from '../responses/message.response';
 import { toChatMemberResponse } from './to-chat-member-response';
 
 export function toMessageResponse(message: MessageRecord): MessageResponse {

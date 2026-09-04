@@ -14,6 +14,7 @@ import {
     isGraphqlHost,
     toGraphQLError,
 } from '~/common/http/filters/to-graphql-error';
+import { isWsContext } from '~/common/security/utils/execution-context';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { LoggerService } from '~/shared/logger';
 
@@ -28,6 +29,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
                 `[GRAPHQL ERROR] ${graphqlError.extensions.statusCode as number} ${String(graphqlError.extensions.code)} ${graphqlError.message}`
             );
             return graphqlError;
+        }
+
+        if (isWsContext(host)) {
+            const message =
+                exception instanceof Error
+                    ? exception.message
+                    : 'Unexpected error';
+
+            this.logger.error(`[WS ERROR] ${message}`);
+            return;
         }
 
         const ctx = host.switchToHttp();

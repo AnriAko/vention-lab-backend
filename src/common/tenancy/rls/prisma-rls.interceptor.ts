@@ -1,17 +1,18 @@
-import {
-    CallHandler,
-    ExecutionContext,
-    Injectable,
-    NestInterceptor,
-} from '@nestjs/common';
+import { CallHandler, Injectable, NestInterceptor } from '@nestjs/common';
+import type { ExecutionContext } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { from, Observable, lastValueFrom } from 'rxjs';
+import { from, lastValueFrom, type Observable } from 'rxjs';
 
+import { AUTH_GUEST } from '~/common/security/auth.types';
 import {
     IS_PUBLIC_KEY,
     SKIP_ORGANIZATION_KEY,
 } from '~/common/security/constants';
-import { AUTH_GUEST } from '~/common/security/auth.types';
+import {
+    getWsClient,
+    isWsContext,
+} from '~/common/security/utils/execution-context';
+import { getWsClientUser } from '~/common/security/utils/ws-handshake';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { PrismaRlsService } from '~/common/tenancy/rls/prisma-rls.service';
 
@@ -44,6 +45,10 @@ export class PrismaRlsInterceptor implements NestInterceptor {
             return next.handle();
         }
 
+        if (isWsContext(context)) {
+            return this.interceptWs(context, next);
+        }
+
         const store = requestContext.getStore();
 
         if (
@@ -56,5 +61,27 @@ export class PrismaRlsInterceptor implements NestInterceptor {
         }
 
         return from(this.prismaRls.withRls(() => lastValueFrom(next.handle())));
+    }
+
+    private interceptWs(
+        context: ExecutionContext,
+        next: CallHandler
+    ): Observable<unknown> {
+        const user = getWsClientUser(getWsClient(context));
+
+        if (!user?.userId || !user.organizationId || !user.role) {
+            return next.handle();
+        }
+
+        return from(
+            this.prismaRls.withTenant(
+                {
+                    userId: user.userId,
+                    organizationId: user.organizationId,
+                    role: user.role,
+                },
+                () => lastValueFrom(next.handle())
+            )
+        );
     }
 }

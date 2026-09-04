@@ -1,6 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
-import type { ConfigType } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
+import { UseFilters, UseGuards } from '@nestjs/common';
 import {
     ConnectedSocket,
     MessageBody,
@@ -12,21 +10,15 @@ import {
 } from '@nestjs/websockets';
 import type { Server } from 'socket.io';
 
-import { AUTH_HEADER, type JwtPayload } from '~/common/security/auth.types';
+import { Roles } from '~/common/security/decorators/roles.decorator';
+import { WsAuthGuard } from '~/common/security/guards/ws-auth.guard';
+import { WsOrganizationGuard } from '~/common/security/guards/ws-organization.guard';
+import { WsRolesGuard } from '~/common/security/guards/ws-roles.guard';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
-import { extractBearerToken } from '~/common/security/utils/extract-bearer-token';
-import { PrismaRlsService } from '~/common/tenancy/rls/prisma-rls.service';
-import { jwtConfig } from '~/config/configuration/jwt.config';
-import { OrganizationRole } from '~/generated/prisma/enums';
-import { RedisService } from '~/infrastructure/cache/redis.service';
-import { RedisPrefix } from '~/infrastructure/cache/redis.types';
-import { PrismaService } from '~/infrastructure/database/prisma.service';
 import { LoggerService } from '~/shared/logger';
 
-import {
-    CHAT_WS_DEDUPLICATION_TTL_SECONDS,
-    CHAT_WS_NAMESPACE,
-} from './chat.constants';
+import { ChatWsExceptionFilter } from './chat-ws.exception-filter';
+import { CHAT_WS_NAMESPACE } from './chat.constants';
 import { ChatService } from './chat.service';
 import { CHAT_WS_EVENTS } from './chat.ws.constants';
 import { WsDeleteMessageSchema } from './requests/ws-delete-message.request.dto';
@@ -38,11 +30,9 @@ import type {
     ChatMessageDeletedPayload,
     ChatRoomJoinResult,
     ChatSocket,
-    ChatSocketAuth,
     ChatTypingPayload,
 } from './types/chat-ws.types';
 import { buildChatRoomName } from './utils/build-chat-room-name';
-import { buildMessageDedupeKey } from './utils/build-message-dedupe-key';
 import { parseInput } from './utils/parse-input';
 
 @WebSocketGateway({
@@ -52,79 +42,31 @@ import { parseInput } from './utils/parse-input';
         credentials: true,
     },
 })
-@Injectable()
+@UseGuards(WsAuthGuard, WsOrganizationGuard, WsRolesGuard)
+@UseFilters(ChatWsExceptionFilter)
+@Roles(AppRole.USER)
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server!: Server;
 
     constructor(
-        private readonly jwtService: JwtService,
-        private readonly redisService: RedisService,
-        private readonly prisma: PrismaService,
-        private readonly prismaRls: PrismaRlsService,
         private readonly chatService: ChatService,
         private readonly logger: LoggerService,
-        @Inject(jwtConfig.KEY)
-        private readonly jwtConf: ConfigType<typeof jwtConfig>
+        private readonly wsAuthGuard: WsAuthGuard,
+        private readonly wsOrganizationGuard: WsOrganizationGuard
     ) {}
 
     async handleConnection(client: ChatSocket): Promise<void> {
         try {
-            const auth = (client.handshake.auth ?? {}) as ChatSocketAuth;
-            const token =
-                auth.token ??
-                extractBearerToken(
-                    client.handshake.headers[AUTH_HEADER.AUTHORIZATION] as
-                        string | undefined
-                );
-            const organizationId =
-                auth.organizationId ??
-                (client.handshake.headers[AUTH_HEADER.ORGANIZATION_ID] as
-                    string | undefined) ??
-                (client.handshake.query.organizationId as string | undefined);
-
-            if (!token || !organizationId) {
-                client.disconnect(true);
-                return;
-            }
-
-            const isBlacklisted = await this.redisService.exists(
-                RedisPrefix.INVALID_TOKEN,
-                token
-            );
-
-            if (isBlacklisted) {
-                client.disconnect(true);
-                return;
-            }
-
-            const payload = await this.jwtService.verifyAsync<JwtPayload>(
-                token,
-                {
-                    secret: this.jwtConf.secret,
-                }
-            );
-
-            if (!payload?.sub) {
-                client.disconnect(true);
-                return;
-            }
-
-            const role = await this.resolveSocketRole(
-                payload.sub,
-                organizationId
-            );
-
-            client.data.userId = payload.sub;
-            client.data.organizationId = organizationId;
-            client.data.role = role;
+            await this.wsAuthGuard.authenticate(client);
+            await this.wsOrganizationGuard.authorize(client);
 
             client.emit(CHAT_WS_EVENTS.READY, {
-                userId: payload.sub,
+                userId: client.data.user.userId,
             });
 
             this.logger.log(
-                `[ChatGateway] connected userId=${payload.sub} org=${organizationId} sid=${client.id}`
+                `[ChatGateway] connected userId=${client.data.user.userId} org=${client.data.user.organizationId} sid=${client.id}`
             );
         } catch (error) {
             this.logger.warn(
@@ -145,10 +87,9 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ): Promise<ChatRoomJoinResult> {
         try {
             const { chatId } = parseInput(WsJoinChatSchema, body);
+            const user = client.data.user;
 
-            await this.runAsSocketTenant(client, () =>
-                this.chatService.assertMemberAccess(chatId, client.data.userId)
-            );
+            await this.chatService.assertMemberAccess(chatId, user.userId);
 
             await client.join(buildChatRoomName(chatId));
 
@@ -174,51 +115,11 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ): Promise<{ ok: boolean }> {
         try {
             const payload = parseInput(WsSendMessageSchema, body);
+            const user = client.data.user;
             const room = buildChatRoomName(payload.chatId);
 
-            await this.runAsSocketTenant(client, () =>
-                this.chatService.assertMemberAccess(
-                    payload.chatId,
-                    client.data.userId
-                )
-            );
-
-            const dedupeKey = payload.clientMessageId
-                ? buildMessageDedupeKey({
-                      userId: client.data.userId,
-                      chatId: payload.chatId,
-                      clientMessageId: payload.clientMessageId,
-                  })
-                : undefined;
-
-            let duplicate = false;
-            let message = dedupeKey
-                ? await this.redisService.getJson<ChatMessageAck['message']>(
-                      RedisPrefix.CHAT_MESSAGE_DEDUPE,
-                      dedupeKey
-                  )
-                : null;
-
-            if (!message) {
-                message = await this.runAsSocketTenant(client, () =>
-                    this.chatService.createMessageForUser({
-                        chatId: payload.chatId,
-                        content: payload.content,
-                        senderId: client.data.userId,
-                    })
-                );
-
-                if (dedupeKey) {
-                    await this.redisService.setJson(
-                        RedisPrefix.CHAT_MESSAGE_DEDUPE,
-                        dedupeKey,
-                        message,
-                        CHAT_WS_DEDUPLICATION_TTL_SECONDS
-                    );
-                }
-            } else {
-                duplicate = true;
-            }
+            const { message, duplicate } =
+                await this.chatService.sendRealtimeMessage(user, payload);
 
             client.emit(CHAT_WS_EVENTS.MESSAGE_ACK, {
                 chatId: payload.chatId,
@@ -243,9 +144,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ): Promise<{ ok: boolean }> {
         try {
             const { messageId } = parseInput(WsDeleteMessageSchema, body);
-            const chatId = await this.runAsSocketTenant(client, () =>
-                this.chatService.hardDeleteOwnedMessage(messageId)
-            );
+            const chatId =
+                await this.chatService.hardDeleteOwnedMessage(messageId);
 
             const payload: ChatMessageDeletedPayload = {
                 chatId,
@@ -287,18 +187,17 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     ): Promise<{ ok: boolean }> {
         try {
             const payload = parseInput(WsTypingSchema, body);
+            const user = client.data.user;
 
-            const peerIds = await this.runAsSocketTenant(client, () =>
-                this.chatService.getPeerParticipantIds(
-                    payload.chatId,
-                    client.data.userId
-                )
+            const peerIds = await this.chatService.getPeerParticipantIds(
+                payload.chatId,
+                user.userId
             );
 
             const room = buildChatRoomName(payload.chatId);
             const typingPayload: ChatTypingPayload = {
                 chatId: payload.chatId,
-                userId: client.data.userId,
+                userId: user.userId,
             };
 
             client.to(room).emit(event, typingPayload);
@@ -314,87 +213,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
             this.emitError(client, error);
             return { ok: false };
         }
-    }
-
-    private async resolveSocketRole(
-        userId: string,
-        organizationId: string
-    ): Promise<AppRole> {
-        const owner = await this.prisma.owner.findUnique({
-            where: {
-                userId,
-            },
-            select: {
-                userId: true,
-            },
-        });
-
-        if (owner) {
-            const organization = await this.prisma.organization.findUnique({
-                where: {
-                    id: organizationId,
-                    isDeleted: false,
-                },
-                select: {
-                    id: true,
-                },
-            });
-
-            if (!organization) {
-                throw new Error('Access denied for organization');
-            }
-
-            return AppRole.OWNER;
-        }
-
-        const membership = await this.prisma.usersOrganizations.findFirst({
-            where: {
-                userId,
-                organizationId,
-                isDeleted: false,
-            },
-            select: {
-                userId: true,
-            },
-        });
-
-        if (!membership) {
-            throw new Error('Access denied for organization');
-        }
-
-        const role = await this.prisma.usersOrganizationsRoles.findUnique({
-            where: {
-                userId_organizationId: {
-                    userId,
-                    organizationId,
-                },
-            },
-            select: {
-                role: true,
-            },
-        });
-
-        if (!role) {
-            throw new Error('Missing organization role');
-        }
-
-        return role.role === OrganizationRole.ADMIN
-            ? AppRole.ADMIN
-            : AppRole.USER;
-    }
-
-    private runAsSocketTenant<T>(
-        client: ChatSocket,
-        callback: () => Promise<T>
-    ): Promise<T> {
-        return this.prismaRls.withTenant(
-            {
-                userId: client.data.userId,
-                organizationId: client.data.organizationId,
-                role: client.data.role,
-            },
-            callback
-        );
     }
 
     private emitError(client: ChatSocket, error: unknown): void {

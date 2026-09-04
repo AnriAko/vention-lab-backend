@@ -7,7 +7,10 @@ import {
 import { tap } from 'rxjs';
 import { GqlExecutionContext } from '@nestjs/graphql';
 import type { Response } from 'express';
-import { isGraphqlContext } from '~/common/security/utils/execution-context';
+import {
+    isGraphqlContext,
+    isWsContext,
+} from '~/common/security/utils/execution-context';
 import { LoggerService } from '~/shared/logger';
 
 @Injectable()
@@ -16,6 +19,10 @@ export class LoggerInterceptor implements NestInterceptor {
 
     intercept(context: ExecutionContext, next: CallHandler) {
         const start = Date.now();
+
+        if (isWsContext(context)) {
+            return next.handle();
+        }
 
         if (isGraphqlContext(context)) {
             const gqlContext = GqlExecutionContext.create(context);

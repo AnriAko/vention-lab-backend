@@ -54,8 +54,7 @@ export class FilesGateway implements OnGatewayConnection, OnGatewayDisconnect {
             const token =
                 auth.token ??
                 extractBearerToken(
-                    client.handshake.headers[AUTH_HEADER.AUTHORIZATION] as
-                        string | undefined
+                    client.handshake.headers[AUTH_HEADER.AUTHORIZATION]
                 );
             const organizationId =
                 auth.organizationId ??

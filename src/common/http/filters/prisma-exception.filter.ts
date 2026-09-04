@@ -13,6 +13,7 @@ import {
     isGraphqlHost,
     toGraphQLError,
 } from '~/common/http/filters/to-graphql-error';
+import { isWsContext } from '~/common/security/utils/execution-context';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { LoggerService } from '~/shared/logger';
 
@@ -62,6 +63,11 @@ export class PrismaExceptionFilter {
                     status
                 )
             );
+        }
+
+        if (isWsContext(host)) {
+            this.logger.error(`[PRISMA WS ERROR] ${exception.code} ${message}`);
+            return;
         }
 
         const ctx = host.switchToHttp();

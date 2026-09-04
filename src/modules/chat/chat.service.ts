@@ -1,12 +1,17 @@
 import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors/app-exception';
-import { AUTH_GUEST } from '~/common/security/auth.types';
+import { AUTH_GUEST, type AuthUser } from '~/common/security/auth.types';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
+import { RedisService } from '~/infrastructure/cache/redis.service';
+import { RedisPrefix } from '~/infrastructure/cache/redis.types';
 import { AuthErrors } from '~/modules/auth/auth.errors';
 import { LoggerService } from '~/shared/logger';
 
-import { CHAT_MAX_MEMBERS } from './chat.constants';
+import {
+    CHAT_MAX_MEMBERS,
+    CHAT_WS_DEDUPLICATION_TTL_SECONDS,
+} from './chat.constants';
 import { ChatErrors } from './chat.errors';
 import { ChatRepository } from './chat.repository';
 import {
@@ -33,11 +38,14 @@ import {
     RemoveChatMemberDto,
     RemoveChatMemberSchema,
 } from './requests/remove-chat-member.request.dto';
+import type { WsSendMessage } from './requests/ws-send-message.request.dto';
 import { ChatMemberResponse } from './responses/chat-member.response';
 import { ChatResponse } from './responses/chat.response';
 import { MessageResponse } from './responses/message.response';
 import { PaginatedChatsResponse } from './responses/paginated-chats.response';
 import { PaginatedMessagesResponse } from './responses/paginated-messages.response';
+import type { ChatMessageAck } from './types/chat-ws.types';
+import { buildMessageDedupeKey } from './utils/build-message-dedupe-key';
 import { parseInput } from './utils/parse-input';
 import { parsePagination } from './utils/parse-pagination';
 import { toChatMemberResponse } from './utils/to-chat-member-response';
@@ -48,6 +56,7 @@ import { toMessageResponse } from './utils/to-message-response';
 export class ChatService {
     constructor(
         private readonly chatRepository: ChatRepository,
+        private readonly redisService: RedisService,
         private readonly logger: LoggerService
     ) {}
 
@@ -237,6 +246,55 @@ export class ChatService {
         this.logger.log(`[ChatService] hard deleted message id=${messageId}`);
 
         return message.chatId;
+    }
+
+    async sendRealtimeMessage(
+        user: AuthUser,
+        input: WsSendMessage
+    ): Promise<{ message: ChatMessageAck['message']; duplicate: boolean }> {
+        await this.assertMemberAccess(input.chatId, user.userId);
+
+        const dedupeKey = input.clientMessageId
+            ? buildMessageDedupeKey({
+                  userId: user.userId,
+                  chatId: input.chatId,
+                  clientMessageId: input.clientMessageId,
+              })
+            : undefined;
+
+        const existing = dedupeKey
+            ? await this.redisService.getJson<ChatMessageAck['message']>(
+                  RedisPrefix.CHAT_MESSAGE_DEDUPE,
+                  dedupeKey
+              )
+            : null;
+
+        if (existing) {
+            return {
+                message: existing,
+                duplicate: true,
+            };
+        }
+
+        const message = await this.createMessageForUser({
+            chatId: input.chatId,
+            content: input.content,
+            senderId: user.userId,
+        });
+
+        if (dedupeKey) {
+            await this.redisService.setJson(
+                RedisPrefix.CHAT_MESSAGE_DEDUPE,
+                dedupeKey,
+                message,
+                CHAT_WS_DEDUPLICATION_TTL_SECONDS
+            );
+        }
+
+        return {
+            message,
+            duplicate: false,
+        };
     }
 
     async assertMemberAccess(chatId: string, userId: string): Promise<void> {
