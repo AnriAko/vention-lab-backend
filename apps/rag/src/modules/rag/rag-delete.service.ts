@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { QdrantDocumentsService } from '~/infrastructure/qdrant/qdrant-documents.service';
-import type { RagDeleteJobMessage } from '~/shared/rag-contract/types';
+import type { RagDeleteJobMessage } from '@vention/rag-contract/types';
 
 import {
     PermanentDeleteError,

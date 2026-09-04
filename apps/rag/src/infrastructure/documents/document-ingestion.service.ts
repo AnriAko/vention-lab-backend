@@ -9,7 +9,7 @@ import { EmbeddingService } from '~/infrastructure/embedding/embedding.service';
 import { MarkdownParserService } from '~/infrastructure/parsing/markdown/markdown-parser.service';
 import type { DocumentPoint } from '~/infrastructure/qdrant/document-point.model';
 import { QdrantDocumentsService } from '~/infrastructure/qdrant/qdrant-documents.service';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 
 import type { DocumentIngestionContext } from './document-ingestion.types';
 

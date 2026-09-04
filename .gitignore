@@ -1,8 +1,11 @@
 # compiled output
 /dist
+**/dist
 /node_modules
+**/node_modules
 /build
 tsconfig.tsbuildinfo
+**/*.tsbuildinfo
 
 # Logs
 logs
@@ -18,6 +21,7 @@ lerna-debug.log*
 
 # Tests
 /coverage
+**/coverage
 /.nyc_output
 
 # IDEs and editors
@@ -45,6 +49,7 @@ lerna-debug.log*
 
 # Firebase service account credentials
 /credentials
+**/credentials
 
 # Generated Excel fixtures
 /excel-data/*.xlsx
@@ -64,7 +69,7 @@ pids
 # Diagnostic reports (https://nodejs.org/api/report.html)
 report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 
-/src/generated/prisma
+apps/main/src/generated/prisma
 
-prisma/scripts/explain/query-to-explain.ts
-prisma/scripts/execute/query-to-execute.ts
+apps/main/prisma/scripts/explain/query-to-explain.ts
+apps/main/prisma/scripts/execute/query-to-execute.ts

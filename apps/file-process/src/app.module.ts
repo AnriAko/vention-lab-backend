@@ -8,9 +8,9 @@ import { firebaseConfig } from '~/config/configuration/firebase.config';
 import { rabbitmqConfig } from '~/config/configuration/rabbitmq.config';
 import { validateEnv } from '~/config/validate-env';
 import { FileProcessModule } from '~/modules/file-process/file-process.module';
-import { FirebaseModule } from '~/shared/firebase';
-import { LoggerModule } from '~/shared/logger';
-import { RabbitmqModule } from '~/shared/rabbitmq';
+import { FirebaseModule } from '@vention/shared-firebase';
+import { LoggerModule } from '@vention/shared-logger';
+import { RabbitmqModule } from '@vention/shared-rabbitmq';
 
 @Module({
     imports: [

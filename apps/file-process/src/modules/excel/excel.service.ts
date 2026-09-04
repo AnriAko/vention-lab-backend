@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 
-import { FileProcessStatus } from '~/shared/file-process-contract';
+import { FileProcessStatus } from '@vention/file-process-contract';
 import type {
     FileProcessJobMessage,
     FileProcessResultPayload,
-} from '~/shared/file-process-contract/types';
-import { LoggerService } from '~/shared/logger';
+} from '@vention/file-process-contract/types';
+import { LoggerService } from '@vention/shared-logger';
 
 import { ExcelParserService } from './excel-parser.service';
 

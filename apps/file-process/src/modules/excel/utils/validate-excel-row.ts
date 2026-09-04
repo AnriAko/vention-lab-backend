@@ -1,6 +1,6 @@
 import type ExcelJS from 'exceljs';
 
-import { EXCEL_HEADER_INDEX } from '~/shared/file-process-contract/excel-columns';
+import { EXCEL_HEADER_INDEX } from '@vention/file-process-contract/excel-columns';
 import { DECIMAL_RE, EMAIL_RE, UUID_RE } from '../excel-parser.constants';
 import { ExcelValidationError } from '../excel-validation.error';
 import type { ParsedRow } from '../types/parsed-row.type';

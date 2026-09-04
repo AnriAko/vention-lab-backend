@@ -1,14 +1,27 @@
-import path from 'path';
+import { existsSync } from 'node:fs';
+import path from 'node:path';
+
 import dotenv from 'dotenv';
 
-export function loadPrismaEnv() {
+function resolveEnvFile(): string {
     const envFile =
         process.env.NODE_ENV === 'production'
             ? '.env.production.local'
             : '.env.development.local';
 
+    const candidates = [
+        path.resolve(process.cwd(), envFile),
+        path.resolve(process.cwd(), '../../', envFile),
+    ];
+
+    return (
+        candidates.find((candidate) => existsSync(candidate)) ?? candidates[0]
+    );
+}
+
+export function loadPrismaEnv() {
     dotenv.config({
-        path: path.resolve(process.cwd(), envFile),
+        path: resolveEnvFile(),
     });
 
     return {

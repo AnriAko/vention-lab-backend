@@ -4,16 +4,16 @@ import type { ConsumeMessage } from 'amqplib';
 import {
     FileProcessStatus,
     isFileProcessStatus,
-} from '~/shared/file-process-contract/constants';
-import type { FileProcessResultMessage } from '~/shared/file-process-contract/types';
+} from '@vention/file-process-contract/constants';
+import type { FileProcessResultMessage } from '@vention/file-process-contract/types';
 import {
     RAG_PROCESS_RESULTS_QUEUE,
     isRagProcessStatus,
-} from '~/shared/rag-contract/constants';
-import type { RagProcessResultMessage } from '~/shared/rag-contract/types';
-import { ragTopology } from '~/shared/rag-contract';
-import { LoggerService } from '~/shared/logger';
-import { RabbitmqService } from '~/shared/rabbitmq';
+} from '@vention/rag-contract/constants';
+import type { RagProcessResultMessage } from '@vention/rag-contract/types';
+import { ragTopology } from '@vention/rag-contract';
+import { LoggerService } from '@vention/shared-logger';
+import { RabbitmqService } from '@vention/shared-rabbitmq';
 import { FileProcessingResultService } from '~/modules/files/file-processing-result.service';
 
 @Injectable()

@@ -89,14 +89,14 @@ npm run prisma:reset
 ### Development
 
 ```bash
-npm run dev
+npm run dev:main
 ```
 
 ### Production
 
 ```bash
 npm run build
-npm run prod
+npm run start:main
 ```
 
 ---
@@ -143,12 +143,6 @@ npm run test:e2e
 npm run docker:build
 ```
 
-### Build image without cache
-
-```bash
-npm run docker:build:clean
-```
-
 ### Development environment
 
 ```bash
@@ -176,7 +170,7 @@ npm run docker:prod:down
 ### File-process / RAG worker images
 
 ```bash
-npm run docker:build:worker
+npm run docker:build:file-process
 npm run docker:build:rag
 ```
 
@@ -200,34 +194,24 @@ Frontend may show a local `uploading` state while the HTTP upload is in flight; 
 
 ```bash
 npm run docker:dev
-npm run shared:sync
-cp credentials/firebase-service-account.json microservices/file-process/credentials/
-cd microservices/file-process
-cp .env.example .env.development.local   # adjust if needed
-npm install
-npm run start:dev
+cp credentials/firebase-service-account.json apps/file-process/credentials/
+npm run dev:file-process
 ```
 
 ### Run RAG locally
 
 ```bash
-npm run shared:sync
-cp credentials/firebase-service-account.json microservices/rag/credentials/
-cd microservices/rag
-cp .env.example .env.development.local   # adjust if needed
-npm install
-npm run start:dev
+cp credentials/firebase-service-account.json apps/rag/credentials/
+npm run dev:rag
 ```
 
 ### Run workers via Docker
 
 ```bash
-# put service account JSON in microservices/file-process/credentials/ and microservices/rag/credentials/
-npm run worker:docker:up
-npm run rag:docker:up
+# put service account JSON in apps/file-process/credentials/ and apps/rag/credentials/
+docker compose -f compose.dev.yml up -d --build file-process
+docker compose -f compose.dev.yml up -d --build rag
 ```
-
-From the worker package: `npm run docker:up` / `npm run docker:logs` / `npm run docker:build`
 
 ### WebSocket (frontend)
 
@@ -270,17 +254,28 @@ npm run lint
 ## Project Structure
 
 ```text
-src/
-  modules/
-  infrastructure/
-  config/
-  main.ts
-shared/
-  file-process-contract/
-  rag-contract/
-microservices/
-  file-process/
-  rag/
+apps/
+  main/           # NestJS HTTP/GraphQL API + Prisma
+  file-process/   # Excel processing worker
+  rag/            # RAG / Qdrant worker
+packages/
+  shared/         # logger, rabbitmq, firebase, file-storage, qdrant
+  contracts/      # file-process and rag message contracts
+configs/          # shared TypeScript, Jest, Prettier
+```
+
+This is an npm workspaces monorepo. Shared infrastructure is consumed as workspace packages (`@vention/*`), not copied into services.
+
+Root commands:
+
+```bash
+npm run dev:main
+npm run dev:file-process
+npm run dev:rag
+npm run build
+npm run build:main
+npm run build:file-process
+npm run build:rag
 ```
 
 ---

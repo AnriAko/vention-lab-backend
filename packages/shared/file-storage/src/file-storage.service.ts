@@ -1,7 +1,7 @@
 import type { Bucket } from '@google-cloud/storage';
 import { Injectable } from '@nestjs/common';
 
-import { FirebaseService } from '../firebase';
+import { FirebaseService } from '@vention/shared-firebase';
 
 import {
     StorageObjectNotFoundError,

@@ -3,11 +3,11 @@ import { Injectable } from '@nestjs/common';
 import {
     RAG_DELETE_ROUTING_KEY,
     RAG_EXCHANGE,
-} from '~/shared/rag-contract/constants';
-import type { RagDeleteJobMessage } from '~/shared/rag-contract/types';
-import { ragTopology } from '~/shared/rag-contract';
-import { LoggerService } from '~/shared/logger';
-import { RabbitmqService } from '~/shared/rabbitmq';
+} from '@vention/rag-contract/constants';
+import type { RagDeleteJobMessage } from '@vention/rag-contract/types';
+import { ragTopology } from '@vention/rag-contract';
+import { LoggerService } from '@vention/shared-logger';
+import { RabbitmqService } from '@vention/shared-rabbitmq';
 
 @Injectable()
 export class RagDeletionPublisher {

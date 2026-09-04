@@ -4,11 +4,11 @@ import {
     FILE_PROCESS_EXCHANGE,
     FILE_PROCESS_RESULTS_QUEUE,
     FILE_PROCESS_ROUTING_KEY,
-} from '~/shared/file-process-contract/constants';
-import type { FileProcessJobMessage } from '~/shared/file-process-contract/types';
-import { fileProcessTopology } from '~/shared/file-process-contract';
-import { LoggerService } from '~/shared/logger';
-import { RabbitmqService } from '~/shared/rabbitmq';
+} from '@vention/file-process-contract/constants';
+import type { FileProcessJobMessage } from '@vention/file-process-contract/types';
+import { fileProcessTopology } from '@vention/file-process-contract';
+import { LoggerService } from '@vention/shared-logger';
+import { RabbitmqService } from '@vention/shared-rabbitmq';
 
 @Injectable()
 export class FileProcessingPublisher {

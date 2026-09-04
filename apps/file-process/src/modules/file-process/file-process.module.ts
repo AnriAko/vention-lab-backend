@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 
 import { ExcelProcessModule } from '../excel/excel.module';
-import { FileStorageModule } from '~/shared/file-storage';
+import { FileStorageModule } from '@vention/shared-file-storage';
 
 import { FileProcessConsumer } from './file-process.consumer';
 import { FileProcessService } from './file-process.service';

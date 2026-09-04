@@ -1,6 +1,6 @@
 import type ExcelJS from 'exceljs';
 
-import { EXCEL_SHEET_HEADERS } from '~/shared/file-process-contract/excel-columns';
+import { EXCEL_SHEET_HEADERS } from '@vention/file-process-contract/excel-columns';
 import { ExcelValidationError } from '../excel-validation.error';
 
 export function validateExcelHeaders(sheet: ExcelJS.Worksheet): void {

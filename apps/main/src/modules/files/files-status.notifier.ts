@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 
-import { FILE_STATUS_WS_EVENT } from '~/shared/file-process-contract/constants';
+import { FILE_STATUS_WS_EVENT } from '@vention/file-process-contract/constants';
 import { FileStatus } from '~/generated/prisma/enums';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 import { FilesGateway } from '~/modules/files/files.gateway';
 
 export type FileStatusNotification = {

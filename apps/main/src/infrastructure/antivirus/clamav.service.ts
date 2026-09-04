@@ -7,7 +7,7 @@ import chalk from 'chalk';
 import { AppException } from '~/common/errors/app-exception';
 import { clamavConfig } from '~/config/configuration/clamav.config';
 import { FileErrors } from '~/modules/files/files.errors';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 import { CLAMAV_HEALTH_MESSAGE } from './clamav.constants';
 import type { ClamAvHealth } from './types/clamav-health.type';
 

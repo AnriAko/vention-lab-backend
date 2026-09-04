@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 
-import { LoggerService } from '~/shared/logger';
-import { QDRANT_DISTANCE, QdrantService } from '~/shared/qdrant';
+import { LoggerService } from '@vention/shared-logger';
+import { QDRANT_DISTANCE, QdrantService } from '@vention/shared-qdrant';
 
 import {
     DOCUMENT_PAYLOAD_FIELDS,

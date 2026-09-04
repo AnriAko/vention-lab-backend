@@ -6,7 +6,7 @@ import { requestContext } from '~/common/tenancy/request-context/request-context
 import { RedisService } from '~/infrastructure/cache/redis.service';
 import { RedisPrefix } from '~/infrastructure/cache/redis.types';
 import { AuthErrors } from '~/modules/auth/auth.errors';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 
 import {
     CHAT_MAX_MEMBERS,

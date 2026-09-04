@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors/app-exception';
 import type { Pagination } from '~/common/api/pagination/pagination.schema';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { UsersService } from '~/modules/user/user.service';
 import { UserErrors } from '~/modules/user/user.errors';

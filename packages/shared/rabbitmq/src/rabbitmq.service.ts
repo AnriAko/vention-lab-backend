@@ -12,7 +12,7 @@ import {
     type Options,
 } from 'amqplib';
 
-import { LoggerService } from '../logger';
+import { LoggerService } from '@vention/shared-logger';
 import { assertRabbitmqTopology } from './topology';
 import {
     RABBITMQ_HEALTH_CHECK_EXCHANGE,

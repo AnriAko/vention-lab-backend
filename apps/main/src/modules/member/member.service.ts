@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 
 import { AppException } from '~/common/errors/app-exception';
 import type { Pagination } from '~/common/api/pagination/pagination.schema';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 import { MemberRepository } from './member.repository';
 import { MemberErrors } from './member.errors';
 import { UpdateMemberRoleDto } from './requests/update-member-role.request.dto';

@@ -6,13 +6,13 @@ import { getActiveOrgId } from '~/common/tenancy/organization/organization-conte
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { AUTH_GUEST } from '~/common/security/auth.types';
 import { ClamAvService } from '~/infrastructure/antivirus/clamav.service';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 import { FileStorageService } from '~/infrastructure/file-storage/file-storage.service';
 import { FileProcessingPublisher } from '~/infrastructure/messaging/file-process/file-processing.publisher';
 import { RagDeletionPublisher } from '~/infrastructure/messaging/rag/rag-deletion.publisher';
 import { RagProcessingPublisher } from '~/infrastructure/messaging/rag/rag-processing.publisher';
-import { FileExtensions } from '~/shared/file-process-contract/constants';
-import { RagFileExtensions } from '~/shared/rag-contract/constants';
+import { FileExtensions } from '@vention/file-process-contract/constants';
+import { RagFileExtensions } from '@vention/rag-contract/constants';
 import { FileStatus } from '~/generated/prisma/enums';
 
 import { FILE_ENCODING_GZIP } from './files.constants';

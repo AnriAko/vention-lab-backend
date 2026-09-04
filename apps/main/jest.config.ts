@@ -1,31 +1,14 @@
 import type { Config } from 'jest';
 
+import base from '../../configs/jest/base.cjs';
+
 const config: Config = {
+    ...base,
     rootDir: '.',
-    testEnvironment: 'node',
-
-    moduleFileExtensions: ['js', 'json', 'ts'],
-
-    testRegex: '.*\\.spec\\.ts$',
-
-    transform: {
-        '^.+\\.(t|j)s$': [
-            'ts-jest',
-            {
-                tsconfig: 'tsconfig.spec.json',
-                useESM: true,
-            },
-        ],
-    },
-
     moduleNameMapper: {
         '^~/(.*)$': '<rootDir>/src/$1',
-        '^@shared/(.*)$': '<rootDir>/src/shared/$1',
         '^(\\.{1,2}/.*)\\.js$': '$1',
     },
-
-    extensionsToTreatAsEsm: ['.ts'],
-
     collectCoverageFrom: ['src/**/*.(t|j)s'],
     coverageDirectory: 'coverage',
 };

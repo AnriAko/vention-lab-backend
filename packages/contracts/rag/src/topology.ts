@@ -14,7 +14,7 @@ import {
     RAG_PROCESS_RESULTS_ROUTING_KEY,
     RAG_PROCESS_ROUTING_KEY,
 } from './constants';
-import type { RabbitmqTopology } from '../rabbitmq';
+import type { RabbitmqTopology } from '@vention/shared-rabbitmq';
 
 export const ragTopology: RabbitmqTopology = {
     exchanges: [

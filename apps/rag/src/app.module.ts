@@ -9,10 +9,10 @@ import { qdrantConfig } from '~/config/configuration/qdrant.config';
 import { rabbitmqConfig } from '~/config/configuration/rabbitmq.config';
 import { validateEnv } from '~/config/validate-env';
 import { RagModule } from '~/modules/rag/rag.module';
-import { FirebaseModule } from '~/shared/firebase';
-import { LoggerModule } from '~/shared/logger';
-import { QdrantModule } from '~/shared/qdrant';
-import { RabbitmqModule } from '~/shared/rabbitmq';
+import { FirebaseModule } from '@vention/shared-firebase';
+import { LoggerModule } from '@vention/shared-logger';
+import { QdrantModule } from '@vention/shared-qdrant';
+import { RabbitmqModule } from '@vention/shared-rabbitmq';
 
 @Module({
     imports: [

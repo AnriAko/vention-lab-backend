@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
 import { DocumentIngestionService } from '~/infrastructure/documents/document-ingestion.service';
-import { RagProcessStatus } from '~/shared/rag-contract';
+import { RagProcessStatus } from '@vention/rag-contract';
 import type {
     RagProcessJobMessage,
     RagProcessResultPayload,
-} from '~/shared/rag-contract/types';
-import { LoggerService } from '~/shared/logger';
+} from '@vention/rag-contract/types';
+import { LoggerService } from '@vention/shared-logger';
 
 @Injectable()
 export class MdProcessService {

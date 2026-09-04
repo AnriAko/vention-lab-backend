@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit } from '@nestjs/common';
 import type { ConsumeMessage, Options } from 'amqplib';
 
-import { ragTopology } from '~/shared/rag-contract';
+import { ragTopology } from '@vention/rag-contract';
 import {
     RAG_DELETE_MAX_RETRIES,
     RAG_DELETE_QUEUE,
@@ -14,13 +14,13 @@ import {
     RAG_PROCESS_RESULTS_ROUTING_KEY,
     RAG_PROCESS_RETRY_HEADER,
     RAG_PROCESS_ROUTING_KEY,
-} from '~/shared/rag-contract/constants';
+} from '@vention/rag-contract/constants';
 import type {
     RagDeleteJobMessage,
     RagProcessJobMessage,
-} from '~/shared/rag-contract/types';
-import { LoggerService } from '~/shared/logger';
-import { RabbitmqService } from '~/shared/rabbitmq';
+} from '@vention/rag-contract/types';
+import { LoggerService } from '@vention/shared-logger';
+import { RabbitmqService } from '@vention/shared-rabbitmq';
 
 import { TransientDeleteError } from './rag-delete.errors';
 import { RagDeleteService } from './rag-delete.service';

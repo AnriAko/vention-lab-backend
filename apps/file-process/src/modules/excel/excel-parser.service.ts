@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import type { FileProcessUserTotal } from '~/shared/file-process-contract/types';
+import type { FileProcessUserTotal } from '@vention/file-process-contract/types';
 
 import { aggregateUserTotals } from './utils/aggregate-user-totals';
 import { collectExcelRows } from './utils/collect-excel-rows';

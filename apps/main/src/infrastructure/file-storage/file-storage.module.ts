@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 
-import { FileStorageModule as SharedFileStorageModule } from '~/shared/file-storage';
+import { FileStorageModule as SharedFileStorageModule } from '@vention/shared-file-storage';
 
 import { FileStorageService } from './file-storage.service';
 

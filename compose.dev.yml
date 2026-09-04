@@ -56,11 +56,11 @@ services:
             - backend
         healthcheck:
             test:
-                ['CMD-SHELL', 'curl -f http://localhost:6333/healthz || exit 1']
+                ['CMD-SHELL', 'bash -c ":> /dev/tcp/127.0.0.1/6333" || exit 1']
             interval: 10s
             timeout: 5s
             retries: 5
-            start_period: 10s
+            start_period: 15s
         deploy:
             resources:
                 limits:
@@ -180,7 +180,7 @@ services:
     file-process:
         build:
             context: .
-            dockerfile: microservices/file-process/dockerfile
+            dockerfile: apps/file-process/dockerfile
         image: vention-file-process
         restart: always
         env_file:
@@ -189,7 +189,7 @@ services:
             NODE_ENV: development
             RABBITMQ_HOST: rabbitmq
         volumes:
-            - ./microservices/file-process/credentials:/app/credentials:ro
+            - ./apps/file-process/credentials:/app/apps/file-process/credentials:ro
         depends_on:
             rabbitmq:
                 condition: service_healthy
@@ -207,7 +207,7 @@ services:
     rag:
         build:
             context: .
-            dockerfile: microservices/rag/dockerfile
+            dockerfile: apps/rag/dockerfile
         image: vention-rag
         restart: always
         env_file:
@@ -218,7 +218,7 @@ services:
             QDRANT_URL: http://vector-db:6333
             OLLAMA_HOST: http://host.docker.internal:11434
         volumes:
-            - ./microservices/rag/credentials:/app/credentials:ro
+            - ./apps/rag/credentials:/app/apps/rag/credentials:ro
         depends_on:
             rabbitmq:
                 condition: service_healthy

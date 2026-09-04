@@ -1,31 +1,13 @@
 {
+    "extends": "../../configs/typescript/nestjs.json",
     "compilerOptions": {
-        "module": "nodenext",
-        "moduleResolution": "NodeNext",
-        "isolatedModules": true,
-        "esModuleInterop": true,
-        "declaration": true,
-        "removeComments": true,
-        "emitDecoratorMetadata": true,
-        "experimentalDecorators": true,
-        "allowSyntheticDefaultImports": true,
-        "target": "ES2023",
-        "sourceMap": true,
         "rootDir": "./src",
         "outDir": "./dist",
         "baseUrl": "./src",
-        "ignoreDeprecations": "6.0",
         "paths": {
-            "~/*": ["*"],
-            "@shared/*": ["shared/*"]
-        },
-        "incremental": true,
-        "skipLibCheck": true,
-        "strictNullChecks": true,
-        "forceConsistentCasingInFileNames": true,
-        "noImplicitAny": false,
-        "types": ["node"]
+            "~/*": ["*"]
+        }
     },
     "include": ["src/**/*"],
-    "exclude": ["node_modules", "dist", "**/*.spec.ts"]
+    "exclude": ["node_modules", "dist", "**/*spec.ts"]
 }

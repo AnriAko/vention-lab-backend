@@ -1,0 +1,9 @@
+**/dist
+**/node_modules
+**/coverage
+**/generated
+package-lock.json
+logs
+excel-data
+files
+*.tsbuildinfo

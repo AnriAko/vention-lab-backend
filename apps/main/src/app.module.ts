@@ -5,9 +5,9 @@ import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, type ApolloDriverConfig } from '@nestjs/apollo';
 import { ThrottlerModule } from '@nestjs/throttler';
 
-import { FirebaseModule } from '~/shared/firebase';
-import { LoggerModule } from '~/shared/logger';
-import { RabbitmqModule } from '~/shared/rabbitmq';
+import { FirebaseModule } from '@vention/shared-firebase';
+import { LoggerModule } from '@vention/shared-logger';
+import { RabbitmqModule } from '@vention/shared-rabbitmq';
 
 import { AUTH_GUEST } from '~/common/security/auth.types';
 import { envFilePath } from '~/common/utils/env-file-path';

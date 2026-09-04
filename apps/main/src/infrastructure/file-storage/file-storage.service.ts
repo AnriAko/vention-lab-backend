@@ -7,7 +7,7 @@ import {
     InvalidStorageKeyError,
     StorageObjectNotFoundError,
     StorageWriteError,
-} from '~/shared/file-storage';
+} from '@vention/shared-file-storage';
 
 @Injectable()
 export class FileStorageService {

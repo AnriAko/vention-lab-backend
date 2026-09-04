@@ -4,11 +4,11 @@ import type { ConsumeMessage } from 'amqplib';
 import {
     FILE_PROCESS_RESULTS_QUEUE,
     isFileProcessStatus,
-} from '~/shared/file-process-contract/constants';
-import type { FileProcessResultMessage } from '~/shared/file-process-contract/types';
-import { fileProcessTopology } from '~/shared/file-process-contract';
-import { LoggerService } from '~/shared/logger';
-import { RabbitmqService } from '~/shared/rabbitmq';
+} from '@vention/file-process-contract/constants';
+import type { FileProcessResultMessage } from '@vention/file-process-contract/types';
+import { fileProcessTopology } from '@vention/file-process-contract';
+import { LoggerService } from '@vention/shared-logger';
+import { RabbitmqService } from '@vention/shared-rabbitmq';
 import { FileProcessingResultService } from '~/modules/files/file-processing-result.service';
 
 @Injectable()

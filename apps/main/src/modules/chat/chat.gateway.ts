@@ -1,4 +1,4 @@
-import { UseFilters, UseGuards } from '@nestjs/common';
+import { SetMetadata, UseFilters, UseGuards } from '@nestjs/common';
 import {
     ConnectedSocket,
     MessageBody,
@@ -10,12 +10,12 @@ import {
 } from '@nestjs/websockets';
 import type { Server } from 'socket.io';
 
-import { Roles } from '~/common/security/decorators/roles.decorator';
+import { ROLES_KEY } from '~/common/security/constants';
 import { WsAuthGuard } from '~/common/security/guards/ws-auth.guard';
 import { WsOrganizationGuard } from '~/common/security/guards/ws-organization.guard';
 import { WsRolesGuard } from '~/common/security/guards/ws-roles.guard';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 
 import { ChatWsExceptionFilter } from './chat-ws.exception-filter';
 import { CHAT_WS_NAMESPACE } from './chat.constants';
@@ -44,7 +44,7 @@ import { parseInput } from './utils/parse-input';
 })
 @UseGuards(WsAuthGuard, WsOrganizationGuard, WsRolesGuard)
 @UseFilters(ChatWsExceptionFilter)
-@Roles(AppRole.USER)
+@SetMetadata(ROLES_KEY, [AppRole.USER])
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
     @WebSocketServer()
     server!: Server;

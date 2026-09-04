@@ -3,17 +3,17 @@ import { Injectable } from '@nestjs/common';
 import {
     FileExtensions,
     FileProcessStatus,
-} from '~/shared/file-process-contract/constants';
+} from '@vention/file-process-contract/constants';
 import type {
     FileProcessJobMessage,
     FileProcessResultMessage,
     FileProcessResultPayload,
-} from '~/shared/file-process-contract/types';
+} from '@vention/file-process-contract/types';
 import {
     InvalidStorageKeyError,
     StorageObjectNotFoundError,
-} from '~/shared/file-storage';
-import { FileStorageService } from '~/shared/file-storage';
+} from '@vention/shared-file-storage';
+import { FileStorageService } from '@vention/shared-file-storage';
 import { ExcelProcessService } from '~/modules/excel/excel.service';
 
 import {

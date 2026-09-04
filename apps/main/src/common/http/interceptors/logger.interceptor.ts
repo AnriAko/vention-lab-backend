@@ -11,7 +11,7 @@ import {
     isGraphqlContext,
     isWsContext,
 } from '~/common/security/utils/execution-context';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 
 @Injectable()
 export class LoggerInterceptor implements NestInterceptor {

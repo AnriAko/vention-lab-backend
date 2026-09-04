@@ -3,7 +3,7 @@ import type { ConfigType } from '@nestjs/config';
 import { Ollama, type EmbedResponse } from 'ollama';
 
 import { ollamaConfig } from '~/config/configuration/ollama.config';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 
 import {
     EmbeddingError,

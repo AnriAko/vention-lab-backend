@@ -3,9 +3,9 @@ export const envFilePath = (() => {
 
     switch (env) {
         case 'production':
-            return '.env.production.local';
+            return ['.env.production.local', '../../.env.production.local'];
         case 'development':
         default:
-            return '.env.development.local';
+            return ['.env.development.local', '../../.env.development.local'];
     }
 })();

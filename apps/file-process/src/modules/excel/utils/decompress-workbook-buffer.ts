@@ -1,6 +1,6 @@
 import { gunzipSync } from 'node:zlib';
 
-import { FILE_PROCESSING_GZIP_SUFFIX } from '~/shared/file-process-contract/constants';
+import { FILE_PROCESSING_GZIP_SUFFIX } from '@vention/file-process-contract/constants';
 
 export function decompressWorkbookBuffer(
     buffer: Buffer,

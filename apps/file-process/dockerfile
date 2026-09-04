@@ -2,21 +2,25 @@ FROM node:26-alpine AS builder
 
 WORKDIR /app
 
-COPY microservices/file-process/package*.json ./
-RUN npm install
+COPY package.json package-lock.json ./
+COPY apps/main/package.json ./apps/main/
+COPY apps/file-process/package.json ./apps/file-process/
+COPY apps/rag/package.json ./apps/rag/
+COPY packages/shared/logger/package.json ./packages/shared/logger/
+COPY packages/shared/rabbitmq/package.json ./packages/shared/rabbitmq/
+COPY packages/shared/firebase/package.json ./packages/shared/firebase/
+COPY packages/shared/file-storage/package.json ./packages/shared/file-storage/
+COPY packages/shared/qdrant/package.json ./packages/shared/qdrant/
+COPY packages/contracts/file-process/package.json ./packages/contracts/file-process/
+COPY packages/contracts/rag/package.json ./packages/contracts/rag/
+COPY configs ./configs
 
-COPY microservices/file-process/ ./
-COPY shared /shared
+RUN npm ci
 
-RUN mkdir -p src/shared/file-process-contract src/shared/rabbitmq src/shared/firebase src/shared/logger src/shared/file-storage \
-    && cp -R /shared/file-process-contract/. src/shared/file-process-contract/ \
-    && cp -R /shared/rabbitmq/. src/shared/rabbitmq/ \
-    && cp -R /shared/firebase/. src/shared/firebase/ \
-    && cp -R /shared/logger/. src/shared/logger/ \
-    && cp -R /shared/file-storage/. src/shared/file-storage/ \
-    && rm -f tsconfig.build.tsbuildinfo tsconfig.tsbuildinfo
+COPY . .
 
-RUN npm run build && test -f dist/main.js
+RUN npm run build --workspace=@vention/shared-logger && npm run build --workspace=@vention/shared-firebase && npm run build --workspace=@vention/shared-rabbitmq && npm run build --workspace=@vention/shared-file-storage && npm run build --workspace=@vention/file-process-contract
+RUN npm run build --workspace=@vention/file-process && test -f apps/file-process/dist/main.js
 
 FROM node:26-alpine AS runner
 
@@ -24,8 +28,12 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /app/dist ./dist
-COPY --from=builder /app/package*.json ./
+COPY --from=builder /app/package.json /app/package-lock.json ./
 COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/apps/file-process/package.json ./apps/file-process/
+COPY --from=builder /app/apps/file-process/dist ./apps/file-process/dist
+
+WORKDIR /app/apps/file-process
 
 CMD ["node", "dist/main.js"]

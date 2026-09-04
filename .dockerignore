@@ -1,12 +1,10 @@
 node_modules
-dist
+**/node_modules
+**/dist
 .git
 .husky
 .dockerignore
 .gitignore
-compose.dev.yml
-compose.prod.yml
-dockerfile
 README.md
 changelog.md
 .env
@@ -15,3 +13,5 @@ logs
 *.tsbuildinfo
 coverage
 excel-data
+files
+**/*.tsbuildinfo

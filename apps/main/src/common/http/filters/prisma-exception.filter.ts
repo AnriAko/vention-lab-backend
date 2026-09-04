@@ -15,7 +15,7 @@ import {
 } from '~/common/http/filters/to-graphql-error';
 import { isWsContext } from '~/common/security/utils/execution-context';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 
 @Catch(Prisma.PrismaClientKnownRequestError)
 export class PrismaExceptionFilter {

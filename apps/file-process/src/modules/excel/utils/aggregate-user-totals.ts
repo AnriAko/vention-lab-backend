@@ -1,4 +1,4 @@
-import type { FileProcessUserTotal } from '~/shared/file-process-contract/types';
+import type { FileProcessUserTotal } from '@vention/file-process-contract/types';
 
 import type { ParsedRow } from '../types/parsed-row.type';
 import { addDecimalStrings } from './add-decimal-strings';

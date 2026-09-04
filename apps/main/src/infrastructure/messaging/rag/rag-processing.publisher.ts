@@ -4,11 +4,11 @@ import {
     RAG_EXCHANGE,
     RAG_PROCESS_RESULTS_QUEUE,
     RAG_PROCESS_ROUTING_KEY,
-} from '~/shared/rag-contract/constants';
-import type { RagProcessJobMessage } from '~/shared/rag-contract/types';
-import { ragTopology } from '~/shared/rag-contract';
-import { LoggerService } from '~/shared/logger';
-import { RabbitmqService } from '~/shared/rabbitmq';
+} from '@vention/rag-contract/constants';
+import type { RagProcessJobMessage } from '@vention/rag-contract/types';
+import { ragTopology } from '@vention/rag-contract';
+import { LoggerService } from '@vention/shared-logger';
+import { RabbitmqService } from '@vention/shared-rabbitmq';
 
 @Injectable()
 export class RagProcessingPublisher {

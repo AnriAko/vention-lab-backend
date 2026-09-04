@@ -2,7 +2,7 @@ import { Catch } from '@nestjs/common';
 import type { ArgumentsHost, ExceptionFilter } from '@nestjs/common';
 
 import { getWsClient } from '~/common/security/utils/execution-context';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 
 import { CHAT_WS_EVENTS } from './chat.ws.constants';
 

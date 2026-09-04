@@ -1,15 +1,15 @@
 import { Injectable } from '@nestjs/common';
 
-import { FileProcessStatus } from '~/shared/file-process-contract/constants';
+import { FileProcessStatus } from '@vention/file-process-contract/constants';
 import type {
     FileProcessResultMessage,
     FileProcessUserTotal,
-} from '~/shared/file-process-contract/types';
+} from '@vention/file-process-contract/types';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
 import { PrismaRlsService } from '~/common/tenancy/rls/prisma-rls.service';
 import { FileStatus } from '~/generated/prisma/enums';
 import { Prisma } from '~/generated/prisma/client';
-import { LoggerService } from '~/shared/logger';
+import { LoggerService } from '@vention/shared-logger';
 import { FilesStatusNotifier } from '~/modules/files/files-status.notifier';
 
 type ApplyOutcome = {

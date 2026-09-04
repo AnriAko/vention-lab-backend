@@ -4,17 +4,17 @@ import { MdProcessService } from '~/modules/md/md.service';
 import {
     RagFileExtensions,
     RagProcessStatus,
-} from '~/shared/rag-contract/constants';
+} from '@vention/rag-contract/constants';
 import type {
     RagProcessJobMessage,
     RagProcessResultMessage,
     RagProcessResultPayload,
-} from '~/shared/rag-contract/types';
+} from '@vention/rag-contract/types';
 import {
     InvalidStorageKeyError,
     StorageObjectNotFoundError,
     FileStorageService,
-} from '~/shared/file-storage';
+} from '@vention/shared-file-storage';
 
 import { PermanentRagError, TransientRagError } from './rag-process.errors';
 
