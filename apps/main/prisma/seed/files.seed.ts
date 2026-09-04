@@ -13,7 +13,7 @@ import {
 import {
     getFirebaseStorageBucket,
     initializeFirebaseAdmin,
-} from '../../shared/firebase/firebase-admin.app';
+} from '@vention/shared-firebase';
 import { loadPrismaEnv } from '../../src/config/prisma/prisma-env';
 
 const gzip = promisify(zlibGzip);
