@@ -374,10 +374,7 @@ export class ChatService {
     }
 
     private async assertChatMembership(chatId: string): Promise<void> {
-        await this.assertChatMembershipForUser(
-            chatId,
-            this.getCurrentUserId()
-        );
+        await this.assertChatMembershipForUser(chatId, this.getCurrentUserId());
     }
 
     private async requireChatMembershipForUser(
