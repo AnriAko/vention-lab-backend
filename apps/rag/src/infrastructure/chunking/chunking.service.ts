@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import type { ParsedDocument } from '../parsing/markdown/markdown-parser.types';
+import type { ParsedDocument } from '../parsing/parsed-document.types';
 import type {
     ChunkingOptions,
     ChunkingStrategyName,

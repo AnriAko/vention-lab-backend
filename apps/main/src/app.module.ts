@@ -28,6 +28,7 @@ import { UserStatsModule } from '~/modules/user-stats/user-stats.module';
 import { SearchModule } from '~/modules/search/search.module';
 import { FilesModule } from '~/modules/files/files.module';
 import { ChatModule } from '~/modules/chat/chat.module';
+import { AiModule } from '~/modules/ai/ai.module';
 
 @Module({
     imports: [
@@ -95,6 +96,7 @@ import { ChatModule } from '~/modules/chat/chat.module';
             context: ({ req, res }) => ({ req, res }),
         }),
         ChatModule,
+        AiModule,
     ],
 })
 export class AppModule implements NestModule {

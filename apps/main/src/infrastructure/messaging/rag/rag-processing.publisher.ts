@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common';
 
 import {
-    RAG_EXCHANGE,
-    RAG_PROCESS_RESULTS_QUEUE,
-    RAG_PROCESS_ROUTING_KEY,
+    AI_DOCUMENT_EXCHANGE,
+    AI_DOCUMENT_PROCESS_RESULTS_QUEUE,
+    AI_DOCUMENT_PROCESS_ROUTING_KEY,
 } from '@vention/rag-contract/constants';
-import type { RagFileDeleteJobMessage } from '@vention/rag-contract/types';
-import { ragTopology } from '@vention/rag-contract';
+import type { AiDocumentProcessJobMessage } from '@vention/rag-contract/types';
+import { aiDocumentTopology } from '@vention/rag-contract';
 import { LoggerService } from '@vention/shared-logger';
 import { RabbitmqService } from '@vention/shared-rabbitmq';
 
@@ -17,29 +17,31 @@ export class RagProcessingPublisher {
         private readonly logger: LoggerService
     ) {}
 
-    async publishStorageFinalized(job: RagFileDeleteJobMessage): Promise<void> {
-        await this.rabbitmq.assertTopology(ragTopology);
+    async publishStorageFinalized(
+        job: AiDocumentProcessJobMessage
+    ): Promise<void> {
+        await this.rabbitmq.assertTopology(aiDocumentTopology);
 
         const published = await this.rabbitmq.publish(
-            RAG_EXCHANGE,
-            RAG_PROCESS_ROUTING_KEY,
+            AI_DOCUMENT_EXCHANGE,
+            AI_DOCUMENT_PROCESS_ROUTING_KEY,
             job,
             {
                 correlationId: job.fileId,
-                replyTo: RAG_PROCESS_RESULTS_QUEUE,
+                replyTo: AI_DOCUMENT_PROCESS_RESULTS_QUEUE,
                 messageId: job.fileId,
-                type: RAG_PROCESS_ROUTING_KEY,
+                type: AI_DOCUMENT_PROCESS_ROUTING_KEY,
             }
         );
 
         if (!published) {
             throw new Error(
-                `Failed to publish RAG process job for fileId=${job.fileId}`
+                `Failed to publish AI document process job for fileId=${job.fileId}`
             );
         }
 
         this.logger.log(
-            `[RagProcessingPublisher] published fileId=${job.fileId} storageKey=${job.fileId}` //FIXME - should be Storage key
+            `[RagProcessingPublisher] published fileId=${job.fileId} storageKey=${job.storageKey}`
         );
     }
 }

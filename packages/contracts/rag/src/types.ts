@@ -1,6 +1,6 @@
-import type { RagProcessStatus } from './constants';
+import type { AiDocumentProcessStatus } from './constants';
 
-export type RagProcessJobMessage = {
+export type AiDocumentProcessJobMessage = {
     fileId: string;
     storageKey: string;
     originalFilename: string;
@@ -11,18 +11,18 @@ export type RagProcessJobMessage = {
     publishedAt: string;
 };
 
-export type RagProcessResultPayload = {
-    status: RagProcessStatus;
+export type AiDocumentProcessResultPayload = {
+    status: AiDocumentProcessStatus;
     success: boolean;
     error: string | null;
 };
 
-export type RagProcessResultMessage = RagProcessResultPayload & {
+export type AiDocumentProcessResultMessage = AiDocumentProcessResultPayload & {
     fileId: string;
     organizationId: string;
     ownerId: string;
 };
 
-export type RagDeleteJobMessage = {
+export type AiDocumentDeleteJobMessage = {
     fileId: string;
 };

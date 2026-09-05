@@ -1,4 +1,4 @@
-import type { ParsedDocument } from '../parsing/markdown/markdown-parser.types';
+import type { ParsedDocument } from '../parsing/parsed-document.types';
 
 export type ChunkingStrategyName = 'fixed-size' | 'markdown';
 

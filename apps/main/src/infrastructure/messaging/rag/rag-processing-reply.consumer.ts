@@ -7,11 +7,11 @@ import {
 } from '@vention/file-process-contract/constants';
 import type { FileProcessResultMessage } from '@vention/file-process-contract/types';
 import {
-    RAG_PROCESS_RESULTS_QUEUE,
-    isRagProcessStatus,
+    AI_DOCUMENT_PROCESS_RESULTS_QUEUE,
+    isAiDocumentProcessStatus,
 } from '@vention/rag-contract/constants';
-import type { RagProcessResultMessage } from '@vention/rag-contract/types';
-import { ragTopology } from '@vention/rag-contract';
+import type { AiDocumentProcessResultMessage } from '@vention/rag-contract/types';
+import { aiDocumentTopology } from '@vention/rag-contract';
 import { LoggerService } from '@vention/shared-logger';
 import { RabbitmqService } from '@vention/shared-rabbitmq';
 import { FileProcessingResultService } from '~/modules/files/file-processing-result.service';
@@ -25,20 +25,20 @@ export class RagProcessingReplyConsumer implements OnModuleInit {
     ) {}
 
     async onModuleInit(): Promise<void> {
-        await this.rabbitmq.assertTopology(ragTopology);
+        await this.rabbitmq.assertTopology(aiDocumentTopology);
 
-        await this.rabbitmq.consume(RAG_PROCESS_RESULTS_QUEUE, (msg) =>
+        await this.rabbitmq.consume(AI_DOCUMENT_PROCESS_RESULTS_QUEUE, (msg) =>
             this.handleResult(msg)
         );
     }
 
     private async handleResult(msg: ConsumeMessage): Promise<void> {
-        let payload: RagProcessResultMessage;
+        let payload: AiDocumentProcessResultMessage;
 
         try {
             payload = JSON.parse(
                 msg.content.toString('utf8')
-            ) as RagProcessResultMessage;
+            ) as AiDocumentProcessResultMessage;
         } catch (error) {
             this.logger.error(
                 `[RagProcessingReplyConsumer] invalid JSON: ${error instanceof Error ? error.message : String(error)}`
@@ -50,7 +50,7 @@ export class RagProcessingReplyConsumer implements OnModuleInit {
         if (
             !payload?.fileId ||
             !payload.ownerId ||
-            !isRagProcessStatus(payload.status)
+            !isAiDocumentProcessStatus(payload.status)
         ) {
             this.logger.error(
                 '[RagProcessingReplyConsumer] missing fileId/ownerId or invalid status'

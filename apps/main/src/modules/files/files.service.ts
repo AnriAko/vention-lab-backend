@@ -12,7 +12,7 @@ import { FileProcessingPublisher } from '~/infrastructure/messaging/file-process
 import { RagDeletionPublisher } from '~/infrastructure/messaging/rag/rag-deletion.publisher';
 import { RagProcessingPublisher } from '~/infrastructure/messaging/rag/rag-processing.publisher';
 import { FileExtensions } from '@vention/file-process-contract/constants';
-import { RagFileExtensions } from '@vention/rag-contract/constants';
+import { AiDocumentExtensions } from '@vention/rag-contract/constants';
 import { FileStatus } from '~/generated/prisma/enums';
 
 import { FILE_ENCODING_GZIP } from './files.constants';
@@ -161,9 +161,13 @@ export class FilesService {
                 .replace(/^\./, '')
                 .toLowerCase();
 
+            const aiDocumentExtensions = Object.values(
+                AiDocumentExtensions
+            ).flat();
+
             if (FileExtensions.EXCEL.includes(extension)) {
                 await this.fileProcessingPublisher.publishStorageFinalized(job);
-            } else if (RagFileExtensions.MD.includes(extension)) {
+            } else if (aiDocumentExtensions.includes(extension)) {
                 await this.ragProcessingPublisher.publishStorageFinalized(job);
             } else {
                 throw new Error(

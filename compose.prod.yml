@@ -254,7 +254,7 @@ services:
         environment:
             NODE_ENV: production
             RABBITMQ_HOST: rabbitmq
-            QDRANT_URL: http://vector-db:6333
+            QDRANT_URL: http://qdrant-vector-db:6333
             FIREBASE_SERVICE_ACCOUNT_PATH: ./credentials/firebase-service-account.json
         volumes:
             - ./apps/rag/credentials:/app/apps/rag/credentials:ro

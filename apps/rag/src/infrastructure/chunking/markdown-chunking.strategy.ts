@@ -4,7 +4,7 @@ import { randomUUID } from 'node:crypto';
 import type {
     ParsedDocument,
     ParsedSection,
-} from '../parsing/markdown/markdown-parser.types';
+} from '../parsing/parsed-document.types';
 import type {
     ChunkingOptions,
     ChunkingStrategy,

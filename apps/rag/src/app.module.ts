@@ -8,7 +8,8 @@ import { firebaseConfig } from '~/config/configuration/firebase.config';
 import { qdrantConfig } from '~/config/configuration/qdrant.config';
 import { rabbitmqConfig } from '~/config/configuration/rabbitmq.config';
 import { validateEnv } from '~/config/validate-env';
-import { RagModule } from '~/modules/rag/rag.module';
+import { AiDocumentModule } from '~/modules/ai-document/ai-document.module';
+import { GenerationModule } from '~/modules/generation/generation.module';
 import { FirebaseModule } from '@vention/shared-firebase';
 import { LoggerModule } from '@vention/shared-logger';
 import { QdrantModule } from '@vention/shared-qdrant';
@@ -49,7 +50,8 @@ import { RabbitmqModule } from '@vention/shared-rabbitmq';
                 apiKey: config.apiKey,
             }),
         }),
-        RagModule,
+        AiDocumentModule,
+        GenerationModule,
     ],
 })
 export class AppModule {}

@@ -11,7 +11,7 @@
     "prettier": "./configs/prettier/index.json",
     "scripts": {
         "build": "npm run build:packages && npm run build:main && npm run build:file-process && npm run build:rag",
-        "build:packages": "npm run build --workspace=@vention/shared-logger && npm run build --workspace=@vention/shared-firebase && npm run build --workspace=@vention/shared-rabbitmq && npm run build --workspace=@vention/shared-file-storage && npm run build --workspace=@vention/shared-qdrant && npm run build --workspace=@vention/file-process-contract && npm run build --workspace=@vention/rag-contract",
+        "build:packages": "npm run build --workspace=@vention/shared-logger && npm run build --workspace=@vention/shared-firebase && npm run build --workspace=@vention/shared-rabbitmq && npm run build --workspace=@vention/shared-file-storage && npm run build --workspace=@vention/shared-qdrant && npm run build --workspace=@vention/file-process-contract && npm run build --workspace=@vention/rag-contract && npm run build --workspace=@vention/generation-contract",
         "build:main": "npm run build --workspace=@vention/main",
         "build:file-process": "npm run build --workspace=@vention/file-process",
         "build:rag": "npm run build --workspace=@vention/rag",

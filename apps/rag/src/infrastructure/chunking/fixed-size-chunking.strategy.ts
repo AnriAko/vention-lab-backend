@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 
-import type { ParsedDocument } from '../parsing/markdown/markdown-parser.types';
+import type { ParsedDocument } from '../parsing/parsed-document.types';
 import type {
     ChunkingOptions,
     ChunkingStrategy,

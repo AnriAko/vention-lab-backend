@@ -26,9 +26,6 @@ async function bootstrap() {
 
     const isDevelopment = process.env.NODE_ENV !== 'production';
 
-    // GraphiQL loads React + GraphiQL from public CDNs (e.g. unpkg). Helmet's
-    // default CSP only allows 'self', which leaves GraphiQL stuck on "Loading...".
-    // Keep full Helmet + default CSP in production; relax only what GraphiQL needs in development.
     app.use(
         isDevelopment
             ? helmet({

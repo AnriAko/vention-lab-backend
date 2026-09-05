@@ -17,6 +17,8 @@
         "@nestjs/common": "^11.1.27",
         "@nestjs/config": "^4.0.4",
         "@nestjs/core": "^11.1.27",
+        "@nestjs/microservices": "^11.1.28",
+        "@nestjs/websockets": "^11.1.29",
         "@vention/rag-contract": "*",
         "@vention/shared-file-storage": "*",
         "@vention/shared-firebase": "*",
@@ -26,6 +28,7 @@
         "cross-env": "^10.1.0",
         "marked": "^15.0.12",
         "ollama": "^0.6.3",
+        "pdf-parse": "^1.1.1",
         "reflect-metadata": "^0.2.2",
         "rxjs": "^7.8.1",
         "zod": "^4.4.3"
@@ -35,6 +38,7 @@
         "@nestjs/schematics": "^11.0.0",
         "@types/jest": "^30.0.0",
         "@types/node": "^24.13.3",
+        "@types/pdf-parse": "^1.1.4",
         "jest": "^30.4.2",
         "ts-jest": "^29.4.11",
         "typescript": "^6.0.3"
