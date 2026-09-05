@@ -185,7 +185,7 @@ export class AiDocumentService {
 
         return chunks.map((chunk, index) => ({
             id: chunk.chunkId,
-            vector: vectors[index]!,
+            vector: vectors[index],
             payload: {
                 organizationId: job.organizationId,
                 documentId: job.fileId,
@@ -209,9 +209,7 @@ export class AiDocumentService {
         return vectors;
     }
 
-    private resolveChunkingStrategy(
-        extension: string
-    ): ChunkingStrategyName {
+    private resolveChunkingStrategy(extension: string): ChunkingStrategyName {
         if (AiDocumentExtensions.PDF.includes(extension)) {
             return 'fixed-size';
         }
@@ -220,9 +218,7 @@ export class AiDocumentService {
     }
 
     private isSupportedExtension(extension: string): boolean {
-        return Object.values(AiDocumentExtensions)
-            .flat()
-            .includes(extension);
+        return Object.values(AiDocumentExtensions).flat().includes(extension);
     }
 
     private getExtension(storageKey: string): string {
