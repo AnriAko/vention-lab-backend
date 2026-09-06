@@ -43,7 +43,7 @@ export class FileProcessingResultService {
         }
 
         if (result.status === FileProcessStatus.FAILED || !result.success) {
-            await this.markFailed(result, result.organizationId, result.error ?? 'Processing failed');
+            await this.markFailed(result, result.error ?? 'Processing failed');
             this.statusNotifier.notify({
                 fileId: result.fileId,
                 organizationId: result.organizationId,
@@ -86,13 +86,14 @@ export class FileProcessingResultService {
 
     private async markFailed(
         result: FileProcessResultMessage,
-            organizationId: string,
-
         error: string
     ): Promise<void> {
         await this.withTenantTx(result, async (tx) => {
             const existing = await tx.file.findFirst({
-                where: { id: result.fileId },
+                where: {
+                    id: result.fileId,
+                    organizationId: result.organizationId,
+                },
                 select: { status: true },
             });
 
@@ -104,7 +105,12 @@ export class FileProcessingResultService {
                 return;
             }
 
-            await this.setFileFailed(tx, result.fileId, organizationId, error);
+            await this.setFileFailed(
+                tx,
+                result.fileId,
+                error,
+                result.organizationId
+            );
         });
 
         this.logger.log(
@@ -301,31 +307,29 @@ export class FileProcessingResultService {
         tx: Prisma.TransactionClient,
         fileId: string,
         error: string,
-                organizationId?: string,
-
+        organizationId?: string
     ): Promise<ApplyOutcome> {
         await this.setFileFailed(tx, fileId, error, organizationId);
         return { status: FileStatus.FAILED, error };
     }
 
-private async setFileFailed(
-    tx: Prisma.TransactionClient,
-    fileId: string,
-    error: string,
-        organizationId?: string,
-
-): Promise<void> {
-    await tx.file.updateMany({
-        where: {
-            id: fileId,
-            organizationId,
-        },
-        data: {
-            status: FileStatus.FAILED,
-            processingError: error.slice(0, 4000),
-        },
-    });
-}
+    private async setFileFailed(
+        tx: Prisma.TransactionClient,
+        fileId: string,
+        error: string,
+        organizationId?: string
+    ): Promise<void> {
+        await tx.file.updateMany({
+            where: {
+                id: fileId,
+                organizationId,
+            },
+            data: {
+                status: FileStatus.FAILED,
+                processingError: error.slice(0, 4000),
+            },
+        });
+    }
 
     private async withTenantTx<T>(
         result: Pick<FileProcessResultMessage, 'ownerId' | 'organizationId'>,

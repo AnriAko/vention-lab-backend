@@ -23,6 +23,13 @@ export class AiConversationRepository {
             where: {
                 id,
             },
+            include: {
+                messages: {
+                    orderBy: {
+                        createdAt: 'asc',
+                    },
+                },
+            },
         });
     }
 

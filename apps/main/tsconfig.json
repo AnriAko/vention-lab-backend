@@ -9,6 +9,12 @@
         },
         "types": ["node", "jest"]
     },
-    "include": ["src/**/*", "scripts/**/*", "prisma/**/*", "test/**/*"],
+    "include": [
+        "src/**/*",
+        "scripts/**/*",
+        "prisma/**/*",
+        "test/**/*",
+        "../rag/src/infrastructure/messaging/rag/rag-rmq.client.ts"
+    ],
     "exclude": ["node_modules", "dist"]
 }

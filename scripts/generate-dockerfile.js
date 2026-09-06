@@ -86,6 +86,7 @@ WORKDIR /app
 
 COPY . .
 
+RUN npm run build:packages
 RUN npm run ${appConfig.buildScript}
 
 
@@ -95,6 +96,7 @@ WORKDIR /app
 
 COPY --from=build /app/apps/${appName}/${appConfig.distPath} ./dist
 COPY --from=build /app/node_modules ./node_modules
+COPY --from=build /app/packages ./packages
 COPY --from=build /app/apps/${appName}/package.json ./package.json
 
 CMD ["node", "${appConfig.entrypoint}"]
@@ -112,7 +114,6 @@ function main() {
     fs.writeFileSync(outputPath, dockerfile, 'utf8');
 
     console.log(`Generated Dockerfile for "${appName}":`);
-
     console.log(path.relative(ROOT_DIR, outputPath));
 }
 

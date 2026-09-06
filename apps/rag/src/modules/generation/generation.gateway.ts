@@ -16,6 +16,7 @@ import {
     type GenerationCancelPayload,
     type GenerationStartPayload,
 } from '@vention/generation-contract';
+import { LoggerService } from '@vention/shared-logger';
 
 import { GenerationService } from './generation.service';
 
@@ -23,13 +24,32 @@ import { GenerationService } from './generation.service';
     namespace: '/ai',
 })
 export class GenerationGateway {
-    constructor(private readonly generationService: GenerationService) {}
+    constructor(
+        private readonly generationService: GenerationService,
+        private readonly logger: LoggerService
+    ) {}
+
+    handleConnection(client: Socket): void {
+        this.logger.log(
+            `[GenerationGateway] websocket connected clientId=${client.id}`
+        );
+    }
+
+    handleDisconnect(client: Socket): void {
+        this.logger.log(
+            `[GenerationGateway] websocket disconnected clientId=${client.id}`
+        );
+    }
 
     @SubscribeMessage(GENERATION_WS_START_EVENT)
     async handleStart(
         @ConnectedSocket() client: Socket,
         @MessageBody() payload: GenerationStartPayload
     ): Promise<void> {
+        this.logger.log(
+            `[GenerationGateway] received websocket event=${GENERATION_WS_START_EVENT} clientId=${client.id} generationId=${payload?.generationId ?? 'unknown'}`
+        );
+
         try {
             for await (const chunk of this.generationService.generate(
                 payload.generationId,
@@ -63,6 +83,10 @@ export class GenerationGateway {
         @ConnectedSocket() client: Socket,
         @MessageBody() payload: GenerationCancelPayload
     ): void {
+        this.logger.log(
+            `[GenerationGateway] received websocket event=${GENERATION_WS_CANCEL_EVENT} clientId=${client.id} generationId=${payload?.generationId ?? 'unknown'}`
+        );
+
         this.generationService.cancel(payload.generationId);
 
         client.emit(GENERATION_WS_CANCELLED_EVENT, {

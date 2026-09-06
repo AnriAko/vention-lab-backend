@@ -24,13 +24,15 @@ import {
 } from '@vention/generation-contract';
 
 import type { AuthUser } from '~/common/security/auth.types';
-import { WsAuthGuard } from '~/common/security/guards/ws-auth.guard';
-import { WsOrganizationGuard } from '~/common/security/guards/ws-organization.guard';
-import { WsRlsInterceptor } from '~/modules/chat/ws-rls-interceptor';
+import { WsAuthGuard } from '~/common/security/ws-security/ws-auth.guard';
+import { WsOrganizationGuard } from '~/common/security/ws-security/ws-organization.guard';
+import { WsRlsInterceptor } from '~/common/security/ws-security/ws-rls-interceptor';
 
 import { AiGenerationService } from './ai.generation.service';
 import { GenerationCancelRequestDto } from './requests/generation-cancel.request.dto';
 import { GenerationStartRequestDto } from './requests/generation-start.request.dto';
+
+const AI_WS_LOG_PREFIX = '[AiGenerationGateway]';
 
 type AiGenerationSocketData = {
     user: AuthUser;
@@ -76,7 +78,11 @@ export class AiGenerationGateway
         try {
             await this.wsAuthGuard.authenticate(client);
             await this.wsOrganizationGuard.authorize(client);
+            console.info(
+                `${AI_WS_LOG_PREFIX} connected userId=${client.data.user.userId} socketId=${client.id}`
+            );
         } catch {
+            console.warn(`${AI_WS_LOG_PREFIX} rejected socketId=${client.id}`);
             client.disconnect(true);
         }
     }
@@ -90,6 +96,9 @@ export class AiGenerationGateway
         @ConnectedSocket() client: AiGenerationSocket,
         @MessageBody() payload: GenerationStartRequestDto
     ): Promise<void> {
+        console.info(
+            `${AI_WS_LOG_PREFIX} generation:start socketId=${client.id} generationId=${payload.generationId} conversationId=${payload.conversationId ?? 'new'}`
+        );
         await this.aiGenerationService.start(client, payload);
     }
 

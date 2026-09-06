@@ -5,5 +5,4 @@
 package-lock.json
 logs
 excel-data
-files
 *.tsbuildinfo

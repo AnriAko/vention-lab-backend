@@ -7,6 +7,7 @@ export const ConfigKeys = {
     JWT: 'jwt',
     RABBITMQ: 'rabbitmq',
     REDIS: 'redis',
+    RAG: 'rag',
 } as const;
 
 export type ConfigKey = (typeof ConfigKeys)[keyof typeof ConfigKeys];

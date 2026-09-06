@@ -1,4 +1,9 @@
-import { Injectable, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+    Inject,
+    Injectable,
+    OnModuleDestroy,
+    OnModuleInit,
+} from '@nestjs/common';
 
 import { io, type Socket as RagSocket } from 'socket.io-client';
 
@@ -29,9 +34,16 @@ import { GenerationDoneResponse } from '~/modules/ai/ai-generation/response/gene
 import { GenerationErrorResponse } from '~/modules/ai/ai-generation/response/generation-error.response';
 import { GenerationCancelledResponse } from '~/modules/ai/ai-generation/response/generation-cancelled.response';
 import { AiConversationMessageRole } from '~/generated/prisma/enums';
+import type { AuthUser } from '~/common/security/auth.types';
+import { WsRlsContext } from '~/common/security/ws-security/ws-rls-interceptor';
+
+import type { ConfigType } from '@nestjs/config';
+import { ragConfig } from '~/config/configuration/rag.config';
+import { LoggerService } from '@vention/shared-logger';
 
 type ClientGeneration = {
     client: AiGenerationSocket;
+    user: AuthUser;
     organizationId: string;
     conversationId: string;
     assistantContent: string;
@@ -45,21 +57,34 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
 
     constructor(
         private readonly aiConversationService: AiConversationService,
-        private readonly aiMessageService: AiConversationMessageService
+        private readonly aiMessageService: AiConversationMessageService,
+        private readonly wsRlsContext: WsRlsContext,
+        private readonly logger: LoggerService,
+
+        @Inject(ragConfig.KEY)
+        private readonly ragConf: ConfigType<typeof ragConfig>
     ) {}
 
     onModuleInit(): void {
-        const ragWsUrl = process.env.RAG_WS_URL;
-
-        if (!ragWsUrl) {
-            throw new Error(
-                'RAG_WS_URL environment variable is not configured'
-            );
-        }
-
-        this.ragSocket = io(`${ragWsUrl}${GENERATION_WS_NAMESPACE}`, {
+        this.ragSocket = io(`${this.ragConf.wsUrl}${GENERATION_WS_NAMESPACE}`, {
             transports: ['websocket'],
             reconnection: true,
+        });
+
+        this.ragSocket.on('connect', () => {
+            this.logger.log(
+                `[AiGenerationService] connected to RAG websocket socketId=${this.ragSocket?.id}`
+            );
+        });
+        this.ragSocket.on('connect_error', (error: Error) => {
+            this.logger.error(
+                `[AiGenerationService] RAG websocket connection failed: ${error.message}`
+            );
+        });
+        this.ragSocket.on('disconnect', (reason) => {
+            this.logger.warn(
+                `[AiGenerationService] disconnected from RAG websocket reason=${reason}`
+            );
         });
 
         this.registerRagListeners();
@@ -97,6 +122,7 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
 
         const generation: ClientGeneration = {
             client,
+            user: client.data.user,
             organizationId,
             conversationId,
             assistantContent: '',
@@ -113,6 +139,9 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
             options: payload.options,
         };
 
+        this.logger.log(
+            `[AiGenerationService] sending generation:start to RAG generationId=${payload.generationId}`
+        );
         this.getRagSocket().emit(GENERATION_WS_START_EVENT, ragPayload);
     }
 
@@ -183,13 +212,25 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
                 }
 
                 try {
-                    await this.saveAssistantMessage(generation);
+                    await this.wsRlsContext.runAuthenticated(
+                        generation.user,
+                        () => this.saveAssistantMessage(generation)
+                    );
 
                     const response = GenerationDoneResponse.schema.parse({
                         generationId: payload.generationId,
                     });
 
                     generation.client.emit(GENERATION_WS_DONE_EVENT, response);
+                } catch (error) {
+                    this.logger.error(
+                        `[AiGenerationService] failed to save assistant message generationId=${payload.generationId}: ${error instanceof Error ? error.message : String(error)}`
+                    );
+
+                    generation.client.emit(GENERATION_WS_ERROR_EVENT, {
+                        generationId: payload.generationId,
+                        error: 'Failed to save generated response',
+                    });
                 } finally {
                     this.cleanupGeneration(payload.generationId);
                 }
@@ -226,7 +267,10 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
                 }
 
                 try {
-                    await this.saveAssistantMessage(generation);
+                    await this.wsRlsContext.runAuthenticated(
+                        generation.user,
+                        () => this.saveAssistantMessage(generation)
+                    );
 
                     const response = GenerationCancelledResponse.schema.parse({
                         generationId: payload.generationId,
@@ -236,6 +280,15 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
                         GENERATION_WS_CANCELLED_EVENT,
                         response
                     );
+                } catch (error) {
+                    this.logger.error(
+                        `[AiGenerationService] failed to save cancelled assistant message generationId=${payload.generationId}: ${error instanceof Error ? error.message : String(error)}`
+                    );
+
+                    generation.client.emit(GENERATION_WS_ERROR_EVENT, {
+                        generationId: payload.generationId,
+                        error: 'Failed to save generated response',
+                    });
                 } finally {
                     this.cleanupGeneration(payload.generationId);
                 }

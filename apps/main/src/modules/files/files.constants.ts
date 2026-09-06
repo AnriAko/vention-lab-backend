@@ -11,7 +11,7 @@ export const ALLOWED_FILE_TYPES = {
     'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': [
         '.xlsx',
     ],
-    // 'application/pdf': ['.pdf'],
+    'application/pdf': ['.pdf'],
     'text/markdown': ['.md'],
 } as const satisfies Record<string, readonly string[]>;
 

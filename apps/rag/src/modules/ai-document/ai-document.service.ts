@@ -1,5 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
+import { promisify } from 'node:util';
+import { gunzip as zlibGunzip } from 'node:zlib';
 
 import { chunkingConfig } from '~/config/configuration/chunking.config';
 import { embeddingConfig } from '~/config/configuration/embedding.config';
@@ -37,6 +39,8 @@ import {
     TransientDeleteError,
 } from './ai-document.errors';
 
+const gunzip = promisify(zlibGunzip);
+
 @Injectable()
 export class AiDocumentService {
     constructor(
@@ -56,7 +60,13 @@ export class AiDocumentService {
         job: AiDocumentProcessJobMessage
     ): Promise<AiDocumentProcessResultMessage> {
         try {
-            const buffer = await this.fileStorage.getFileBuffer(job.storageKey);
+            const storedBuffer = await this.fileStorage.getFileBuffer(
+                job.storageKey
+            );
+            const buffer = await this.decompressIfNeeded(
+                storedBuffer,
+                job.storageKey
+            );
             const extension = this.getExtension(job.storageKey);
 
             if (!this.isSupportedExtension(extension)) {
@@ -97,7 +107,15 @@ export class AiDocumentService {
 
     async deleteJob(job: AiDocumentDeleteJobMessage): Promise<void> {
         try {
+            this.logger.log(
+                `[AiDocumentService] deleting Qdrant points documentId=${job.fileId}`
+            );
+
             await this.qdrantDocuments.deleteByDocumentId(job.fileId);
+
+            this.logger.log(
+                `[AiDocumentService] deleted Qdrant points documentId=${job.fileId}`
+            );
         } catch (error) {
             if (this.isPermanentDeleteError(error)) {
                 throw error;
@@ -232,6 +250,17 @@ export class AiDocumentService {
         }
 
         return extension;
+    }
+
+    private async decompressIfNeeded(
+        buffer: Buffer,
+        storageKey: string
+    ): Promise<Buffer> {
+        if (!storageKey.endsWith('.gz')) {
+            return buffer;
+        }
+
+        return gunzip(buffer);
     }
 
     private buildResult(

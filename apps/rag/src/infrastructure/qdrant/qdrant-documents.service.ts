@@ -67,6 +67,10 @@ export class QdrantDocumentsService implements OnModuleInit {
                 },
             ],
         });
+
+        this.logger.log(
+            `Deleted Qdrant points collection=${DOCUMENTS_COLLECTION} documentId=${documentId}`
+        );
     }
 
     async search(

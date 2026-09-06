@@ -189,7 +189,7 @@ services:
             NODE_ENV: development
             RABBITMQ_HOST: rabbitmq
         volumes:
-            - ./apps/file-process/credentials:/app/apps/file-process/credentials:ro
+            - ./apps/file-process/credentials:/app/credentials:ro
         depends_on:
             rabbitmq:
                 condition: service_healthy
@@ -217,8 +217,11 @@ services:
             RABBITMQ_HOST: rabbitmq
             QDRANT_URL: http://qdrant-vector-db:6333
             OLLAMA_HOST: http://host.docker.internal:11434
+            RAG_WS_PORT: 3002
+        ports:
+            - '3002:3002'
         volumes:
-            - ./apps/rag/credentials:/app/apps/rag/credentials:ro
+            - ./apps/rag/credentials:/app/credentials:ro
         depends_on:
             rabbitmq:
                 condition: service_healthy

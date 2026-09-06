@@ -6,6 +6,7 @@ import { redisConfig } from '~/config/configuration/redis.config';
 import { rabbitmqConfig } from '~/config/configuration/rabbitmq.config';
 import { jwtConfig } from '~/config/configuration/jwt.config';
 import { argon2Config } from '~/config/configuration/argon2.config';
+import { ragConfig } from '~/config/configuration/rag.config';
 
 export const configLoaders = [
     appConfig,
@@ -16,4 +17,5 @@ export const configLoaders = [
     rabbitmqConfig,
     jwtConfig,
     argon2Config,
+    ragConfig,
 ];

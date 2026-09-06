@@ -17,7 +17,7 @@
         "build:main": "npm run build --workspace=@vention/main",
         "build:file-process": "npm run build --workspace=@vention/file-process",
         "build:rag": "npm run build --workspace=@vention/rag",
-        "dev:main": "npm run dev --workspace=@vention/main",
+        "dev": "npm run dev --workspace=@vention/main",
         "dev:file-process": "npm run dev --workspace=@vention/file-process",
         "dev:rag": "npm run dev --workspace=@vention/rag",
         "start:main": "npm run start --workspace=@vention/main",

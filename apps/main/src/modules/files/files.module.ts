@@ -1,6 +1,9 @@
 import { Module } from '@nestjs/common';
+import { ClientsModule, Transport } from '@nestjs/microservices';
+import type { ConfigType } from '@nestjs/config';
 
 import { AntivirusModule } from '~/infrastructure/antivirus/antivirus.module';
+import { rabbitmqConfig } from '~/config/configuration/rabbitmq.config';
 import { PrismaModule } from '~/infrastructure/database/prisma.module';
 import { FileStorageModule } from '~/infrastructure/file-storage/file-storage.module';
 import { FileProcessingReplyConsumer } from '~/infrastructure/messaging/file-process/file-processing-reply.consumer';
@@ -16,7 +19,29 @@ import { FilesService } from './files.service';
 import { FilesStatusNotifier } from './files-status.notifier';
 
 @Module({
-    imports: [PrismaModule, FileStorageModule, AntivirusModule],
+    imports: [
+        PrismaModule,
+        FileStorageModule,
+        AntivirusModule,
+        ClientsModule.registerAsync([
+            {
+                name: 'RAG_RMQ_CLIENT',
+                inject: [rabbitmqConfig.KEY],
+                useFactory: (config: ConfigType<typeof rabbitmqConfig>) => ({
+                    transport: Transport.RMQ,
+                    options: {
+                        urls: [
+                            `amqp://${config.user}:${config.password}@${config.host}:${config.port}`,
+                        ],
+                        queue: 'ai.document.process.queue',
+                        exchange: 'ai.document',
+                        exchangeType: 'topic',
+                        wildcards: true,
+                    },
+                }),
+            },
+        ]),
+    ],
     controllers: [FilesController],
     providers: [
         FilesService,

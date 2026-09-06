@@ -2,7 +2,8 @@ import { createHash } from 'node:crypto';
 import { promisify } from 'node:util';
 import { gzip as zlibGzip } from 'node:zlib';
 
-import { FileStatus, PrismaClient } from '../../src/generated/prisma/client';
+import type { PrismaClient } from '../../src/generated/prisma/client';
+import { FileStatus } from '../../src/generated/prisma/client';
 import { faker } from '@faker-js/faker';
 
 import {
@@ -18,7 +19,7 @@ import { loadPrismaEnv } from '../../src/config/prisma/prisma-env';
 
 const gzip = promisify(zlibGzip);
 
-const TOTAL_FILES = 200;
+const TOTAL_FILES = 5;
 const BATCH_SIZE = 100;
 
 function initializeSeedFirebaseStorage() {

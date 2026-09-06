@@ -59,6 +59,8 @@ async function bootstrap(): Promise<void> {
 
     app.enableShutdownHooks();
 
+    await app.init();
+    await app.listen(Number(process.env.RAG_WS_PORT ?? 3002));
     await app.startAllMicroservices();
 
     logger.log('RAG microservice started');

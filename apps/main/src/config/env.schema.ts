@@ -37,6 +37,8 @@ export const envSchema = z.object({
     CLAMAV_HOST: z.string().default('localhost'),
     CLAMAV_PORT: z.coerce.number().default(3310),
     CLAMAV_TIMEOUT_MS: z.coerce.number().default(60_000),
+
+    RAG_WS_URL: z.url(),
 });
 
 export type Env = z.infer<typeof envSchema>;
@@ -90,4 +92,8 @@ export type ClamAvConfig = {
     host: Env['CLAMAV_HOST'];
     port: Env['CLAMAV_PORT'];
     timeoutMs: Env['CLAMAV_TIMEOUT_MS'];
+};
+
+export type RagConfig = {
+    wsUrl: Env['RAG_WS_URL'];
 };

@@ -18,9 +18,9 @@ import type { Server } from 'socket.io';
 import { LoggerService } from '@vention/shared-logger';
 
 import { ROLES_KEY } from '~/common/security/constants';
-import { WsAuthGuard } from '~/common/security/guards/ws-auth.guard';
-import { WsOrganizationGuard } from '~/common/security/guards/ws-organization.guard';
-import { WsRolesGuard } from '~/common/security/guards/ws-roles.guard';
+import { WsAuthGuard } from '~/common/security/ws-security/ws-auth.guard';
+import { WsOrganizationGuard } from '~/common/security/ws-security/ws-organization.guard';
+import { WsRolesGuard } from '~/common/security/ws-security/ws-roles.guard';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
 
 import { ChatWsExceptionFilter } from './chat-ws.exception-filter';
@@ -40,7 +40,7 @@ import type {
 } from './types/chat-ws.types';
 import { buildChatRoomName } from './utils/build-chat-room-name';
 import { parseInput } from './utils/parse-input';
-import { WsRlsInterceptor } from './ws-rls-interceptor';
+import { WsRlsInterceptor } from '../../common/security/ws-security/ws-rls-interceptor';
 
 @WebSocketGateway({
     namespace: CHAT_WS_NAMESPACE,
@@ -275,7 +275,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         return this.forwardTyping(CHAT_WS_EVENTS.STOP_TYPING, client, body);
     }
 
-    private async forwardTyping(
+    private forwardTyping(
         event: (typeof CHAT_WS_EVENTS)[keyof typeof CHAT_WS_EVENTS],
         client: ChatSocket,
         body: unknown

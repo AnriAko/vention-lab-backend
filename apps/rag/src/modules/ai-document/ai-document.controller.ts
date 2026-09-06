@@ -1,12 +1,20 @@
 import { Controller } from '@nestjs/common';
-import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
+import {
+    Ctx,
+    EventPattern,
+    Payload,
+    RmqContext,
+    RmqRecordBuilder,
+} from '@nestjs/microservices';
+import { Inject } from '@nestjs/common';
+import type { ClientProxy } from '@nestjs/microservices';
+import { firstValueFrom } from 'rxjs';
 import type { Channel, ConsumeMessage } from 'amqplib';
 
 import {
     AI_DOCUMENT_DELETE_MAX_RETRIES,
     AI_DOCUMENT_DELETE_RETRY_HEADER,
     AI_DOCUMENT_DELETE_ROUTING_KEY,
-    AI_DOCUMENT_EXCHANGE,
     AI_DOCUMENT_PROCESS_MAX_RETRIES,
     AI_DOCUMENT_PROCESS_RETRY_HEADER,
     AI_DOCUMENT_PROCESS_ROUTING_KEY,
@@ -33,6 +41,7 @@ export class AiDocumentController {
     constructor(
         private readonly aiDocumentService: AiDocumentService,
         private readonly rabbitmq: RabbitmqService,
+        @Inject('RAG_RMQ_CLIENT') private readonly client: ClientProxy,
         private readonly logger: LoggerService
     ) {}
 
@@ -43,6 +52,10 @@ export class AiDocumentController {
     ): Promise<void> {
         const message = context.getMessage() as ConsumeMessage;
         const channel = context.getChannelRef() as Channel;
+
+        this.logger.log(
+            `[AiDocumentController] received event routingKey=${AI_DOCUMENT_PROCESS_ROUTING_KEY} fileId=${job?.fileId ?? 'unknown'}`
+        );
 
         if (!this.isValidProcessJob(job)) {
             this.logger.error(
@@ -71,6 +84,10 @@ export class AiDocumentController {
 
             await this.publishProcessResult(message, result, correlationId);
 
+            this.logger.log(
+                `[AiDocumentController] process completed fileId=${job.fileId} status=${result.status}`
+            );
+
             channel.ack(message);
         } catch (error) {
             await this.handleProcessFailure(
@@ -92,6 +109,10 @@ export class AiDocumentController {
         const message = context.getMessage() as ConsumeMessage;
         const channel = context.getChannelRef() as Channel;
 
+        this.logger.log(
+            `[AiDocumentController] received event routingKey=${AI_DOCUMENT_DELETE_ROUTING_KEY} fileId=${job?.fileId ?? 'unknown'}`
+        );
+
         if (!this.isValidDeleteJob(job)) {
             this.logger.error(
                 '[AiDocumentController] Delete job missing required fields'
@@ -108,6 +129,10 @@ export class AiDocumentController {
 
         try {
             await this.aiDocumentService.deleteJob(job);
+
+            this.logger.log(
+                `[AiDocumentController] delete completed fileId=${job.fileId}`
+            );
 
             channel.ack(message);
         } catch (error) {
@@ -143,7 +168,11 @@ export class AiDocumentController {
             return;
         }
 
-        if (!(error instanceof TransientAiDocumentError)) {
+        if (error instanceof TransientAiDocumentError) {
+            this.logger.warn(
+                `[AiDocumentController] transient process failure fileId=${job.fileId}: ${errorMessage}`
+            );
+        } else {
             this.logger.error(
                 `[AiDocumentController] unexpected process error fileId=${job.fileId}: ${errorMessage}`
             );
@@ -170,22 +199,23 @@ export class AiDocumentController {
         const nextRetry = retryCount + 1;
 
         this.logger.warn(
-            `[AiDocumentController] transient process failure fileId=${job.fileId} retry=${nextRetry}`
+            `[AiDocumentController] transient process retry fileId=${job.fileId} retry=${nextRetry}`
         );
 
-        await this.rabbitmq.publish(
-            AI_DOCUMENT_EXCHANGE,
-            AI_DOCUMENT_PROCESS_ROUTING_KEY,
-            job,
-            {
-                correlationId,
-                type: AI_DOCUMENT_PROCESS_ROUTING_KEY,
-                replyTo: message.properties.replyTo,
-                headers: {
-                    ...this.copyHeaders(message.properties.headers),
-                    [AI_DOCUMENT_PROCESS_RETRY_HEADER]: nextRetry,
-                },
-            }
+        await firstValueFrom(
+            this.client.emit(
+                AI_DOCUMENT_PROCESS_ROUTING_KEY,
+                new RmqRecordBuilder(job)
+                    .setOptions({
+                        type: AI_DOCUMENT_PROCESS_ROUTING_KEY,
+                        headers: {
+                            ...this.copyHeaders(message.properties.headers),
+                            [AI_DOCUMENT_PROCESS_RETRY_HEADER]:
+                                String(nextRetry),
+                        },
+                    })
+                    .build()
+            )
         );
 
         channel.ack(message);
@@ -231,17 +261,20 @@ export class AiDocumentController {
             `[AiDocumentController] transient delete failure fileId=${job.fileId} retry=${nextRetry}`
         );
 
-        await this.rabbitmq.publish(
-            AI_DOCUMENT_EXCHANGE,
-            AI_DOCUMENT_DELETE_ROUTING_KEY,
-            job,
-            {
-                type: AI_DOCUMENT_DELETE_ROUTING_KEY,
-                headers: {
-                    ...this.copyHeaders(message.properties.headers),
-                    [AI_DOCUMENT_DELETE_RETRY_HEADER]: nextRetry,
-                },
-            }
+        await firstValueFrom(
+            this.client.emit(
+                AI_DOCUMENT_DELETE_ROUTING_KEY,
+                new RmqRecordBuilder(job)
+                    .setOptions({
+                        type: AI_DOCUMENT_DELETE_ROUTING_KEY,
+                        headers: {
+                            ...this.copyHeaders(message.properties.headers),
+                            [AI_DOCUMENT_DELETE_RETRY_HEADER]:
+                                String(nextRetry),
+                        },
+                    })
+                    .build()
+            )
         );
 
         channel.ack(message);
@@ -252,15 +285,13 @@ export class AiDocumentController {
         payload: unknown,
         correlationId: string
     ): Promise<void> {
-        if (message.properties.replyTo) {
-            await this.rabbitmq.sendToQueue(
-                message.properties.replyTo,
-                payload,
-                {
-                    correlationId,
-                    type: AI_DOCUMENT_PROCESS_RESULTS_ROUTING_KEY,
-                }
-            );
+        const replyTo = message.properties.replyTo as unknown;
+
+        if (typeof replyTo === 'string' && replyTo.length > 0) {
+            await this.rabbitmq.sendToQueue(replyTo, payload, {
+                correlationId,
+                type: AI_DOCUMENT_PROCESS_RESULTS_ROUTING_KEY,
+            });
 
             return;
         }
@@ -280,7 +311,7 @@ export class AiDocumentController {
         message: ConsumeMessage,
         fallback: string
     ): string {
-        const correlationId = message.properties.correlationId;
+        const correlationId = message.properties.correlationId as unknown;
 
         return typeof correlationId === 'string' && correlationId.length > 0
             ? correlationId
@@ -289,12 +320,18 @@ export class AiDocumentController {
 
     private copyHeaders(
         headers: ConsumeMessage['properties']['headers']
-    ): Record<string, unknown> {
-        return headers ? { ...(headers as Record<string, unknown>) } : {};
+    ): Record<string, string> {
+        if (!headers) {
+            return {};
+        }
+
+        return Object.fromEntries(
+            Object.entries(headers).map(([key, value]) => [key, String(value)])
+        );
     }
 
     private getRetryCount(message: ConsumeMessage, header: string): number {
-        const raw = message.properties.headers?.[header];
+        const raw = message.properties.headers?.[header] as unknown;
         const value = typeof raw === 'number' ? raw : Number(raw);
 
         return Number.isFinite(value) && value > 0 ? value : 0;
