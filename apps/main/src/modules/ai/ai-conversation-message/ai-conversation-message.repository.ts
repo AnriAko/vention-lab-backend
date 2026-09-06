@@ -1,13 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaRlsClient } from '~/common/tenancy/rls/prisma-rls.client';
-import { AiMessageRole } from '~/generated/prisma/enums';
+import { AiConversationMessageRole } from '~/generated/prisma/enums';
 
 @Injectable()
 export class AiMessageRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
 
-    async findByConversationId(conversationId: string) {
-        return this.prisma.aiMessage.findMany({
+    findByConversationId(conversationId: string) {
+        return this.prisma.aiConversationMessage.findMany({
             where: {
                 conversationId,
             },
@@ -17,8 +17,12 @@ export class AiMessageRepository {
         });
     }
 
-    async create(conversationId: string, role: AiMessageRole, content: string) {
-        return this.prisma.aiMessage.create({
+    create(
+        conversationId: string,
+        role: AiConversationMessageRole,
+        content: string
+    ) {
+        return this.prisma.aiConversationMessage.create({
             data: {
                 conversationId,
                 role,

@@ -9,6 +9,7 @@ import {
     DOCUMENTS_VECTOR_SIZE,
     type DocumentPoint,
 } from './document-point.model';
+import type { DocumentSearchResult } from './qdrant-documents.types';
 
 const UPSERT_BATCH_SIZE = 100;
 
@@ -29,6 +30,7 @@ export class QdrantDocumentsService implements OnModuleInit {
             DOCUMENTS_COLLECTION,
             DOCUMENT_PAYLOAD_FIELDS.ORGANIZATION_ID
         );
+
         await this.qdrant.ensurePayloadIndex(
             DOCUMENTS_COLLECTION,
             DOCUMENT_PAYLOAD_FIELDS.DOCUMENT_ID
@@ -65,5 +67,52 @@ export class QdrantDocumentsService implements OnModuleInit {
                 },
             ],
         });
+    }
+
+    async search(
+        vector: number[],
+        organizationId: string,
+        limit = 5
+    ): Promise<DocumentSearchResult[]> {
+        const results = await this.qdrant.search(DOCUMENTS_COLLECTION, vector, {
+            limit,
+            filter: {
+                must: [
+                    {
+                        key: DOCUMENT_PAYLOAD_FIELDS.ORGANIZATION_ID,
+                        match: {
+                            value: organizationId,
+                        },
+                    },
+                ],
+            },
+        });
+
+        return results.map((result) => {
+            const payload = result.payload;
+
+            return {
+                id: result.id,
+                score: result.score ?? 0,
+                text: this.getPayloadString(payload, 'text'),
+                documentId: this.getPayloadString(payload, 'documentId'),
+                chunkId: this.getPayloadString(payload, 'chunkId'),
+                fileName: this.getPayloadString(payload, 'fileName'),
+            };
+        });
+    }
+
+    private getPayloadString(payload: unknown, key: string): string {
+        if (
+            typeof payload !== 'object' ||
+            payload === null ||
+            !(key in payload)
+        ) {
+            return '';
+        }
+
+        const value = (payload as Record<string, unknown>)[key];
+
+        return typeof value === 'string' ? value : '';
     }
 }

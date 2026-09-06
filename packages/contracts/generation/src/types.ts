@@ -1,49 +1,42 @@
-import type { GenerationStatus } from './constants';
+export type GenerationMessageRole = 'system' | 'user' | 'assistant';
 
-export type GenerationMessageRole = 'USER' | 'ASSISTANT' | 'SYSTEM';
-
-export type GenerationHistoryMessage = {
+export type GenerationMessage = {
     role: GenerationMessageRole;
     content: string;
 };
 
-export type GenerationRequestMessage = {
-    requestId: string;
-    organizationId: string;
-    ownerId: string;
-    conversationId: string;
-    prompt: string;
-    messages: GenerationHistoryMessage[];
-    publishedAt: string;
+export type GenerationOptions = {
+    temperature?: number;
+    maxTokens?: number;
 };
 
-export type GenerationCancelMessage = {
-    requestId: string;
-    organizationId: string;
-    ownerId: string;
+export type GenerationStartPayload = {
+    generationId: string;
     conversationId: string;
-    publishedAt: string;
+    query: string;
+    organizationId: string;
+    history: GenerationMessage[];
+    options?: GenerationOptions;
 };
 
-export type GenerationResultMessage = {
-    requestId: string;
-    organizationId: string;
-    ownerId: string;
-    conversationId: string;
-    status: GenerationStatus;
-    success: boolean;
-    error: string | null;
-    content: string | null;
+export type GenerationCancelPayload = {
+    generationId: string;
 };
 
-export type GenerationEventType =
-    'CHUNK' | 'COMPLETED' | 'CANCELLED' | 'FAILED';
+export type GenerationChunkPayload = {
+    generationId: string;
+    chunk: string;
+};
 
-export type GenerationEventMessage = {
-    requestId: string;
-    organizationId: string;
-    ownerId: string;
-    conversationId: string;
-    event: GenerationEventType;
-    payload: Record<string, unknown>;
+export type GenerationDonePayload = {
+    generationId: string;
+};
+
+export type GenerationErrorPayload = {
+    generationId: string;
+    error: string;
+};
+
+export type GenerationCancelledPayload = {
+    generationId: string;
 };

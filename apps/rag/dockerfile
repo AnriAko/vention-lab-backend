@@ -19,8 +19,10 @@ RUN npm ci
 
 COPY . .
 
-RUN npm run build --workspace=@vention/shared-logger && npm run build --workspace=@vention/shared-firebase && npm run build --workspace=@vention/shared-rabbitmq && npm run build --workspace=@vention/shared-file-storage && npm run build --workspace=@vention/shared-qdrant && npm run build --workspace=@vention/rag-contract
-RUN npm run build --workspace=@vention/rag && test -f apps/rag/dist/main.js
+RUN npm run build:dependencies --workspace=@vention/rag
+
+RUN npm run build --workspace=@vention/rag \
+    && test -f apps/rag/dist/main.js
 
 FROM node:26-alpine AS runner
 

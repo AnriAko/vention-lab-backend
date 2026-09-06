@@ -73,3 +73,5 @@ apps/main/src/generated/prisma
 
 apps/main/prisma/scripts/explain/query-to-explain.ts
 apps/main/prisma/scripts/execute/query-to-execute.ts
+
+Dockerfile.*.generated

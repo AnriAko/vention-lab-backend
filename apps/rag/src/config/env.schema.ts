@@ -25,6 +25,8 @@ export const envSchema = z
 
         OLLAMA_HOST: z.string().url(),
         OLLAMA_EMBEDDING_MODEL: z.string().min(1),
+        OLLAMA_GENERATION_MODEL: z.string().min(1),
+
         OLLAMA_EMBEDDING_BATCH_SIZE: z.coerce
             .number()
             .int()

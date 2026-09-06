@@ -56,8 +56,8 @@ export class PrismaRlsClient {
         return this.client.aiConversation;
     }
 
-    get aiMessage() {
-        return this.client.aiMessage;
+    get aiConversationMessage() {
+        return this.client.aiConversationMessage;
     }
 
     $queryRaw<T = unknown>(

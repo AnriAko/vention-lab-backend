@@ -21,8 +21,10 @@ COPY . .
 
 ENV DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/app_db"
 
-RUN npm run build:packages
+RUN npm run build:dependencies --workspace=@vention/main
+
 RUN npm run prisma:generate --workspace=@vention/main
+
 RUN npm run build --workspace=@vention/main
 
 FROM node:26-alpine AS runner
