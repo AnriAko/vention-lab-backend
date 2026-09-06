@@ -27,7 +27,7 @@ export default tseslint.config(
             },
             sourceType: 'module',
             parserOptions: {
-                project: ['./apps/main/tsconfig.json'],
+                projectService: true,
                 tsconfigRootDir: import.meta.dirname,
             },
         },
@@ -74,6 +74,7 @@ export default tseslint.config(
                     './packages/shared/qdrant/tsconfig.json',
                     './packages/contracts/file-process/tsconfig.json',
                     './packages/contracts/rag/tsconfig.json',
+                    './packages/contracts/generation/tsconfig.json',
                 ],
                 tsconfigRootDir: import.meta.dirname,
             },
