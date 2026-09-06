@@ -1,4 +1,4 @@
-FROM node:26-alpine AS builder
+FROM node:26-alpine AS dependencies
 
 WORKDIR /app
 
@@ -15,24 +15,57 @@ COPY packages/contracts/file-process/package.json ./packages/contracts/file-proc
 COPY packages/contracts/rag/package.json ./packages/contracts/rag/
 COPY configs ./configs
 
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
-COPY . .
+FROM dependencies AS build-packages
 
-RUN npm run build:dependencies --workspace=@vention/file-process
+COPY packages/contracts/file-process ./packages/contracts/file-process
+COPY packages/shared/file-storage ./packages/shared/file-storage
+COPY packages/shared/firebase ./packages/shared/firebase
+COPY packages/shared/logger ./packages/shared/logger
+COPY packages/shared/rabbitmq ./packages/shared/rabbitmq
+COPY scripts ./scripts
+
+RUN npm run build:dependencies -- --workspace=@vention/file-process
+
+FROM build-packages AS builder
+
+COPY apps/file-process ./apps/file-process
 
 RUN npm run build --workspace=@vention/file-process \
     && test -f apps/file-process/dist/main.js
 
-FROM node:26-alpine AS runner
+FROM node:26-alpine AS production-dependencies
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY apps/main/package.json ./apps/main/
+COPY apps/file-process/package.json ./apps/file-process/
+COPY apps/rag/package.json ./apps/rag/
+COPY packages/shared/logger/package.json ./packages/shared/logger/
+COPY packages/shared/rabbitmq/package.json ./packages/shared/rabbitmq/
+COPY packages/shared/firebase/package.json ./packages/shared/firebase/
+COPY packages/shared/file-storage/package.json ./packages/shared/file-storage/
+COPY packages/shared/qdrant/package.json ./packages/shared/qdrant/
+COPY packages/contracts/file-process/package.json ./packages/contracts/file-process/
+COPY packages/contracts/rag/package.json ./packages/contracts/rag/
+COPY configs ./configs
+
+RUN --mount=type=cache,target=/root/.npm \
+    npm prune --omit=dev --ignore-scripts
+
+FROM production-dependencies AS runner
 
 WORKDIR /app
 
 ENV NODE_ENV=production
 
-COPY --from=builder /app/package.json /app/package-lock.json ./
-COPY --from=builder /app/node_modules ./node_modules
-COPY --from=builder /app/packages ./packages
+COPY --from=builder /app/packages/contracts/file-process ./packages/contracts/file-process
+COPY --from=builder /app/packages/shared/file-storage ./packages/shared/file-storage
+COPY --from=builder /app/packages/shared/firebase ./packages/shared/firebase
+COPY --from=builder /app/packages/shared/logger ./packages/shared/logger
+COPY --from=builder /app/packages/shared/rabbitmq ./packages/shared/rabbitmq
 COPY --from=builder /app/apps/file-process/package.json ./apps/file-process/
 COPY --from=builder /app/apps/file-process/dist ./apps/file-process/dist
 

@@ -1,22 +1,30 @@
 const fs = require('node:fs');
 const path = require('node:path');
 
-const { ROOT_DIR, loadWorkspacePackages } = require('./workspace-utils');
+const {
+    ROOT_DIR,
+    loadWorkspacePackages,
+    getInternalDependencies,
+    resolveBuildOrder,
+} = require('./workspace-utils');
 
 const APP_CONFIG = {
     main: {
+        workspaceName: '@vention/main',
         buildScript: 'build:main',
         distPath: 'dist',
         entrypoint: 'dist/src/main',
     },
 
     'file-process': {
+        workspaceName: '@vention/file-process',
         buildScript: 'build:file-process',
         distPath: 'dist',
         entrypoint: 'dist/main',
     },
 
     rag: {
+        workspaceName: '@vention/rag',
         buildScript: 'build:rag',
         distPath: 'dist',
         entrypoint: 'dist/main',
@@ -64,8 +72,52 @@ function generateWorkspaceCopies() {
         .join('\n');
 }
 
+function getBuildPackageNames(appConfig) {
+    const workspacePackages = loadWorkspacePackages();
+    const dependencies = getInternalDependencies(
+        appConfig.workspaceName,
+        workspacePackages
+    );
+
+    return resolveBuildOrder(dependencies, workspacePackages);
+}
+
+function generateBuildPackageCopies(appConfig) {
+    const workspacePackages = loadWorkspacePackages();
+
+    return getBuildPackageNames(appConfig)
+        .map((packageName) => workspacePackages.get(packageName))
+        .sort((a, b) => a.path.localeCompare(b.path))
+        .map((workspace) => {
+            const relativePath = path
+                .relative(ROOT_DIR, workspace.path)
+                .replaceAll(path.sep, '/');
+
+            return `COPY ${relativePath} ./${relativePath}`;
+        })
+        .join('\n');
+}
+
+function generateBuiltPackageCopies(appConfig) {
+    const workspacePackages = loadWorkspacePackages();
+
+    return getBuildPackageNames(appConfig)
+        .map((packageName) => workspacePackages.get(packageName))
+        .sort((a, b) => a.path.localeCompare(b.path))
+        .map((workspace) => {
+            const relativePath = path
+                .relative(ROOT_DIR, workspace.path)
+                .replaceAll(path.sep, '/');
+
+            return `COPY --from=build /app/${relativePath} ./${relativePath}`;
+        })
+        .join('\n');
+}
+
 function generateDockerfile(appName, appConfig) {
     const workspaceCopies = generateWorkspaceCopies();
+    const buildPackageCopies = generateBuildPackageCopies(appConfig);
+    const builtPackageCopies = generateBuiltPackageCopies(appConfig);
 
     return `FROM node:22-alpine AS dependencies
 
@@ -77,26 +129,51 @@ ${workspaceCopies}
 
 COPY configs ./configs
 
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 
 
-FROM dependencies AS build
+FROM dependencies AS build-packages
 
 WORKDIR /app
 
-COPY . .
+${buildPackageCopies}
 
-RUN npm run build:packages
+COPY scripts ./scripts
+
+RUN npm run build:dependencies -- --workspace=${appConfig.workspaceName}
+
+
+FROM build-packages AS build
+
+WORKDIR /app
+
+COPY apps/${appName} ./apps/${appName}
+
 RUN npm run ${appConfig.buildScript}
 
 
-FROM node:22-alpine AS production
+FROM node:22-alpine AS production-dependencies
 
 WORKDIR /app
 
+COPY package.json package-lock.json ./
+
+${workspaceCopies}
+
+COPY configs ./configs
+
+RUN --mount=type=cache,target=/root/.npm \\
+    npm prune --omit=dev --ignore-scripts
+
+
+FROM production-dependencies AS production
+
+WORKDIR /app
+
+ENV NODE_ENV=production
+
 COPY --from=build /app/apps/${appName}/${appConfig.distPath} ./dist
-COPY --from=build /app/node_modules ./node_modules
-COPY --from=build /app/packages ./packages
+${builtPackageCopies}
 COPY --from=build /app/apps/${appName}/package.json ./package.json
 
 CMD ["node", "${appConfig.entrypoint}"]

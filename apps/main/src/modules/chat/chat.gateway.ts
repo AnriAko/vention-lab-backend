@@ -62,10 +62,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         private readonly wsOrganizationGuard: WsOrganizationGuard
     ) {}
 
-    /**
-     * Authentication and organization authorization happen once
-     * when the WebSocket connection is established.
-     */
     async handleConnection(client: ChatSocket): Promise<void> {
         try {
             await this.wsAuthGuard.authenticate(client);
@@ -94,13 +90,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         this.logger.log(`[ChatGateway] disconnected sid=${client.id}`);
     }
 
-    /**
-     * JOIN
-     *
-     * Transport-only: joins the Socket.IO room without a DB/RLS transaction.
-     * Membership authorization for sensitive operations happens in SEND/DELETE
-     * (and GraphQL) inside a single RLS transaction.
-     */
     @SubscribeMessage(CHAT_WS_EVENTS.JOIN)
     @UseGuards(WsRolesGuard)
     async joinChat(
@@ -131,14 +120,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
-    /**
-     * MESSAGE SEND
-     *
-     * WsRolesGuard
-     * WsRlsInterceptor (single RLS transaction)
-     * Redis dedupe
-     * ChatService.createMessageForUser (one membership check)
-     */
     @SubscribeMessage(CHAT_WS_EVENTS.MESSAGE_SEND)
     @UseGuards(WsRolesGuard)
     @UseInterceptors(WsRlsInterceptor)
@@ -201,16 +182,6 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
-    /**
-     * MESSAGE DELETE
-     *
-     * Connection already authenticated the socket.
-     * RLS and request context are applied by WsRlsInterceptor.
-     *
-     * WsRolesGuard
-     * ChatService
-     * Prisma RLS
-     */
     @SubscribeMessage(CHAT_WS_EVENTS.MESSAGE_DELETE)
     @UseGuards(WsRolesGuard)
     @UseInterceptors(WsRlsInterceptor)
@@ -243,35 +214,19 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         }
     }
 
-    /**
-     * TYPING
-     *
-     * No authentication guard.
-     * No organization guard.
-     * No RLS.
-     * No database query.
-     *
-     * The socket was already authenticated when connected.
-     * We only allow broadcasting to a room the socket actually joined.
-     */
     @SubscribeMessage(CHAT_WS_EVENTS.TYPING)
-    async typing(
+    typing(
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
-    ): Promise<{ ok: boolean }> {
+    ): { ok: boolean } {
         return this.forwardTyping(CHAT_WS_EVENTS.TYPING, client, body);
     }
 
-    /**
-     * STOP_TYPING
-     *
-     * Same lightweight path as TYPING.
-     */
     @SubscribeMessage(CHAT_WS_EVENTS.STOP_TYPING)
-    async stopTyping(
+    stopTyping(
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
-    ): Promise<{ ok: boolean }> {
+    ): { ok: boolean } {
         return this.forwardTyping(CHAT_WS_EVENTS.STOP_TYPING, client, body);
     }
 
@@ -279,19 +234,13 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         event: (typeof CHAT_WS_EVENTS)[keyof typeof CHAT_WS_EVENTS],
         client: ChatSocket,
         body: unknown
-    ): Promise<{ ok: boolean }> {
+    ): { ok: boolean } {
         try {
             const payload = parseInput(WsTypingSchema, body);
 
             const user = client.data.user;
             const room = buildChatRoomName(payload.chatId);
 
-            /**
-             * Do not query Prisma for every typing event.
-             *
-             * If the socket hasn't joined this chat room,
-             * it cannot broadcast typing into it.
-             */
             if (!client.rooms.has(room)) {
                 throw new Error('You are not a member of this chat');
             }
