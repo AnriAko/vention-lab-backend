@@ -52,6 +52,14 @@ export class PrismaRlsClient {
         return this.client.message;
     }
 
+    get aiConversation() {
+        return this.client.aiConversation;
+    }
+
+    get aiMessage() {
+        return this.client.aiMessage;
+    }
+
     $queryRaw<T = unknown>(
         ...args: Parameters<Prisma.TransactionClient['$queryRaw']>
     ): Prisma.PrismaPromise<T> {

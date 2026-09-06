@@ -10,7 +10,7 @@ import { LoggerService } from '@vention/shared-logger';
 import { RabbitmqService } from '@vention/shared-rabbitmq';
 
 @Injectable()
-export class AiService {
+export class AiGenerationService {
     constructor(
         private readonly rabbitmq: RabbitmqService,
         private readonly logger: LoggerService

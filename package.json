@@ -29,6 +29,7 @@
         "test:main": "npm run test --workspace=@vention/main",
         "test:file-process": "npm run test --workspace=@vention/file-process",
         "test:rag": "npm run test --workspace=@vention/rag",
+        "prisma:migrate:create": "npm run prisma:migrate:create --workspace=@vention/main",
         "prisma:generate": "npm run prisma:generate --workspace=@vention/main",
         "prisma:migrate:dev": "npm run prisma:migrate:dev --workspace=@vention/main",
         "prisma:migrate:deploy": "npm run prisma:migrate:deploy --workspace=@vention/main",

@@ -4,16 +4,15 @@ import { randomUUID } from 'node:crypto';
 import { getActiveOrgId } from '~/common/tenancy/organization/organization-context';
 import { requestContext } from '~/common/tenancy/request-context/request-context';
 import { AUTH_GUEST } from '~/common/security/auth.types';
-
-import { AiService } from './ai.service';
+import { AiGenerationService } from '~/modules/ai/ai-generation/ai.generation.service';
 
 type GenerationRequestBody = {
     prompt: string;
 };
 
 @Controller('ai')
-export class AiController {
-    constructor(private readonly aiService: AiService) {}
+export class AiGenerationController {
+    constructor(private readonly aiService: AiGenerationService) {}
 
     @Post('generation')
     async requestGeneration(@Body() body: GenerationRequestBody) {
