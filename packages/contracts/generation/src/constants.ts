@@ -1,5 +1,7 @@
 export const GENERATION_WS_NAMESPACE = '/ai';
 
+export const GENERATION_WS_HEALTH_CHECK_EVENT = 'generation:health';
+
 export const GENERATION_WS_START_EVENT = 'generation:start';
 
 export const GENERATION_WS_CANCEL_EVENT = 'generation:cancel';

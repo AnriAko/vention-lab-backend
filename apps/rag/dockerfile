@@ -12,6 +12,8 @@ COPY packages/shared/firebase/package.json ./packages/shared/firebase/
 COPY packages/shared/file-storage/package.json ./packages/shared/file-storage/
 COPY packages/shared/qdrant/package.json ./packages/shared/qdrant/
 COPY packages/contracts/file-process/package.json ./packages/contracts/file-process/
+COPY packages/contracts/generation/package.json ./packages/contracts/generation/
+COPY packages/contracts/health/package.json ./packages/contracts/health/
 COPY packages/contracts/rag/package.json ./packages/contracts/rag/
 COPY configs ./configs
 
@@ -20,6 +22,8 @@ RUN --mount=type=cache,target=/root/.npm npm ci
 FROM dependencies AS build-packages
 
 COPY packages/contracts/rag ./packages/contracts/rag
+COPY packages/contracts/generation ./packages/contracts/generation
+COPY packages/contracts/health ./packages/contracts/health
 COPY packages/shared/file-storage ./packages/shared/file-storage
 COPY packages/shared/firebase ./packages/shared/firebase
 COPY packages/shared/logger ./packages/shared/logger
@@ -50,6 +54,8 @@ COPY packages/shared/firebase/package.json ./packages/shared/firebase/
 COPY packages/shared/file-storage/package.json ./packages/shared/file-storage/
 COPY packages/shared/qdrant/package.json ./packages/shared/qdrant/
 COPY packages/contracts/file-process/package.json ./packages/contracts/file-process/
+COPY packages/contracts/generation/package.json ./packages/contracts/generation/
+COPY packages/contracts/health/package.json ./packages/contracts/health/
 COPY packages/contracts/rag/package.json ./packages/contracts/rag/
 COPY configs ./configs
 
@@ -63,6 +69,8 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=builder /app/packages/contracts/rag ./packages/contracts/rag
+COPY --from=builder /app/packages/contracts/generation ./packages/contracts/generation
+COPY --from=builder /app/packages/contracts/health ./packages/contracts/health
 COPY --from=builder /app/packages/shared/file-storage ./packages/shared/file-storage
 COPY --from=builder /app/packages/shared/firebase ./packages/shared/firebase
 COPY --from=builder /app/packages/shared/logger ./packages/shared/logger

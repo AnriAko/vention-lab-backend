@@ -49,6 +49,7 @@
         "@prisma/client": "^7.10.0",
         "@vention/file-process-contract": "*",
         "@vention/generation-contract": "*",
+        "@vention/health-contract": "*",
         "@vention/rag-contract": "*",
         "@vention/shared-file-storage": "*",
         "@vention/shared-firebase": "*",

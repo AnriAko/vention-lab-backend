@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import {
+    AI_DOCUMENT_PROCESS_DLQ_ROUTING_KEY,
+    AI_DOCUMENT_PROCESS_DLX,
+    AI_DOCUMENT_PROCESS_QUEUE,
+} from '@vention/rag-contract/constants';
 
 import { ChunkingModule } from '~/infrastructure/chunking/chunking.module';
 import { EmbeddingModule } from '~/infrastructure/embedding/embedding.module';
@@ -24,7 +29,16 @@ import { AiDocumentService } from './ai-document.service';
                         urls: [
                             `amqp://${config.user}:${config.password}@${config.host}:${config.port}`,
                         ],
-                        queue: 'ai.document.process.queue',
+                        queue: AI_DOCUMENT_PROCESS_QUEUE,
+                        queueOptions: {
+                            durable: true,
+                            arguments: {
+                                'x-dead-letter-exchange':
+                                    AI_DOCUMENT_PROCESS_DLX,
+                                'x-dead-letter-routing-key':
+                                    AI_DOCUMENT_PROCESS_DLQ_ROUTING_KEY,
+                            },
+                        },
                         exchange: 'ai.document',
                         exchangeType: 'topic',
                         wildcards: true,

@@ -21,6 +21,7 @@
         "@nestjs/platform-socket.io": "^11.1.29",
         "@nestjs/websockets": "^11.1.29",
         "@vention/generation-contract": "*",
+        "@vention/health-contract": "*",
         "@vention/rag-contract": "*",
         "@vention/shared-file-storage": "*",
         "@vention/shared-firebase": "*",

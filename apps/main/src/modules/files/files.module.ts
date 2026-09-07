@@ -1,6 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ClientsModule, Transport } from '@nestjs/microservices';
 import type { ConfigType } from '@nestjs/config';
+import {
+    AI_DOCUMENT_PROCESS_DLQ_ROUTING_KEY,
+    AI_DOCUMENT_PROCESS_DLX,
+    AI_DOCUMENT_PROCESS_QUEUE,
+} from '@vention/rag-contract/constants';
 
 import { AntivirusModule } from '~/infrastructure/antivirus/antivirus.module';
 import { rabbitmqConfig } from '~/config/configuration/rabbitmq.config';
@@ -33,7 +38,16 @@ import { FilesStatusNotifier } from './files-status.notifier';
                         urls: [
                             `amqp://${config.user}:${config.password}@${config.host}:${config.port}`,
                         ],
-                        queue: 'ai.document.process.queue',
+                        queue: AI_DOCUMENT_PROCESS_QUEUE,
+                        queueOptions: {
+                            durable: true,
+                            arguments: {
+                                'x-dead-letter-exchange':
+                                    AI_DOCUMENT_PROCESS_DLX,
+                                'x-dead-letter-routing-key':
+                                    AI_DOCUMENT_PROCESS_DLQ_ROUTING_KEY,
+                            },
+                        },
                         exchange: 'ai.document',
                         exchangeType: 'topic',
                         wildcards: true,

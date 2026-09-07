@@ -62,7 +62,6 @@ export class ClamAvService implements OnModuleInit {
             this.logger.error(
                 `ClamAV init failed: ${error instanceof Error ? error.message : String(error)}`
             );
-            throw error;
         }
     }
 

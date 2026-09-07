@@ -7,6 +7,7 @@ import {
 import type { Socket } from 'socket.io';
 
 import {
+    GENERATION_WS_HEALTH_CHECK_EVENT,
     GENERATION_WS_CANCEL_EVENT,
     GENERATION_WS_CANCELLED_EVENT,
     GENERATION_WS_CHUNK_EVENT,
@@ -16,6 +17,7 @@ import {
     type GenerationCancelPayload,
     type GenerationStartPayload,
 } from '@vention/generation-contract';
+import type { HealthCheckResult } from '@vention/health-contract';
 import { LoggerService } from '@vention/shared-logger';
 
 import { GenerationService } from './generation.service';
@@ -39,6 +41,11 @@ export class GenerationGateway {
         this.logger.log(
             `[GenerationGateway] websocket disconnected clientId=${client.id}`
         );
+    }
+
+    @SubscribeMessage(GENERATION_WS_HEALTH_CHECK_EVENT)
+    handleHealthCheck(): HealthCheckResult {
+        return { status: 'up', service: 'generation' };
     }
 
     @SubscribeMessage(GENERATION_WS_START_EVENT)

@@ -14,6 +14,7 @@ import { LoggerModule } from '@vention/shared-logger';
 import { QdrantModule } from '@vention/shared-qdrant';
 import { RabbitmqModule } from '@vention/shared-rabbitmq';
 import { GenerationModule } from '~/modules/generation/generation.module';
+import { HealthController } from '~/modules/health/health.controller';
 
 @Module({
     imports: [
@@ -53,5 +54,6 @@ import { GenerationModule } from '~/modules/generation/generation.module';
         AiDocumentModule,
         GenerationModule,
     ],
+    controllers: [HealthController],
 })
 export class AppModule {}

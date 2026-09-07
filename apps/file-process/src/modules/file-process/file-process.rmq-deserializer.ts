@@ -1,6 +1,7 @@
 import type {
     ConsumerDeserializer,
     IncomingEvent,
+    IncomingRequest,
 } from '@nestjs/microservices';
 
 import { FILE_PROCESS_ROUTING_KEY } from '@vention/file-process-contract/constants';
@@ -8,14 +9,23 @@ import { FILE_PROCESS_ROUTING_KEY } from '@vention/file-process-contract/constan
 type NestRmqPacket = {
     pattern: unknown;
     data: unknown;
+    id?: string;
 };
 
 export class FileProcessRmqDeserializer implements ConsumerDeserializer {
     deserialize(
         value: unknown,
         options?: Record<string, unknown>
-    ): IncomingEvent {
+    ): IncomingEvent | IncomingRequest {
         if (this.isNestPacket(value)) {
+            if (typeof value.id === 'string') {
+                return {
+                    pattern: value.pattern,
+                    data: value.data,
+                    id: value.id,
+                };
+            }
+
             return {
                 pattern: value.pattern,
                 data: value.data,

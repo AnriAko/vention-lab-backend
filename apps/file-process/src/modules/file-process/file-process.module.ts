@@ -6,10 +6,11 @@ import { FileStorageModule } from '@vention/shared-file-storage';
 import { FileProcessController } from './file-process.controller';
 import { FileProcessStatusPublisher } from './file-process.result.publisher';
 import { FileProcessService } from './file-process.service';
+import { HealthController } from '~/modules/health/health.controller';
 
 @Module({
     imports: [ExcelProcessModule, FileStorageModule],
-    controllers: [FileProcessController],
+    controllers: [FileProcessController, HealthController],
     providers: [FileProcessService, FileProcessStatusPublisher],
 })
 export class FileProcessModule {}

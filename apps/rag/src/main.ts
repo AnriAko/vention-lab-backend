@@ -14,6 +14,8 @@ import {
 
 import { AppModule } from './app.module';
 
+const RAG_HEALTH_QUEUE = 'ai.document.health.queue';
+
 async function bootstrap(): Promise<void> {
     const logger = new Logger('Rag');
 
@@ -35,6 +37,19 @@ async function bootstrap(): Promise<void> {
                     'x-dead-letter-routing-key':
                         AI_DOCUMENT_PROCESS_DLQ_ROUTING_KEY,
                 },
+            },
+        },
+    });
+
+    app.connectMicroservice<MicroserviceOptions>({
+        transport: Transport.RMQ,
+        options: {
+            urls: [rmqUrl],
+            queue: RAG_HEALTH_QUEUE,
+            noAck: false,
+            prefetchCount: 1,
+            queueOptions: {
+                durable: true,
             },
         },
     });

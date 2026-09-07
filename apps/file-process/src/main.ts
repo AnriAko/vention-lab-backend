@@ -12,17 +12,18 @@ import {
 import { AppModule } from './app.module';
 import { FileProcessRmqDeserializer } from './modules/file-process/file-process.rmq-deserializer';
 
+const FILE_PROCESS_HEALTH_QUEUE = 'file.process.health.queue';
+
 async function bootstrap(): Promise<void> {
     const logger = new Logger('FileProcess');
+    const rmqUrl = `amqp://${process.env.RABBITMQ_USER}:${process.env.RABBITMQ_PASSWORD}@${process.env.RABBITMQ_HOST}:${process.env.RABBITMQ_PORT}`;
 
     const app = await NestFactory.createMicroservice<MicroserviceOptions>(
         AppModule,
         {
             transport: Transport.RMQ,
             options: {
-                urls: [
-                    `amqp://${process.env.RABBITMQ_USER}:${process.env.RABBITMQ_PASSWORD}@${process.env.RABBITMQ_HOST}:${process.env.RABBITMQ_PORT}`,
-                ],
+                urls: [rmqUrl],
                 queue: FILE_PROCESS_QUEUE,
                 noAck: false,
                 prefetchCount: 1,
@@ -39,8 +40,27 @@ async function bootstrap(): Promise<void> {
         }
     );
 
+    const healthApp = await NestFactory.createMicroservice<MicroserviceOptions>(
+        AppModule,
+        {
+            transport: Transport.RMQ,
+            options: {
+                urls: [rmqUrl],
+                queue: FILE_PROCESS_HEALTH_QUEUE,
+                noAck: true,
+                prefetchCount: 1,
+                deserializer: new FileProcessRmqDeserializer(),
+                queueOptions: {
+                    durable: true,
+                },
+            },
+        }
+    );
+
     app.enableShutdownHooks();
+    healthApp.enableShutdownHooks();
     await app.listen();
+    await healthApp.listen();
 
     logger.log('File-process microservice started');
 }

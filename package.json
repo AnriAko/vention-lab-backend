@@ -44,6 +44,7 @@
         "docker:generate:main": "node scripts/generate-dockerfile.js main",
         "docker:generate:file-process": "node scripts/generate-dockerfile.js file-process",
         "docker:generate:rag": "node scripts/generate-dockerfile.js rag",
+        "docker:build:all": "npm run docker:build && npm run docker:build:file-process && npm run docker:build:rag",
         "docker:build": "npm run docker:generate:main && docker build -f Dockerfile.main.generated -t vention-api .",
         "docker:build:file-process": "npm run docker:generate:file-process && docker build -f Dockerfile.file-process.generated -t vention-file-process .",
         "docker:build:rag": "npm run docker:generate:rag && docker build -f Dockerfile.rag.generated -t vention-rag .",
