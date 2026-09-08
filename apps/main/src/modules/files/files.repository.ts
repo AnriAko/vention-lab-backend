@@ -9,49 +9,33 @@ import { activeTenantScope } from '~/infrastructure/database/scopes/organization
 import { fileSelect } from '~/infrastructure/database/selects/file.types';
 import { FileStatus } from '~/generated/prisma/enums';
 import type { FileSafe } from '~/infrastructure/database/selects/file.types';
-
-export type CreateFileData = {
-    ownerId: string;
-    organizationId: string;
-    name: string;
-    size: number;
-    contentType: string;
-    checksum: string;
-    storageKey: string;
-    status?: FileStatus;
-};
+import { CreateFileData } from '~/modules/files/types/create-file.type';
 
 @Injectable()
 export class FilesRepository {
     constructor(private readonly prisma: PrismaRlsClient) {}
-
     findAll(pagination: Pagination) {
         return paginatePrisma({
             pagination,
             model: this.prisma.file,
             where: activeTenantScope(),
             select: fileSelect,
-            orderBy: {
-                name: SortDirection.ASC,
-            },
+            orderBy: { name: SortDirection.ASC },
         });
     }
-
     findById(id: string) {
         return this.prisma.file.findFirst({
             where: addWhere(activeTenantScope(), { id }),
             select: fileSelect,
         });
     }
-
     findByChecksum(checksum: string) {
         return this.prisma.file.findFirst({
             where: addWhere(activeTenantScope(), { checksum }),
             select: fileSelect,
         });
     }
-
-    create(data: CreateFileData) {
+    create(data: CreateFileData): Promise<FileSafe> {
         return this.prisma.file.create({
             data: {
                 ownerId: data.ownerId,
@@ -66,13 +50,9 @@ export class FilesRepository {
             select: fileSelect,
         });
     }
-
     updateStatus(
         id: string,
-        data: {
-            status: FileStatus;
-            processingError?: string | null;
-        }
+        data: { status: FileStatus; processingError?: string | null }
     ): Promise<FileSafe> {
         return this.prisma.file.update({
             where: { id },
@@ -86,7 +66,6 @@ export class FilesRepository {
             select: fileSelect,
         });
     }
-
     countByStorageKey(storageKey: string, excludeId?: string) {
         return this.prisma.file.count({
             where: addWhere(activeTenantScope(), {
@@ -95,12 +74,10 @@ export class FilesRepository {
             }),
         });
     }
-
     async deleteById(id: string) {
         const result = await this.prisma.file.deleteMany({
             where: addWhere(activeTenantScope(), { id }),
         });
-
         return result.count;
     }
 }

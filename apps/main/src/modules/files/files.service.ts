@@ -26,6 +26,7 @@ import { openStoredReadStream } from './utils/decompress-stream';
 import { validateUploadedFile } from './utils/validate-uploaded-file';
 import { buildStoredFileName } from '~/modules/files/utils/build-stored-filename';
 import { buildContentDisposition } from '~/modules/files/utils/build-content-disposition';
+import type { FileSafe } from '~/infrastructure/database/selects/file.types';
 
 @Injectable()
 export class FilesService {
@@ -121,7 +122,8 @@ export class FilesService {
 
         await this.fileStorageService.writeFile(storageKey, storedBuffer);
 
-        let uploaded;
+        let uploaded: FileSafe;
+
         try {
             uploaded = await this.filesRepository.create({
                 ownerId,
@@ -161,9 +163,8 @@ export class FilesService {
                 .replace(/^\./, '')
                 .toLowerCase();
 
-            const aiDocumentExtensions = Object.values(
-                AiDocumentExtensions
-            ).flat();
+            const aiDocumentExtensions =
+                Object.values(AiDocumentExtensions).flat();
 
             if (FileExtensions.EXCEL.includes(extension)) {
                 await this.fileProcessingPublisher.publishStorageFinalized(job);
@@ -207,10 +208,7 @@ export class FilesService {
     async remove(id: string): Promise<null> {
         const file = await this.findById(id);
 
-        if (
-            file.status === FileStatus.UPLOADED ||
-            file.status === FileStatus.PROCESSING
-        ) {
+        if (file.status === FileStatus.PROCESSING) {
             throw new AppException(FileErrors.PROCESSING_IN_PROGRESS);
         }
 

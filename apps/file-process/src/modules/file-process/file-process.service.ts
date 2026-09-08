@@ -20,6 +20,7 @@ import {
     PermanentProcessingError,
     TransientProcessingError,
 } from './file-process.errors';
+import { getFileExtension } from '~/modules/file-process/file-process.utils';
 
 @Injectable()
 export class FileProcessService {
@@ -33,7 +34,12 @@ export class FileProcessService {
     ): Promise<FileProcessResultMessage> {
         try {
             const buffer = await this.fileStorage.getFileBuffer(job.storageKey);
-            const extension = this.getExtension(job.storageKey);
+
+            const extension = getFileExtension(job.storageKey);
+
+            if (!extension) {
+                throw new PermanentProcessingError('File extension is missing');
+            }
 
             if (!FileExtensions.EXCEL.includes(extension)) {
                 throw new PermanentProcessingError(
@@ -42,6 +48,7 @@ export class FileProcessService {
             }
 
             const result = await this.excelProcessService.process(buffer, job);
+
             return this.buildResult(job, result);
         } catch (error) {
             if (this.isPermanentError(error)) {
@@ -56,19 +63,6 @@ export class FileProcessService {
 
             throw new TransientProcessingError(message);
         }
-    }
-
-    private getExtension(storageKey: string): string {
-        const withoutGzip = storageKey.endsWith('.gz')
-            ? storageKey.slice(0, -3)
-            : storageKey;
-        const extension = withoutGzip.split('.').pop()?.toLowerCase();
-
-        if (!extension) {
-            throw new PermanentProcessingError('File extension is missing');
-        }
-
-        return extension;
     }
 
     failedResult(

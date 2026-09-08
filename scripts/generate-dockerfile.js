@@ -54,15 +54,24 @@ function getAppName() {
     return appName;
 }
 
+function getRelativeWorkspacePath(workspace) {
+    return path.relative(ROOT_DIR, workspace.path).replaceAll(path.sep, '/');
+}
+
+function getWorkspaceStageName(packageName) {
+    return packageName
+        .replace(/^@/, '')
+        .replace(/[^a-zA-Z0-9]+/g, '-')
+        .toLowerCase();
+}
+
 function generateWorkspaceCopies() {
     const workspacePackages = loadWorkspacePackages();
 
     return [...workspacePackages.values()]
         .sort((a, b) => a.path.localeCompare(b.path))
         .map((workspace) => {
-            const relativePath = path
-                .relative(ROOT_DIR, workspace.path)
-                .replaceAll(path.sep, '/');
+            const relativePath = getRelativeWorkspacePath(workspace);
 
             return (
                 `COPY ${relativePath}/package.json ` +
@@ -74,6 +83,7 @@ function generateWorkspaceCopies() {
 
 function getBuildPackageNames(appConfig) {
     const workspacePackages = loadWorkspacePackages();
+
     const dependencies = getInternalDependencies(
         appConfig.workspaceName,
         workspacePackages
@@ -82,41 +92,162 @@ function getBuildPackageNames(appConfig) {
     return resolveBuildOrder(dependencies, workspacePackages);
 }
 
-function generateBuildPackageCopies(appConfig) {
+function getBuildLevels(packageNames, workspacePackages) {
+    const levels = new Map();
+    const visiting = new Set();
+
+    function getLevel(packageName) {
+        if (levels.has(packageName)) {
+            return levels.get(packageName);
+        }
+
+        if (visiting.has(packageName)) {
+            throw new Error(
+                `Circular workspace dependency detected: ${packageName}`
+            );
+        }
+
+        visiting.add(packageName);
+
+        const dependencies = getInternalDependencies(
+            packageName,
+            workspacePackages
+        );
+
+        const level = dependencies.length
+            ? Math.max(...dependencies.map(getLevel)) + 1
+            : 0;
+
+        visiting.delete(packageName);
+        levels.set(packageName, level);
+
+        return level;
+    }
+
+    packageNames.forEach(getLevel);
+
+    return [...levels.entries()].reduce((result, [packageName, level]) => {
+        const packagesAtLevel = result.get(level) ?? [];
+
+        packagesAtLevel.push(packageName);
+        result.set(level, packagesAtLevel);
+
+        return result;
+    }, new Map());
+}
+
+function generatePackageBuildStages(appConfig) {
     const workspacePackages = loadWorkspacePackages();
 
-    return getBuildPackageNames(appConfig)
-        .map((packageName) => workspacePackages.get(packageName))
-        .sort((a, b) => a.path.localeCompare(b.path))
-        .map((workspace) => {
-            const relativePath = path
-                .relative(ROOT_DIR, workspace.path)
-                .replaceAll(path.sep, '/');
+    const packageNames = getBuildPackageNames(appConfig);
+    const buildLevels = getBuildLevels(packageNames, workspacePackages);
 
-            return `COPY ${relativePath} ./${relativePath}`;
+    const stages = [];
+
+    for (const packageNamesAtLevel of buildLevels.values()) {
+        for (const packageName of packageNamesAtLevel) {
+            const workspace = workspacePackages.get(packageName);
+
+            if (!workspace) {
+                throw new Error(`Workspace package "${packageName}" not found`);
+            }
+
+            const relativePath = getRelativeWorkspacePath(workspace);
+            const stageName = getWorkspaceStageName(packageName);
+
+            const dependencies = getInternalDependencies(
+                packageName,
+                workspacePackages
+            ).filter((dependency) => packageNames.includes(dependency));
+
+            const dependencyCopies = dependencies
+                .map((dependency) => {
+                    const dependencyWorkspace =
+                        workspacePackages.get(dependency);
+
+                    const dependencyPath =
+                        getRelativeWorkspacePath(dependencyWorkspace);
+
+                    const dependencyStage = getWorkspaceStageName(dependency);
+
+                    return (
+                        `COPY --from=build-${dependencyStage} ` +
+                        `/app/${dependencyPath}/dist ` +
+                        `./${dependencyPath}/dist`
+                    );
+                })
+                .join('\n');
+
+            stages.push(`
+FROM dependencies AS build-${stageName}
+
+WORKDIR /app
+
+COPY ${relativePath} ./${relativePath}
+${dependencyCopies ? `\n${dependencyCopies}\n` : ''}
+RUN npm run build --workspace=${packageName}
+`);
+        }
+    }
+
+    return stages.join('\n');
+}
+
+function generateMainBuildStage(appName, appConfig) {
+    const workspacePackages = loadWorkspacePackages();
+    const packageNames = getBuildPackageNames(appConfig);
+
+    const dependencyCopies = packageNames
+        .map((packageName) => {
+            const workspace = workspacePackages.get(packageName);
+            const relativePath = getRelativeWorkspacePath(workspace);
+            const stageName = getWorkspaceStageName(packageName);
+
+            return (
+                `COPY --from=build-${stageName} ` +
+                `/app/${relativePath}/dist ` +
+                `./${relativePath}/dist`
+            );
         })
         .join('\n');
+
+    return `
+FROM dependencies AS build
+
+WORKDIR /app
+
+${dependencyCopies}
+
+COPY apps/${appName} ./apps/${appName}
+
+RUN npm run ${appConfig.buildScript}
+`;
 }
 
 function generateBuiltPackageCopies(appConfig) {
     const workspacePackages = loadWorkspacePackages();
+    const packageNames = getBuildPackageNames(appConfig);
 
-    return getBuildPackageNames(appConfig)
-        .map((packageName) => workspacePackages.get(packageName))
-        .sort((a, b) => a.path.localeCompare(b.path))
-        .map((workspace) => {
-            const relativePath = path
-                .relative(ROOT_DIR, workspace.path)
-                .replaceAll(path.sep, '/');
+    return packageNames
+        .map((packageName) => {
+            const workspace = workspacePackages.get(packageName);
 
-            return `COPY --from=build /app/${relativePath} ./${relativePath}`;
+            const relativePath = getRelativeWorkspacePath(workspace);
+            const stageName = getWorkspaceStageName(packageName);
+
+            return (
+                `COPY --from=build-${stageName} ` +
+                `/app/${relativePath} ` +
+                `./${relativePath}`
+            );
         })
         .join('\n');
 }
 
 function generateDockerfile(appName, appConfig) {
     const workspaceCopies = generateWorkspaceCopies();
-    const buildPackageCopies = generateBuildPackageCopies(appConfig);
+    const packageBuildStages = generatePackageBuildStages(appConfig);
+    const mainBuildStage = generateMainBuildStage(appName, appConfig);
     const builtPackageCopies = generateBuiltPackageCopies(appConfig);
 
     return `FROM node:22-alpine AS dependencies
@@ -132,24 +263,10 @@ COPY configs ./configs
 RUN --mount=type=cache,target=/root/.npm npm ci
 
 
-FROM dependencies AS build-packages
-
-WORKDIR /app
-
-${buildPackageCopies}
-
-COPY scripts ./scripts
-
-RUN npm run build:dependencies -- --workspace=${appConfig.workspaceName}
+${packageBuildStages}
 
 
-FROM build-packages AS build
-
-WORKDIR /app
-
-COPY apps/${appName} ./apps/${appName}
-
-RUN npm run ${appConfig.buildScript}
+${mainBuildStage}
 
 
 FROM node:22-alpine AS production-dependencies
@@ -173,7 +290,9 @@ WORKDIR /app
 ENV NODE_ENV=production
 
 COPY --from=build /app/apps/${appName}/${appConfig.distPath} ./dist
+
 ${builtPackageCopies}
+
 COPY --from=build /app/apps/${appName}/package.json ./package.json
 
 CMD ["node", "${appConfig.entrypoint}"]

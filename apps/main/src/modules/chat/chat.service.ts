@@ -45,7 +45,6 @@ import { ChatResponse } from './responses/chat.response';
 import { MessageResponse } from './responses/message.response';
 import { PaginatedChatsResponse } from './responses/paginated-chats.response';
 import { PaginatedMessagesResponse } from './responses/paginated-messages.response';
-import type { ChatMessageAck } from './types/chat-ws.types';
 import { buildMessageDedupeKey } from './utils/build-message-dedupe-key';
 import { parseInput } from './utils/parse-input';
 import { parsePagination } from './utils/parse-pagination';
@@ -252,7 +251,7 @@ export class ChatService {
     async sendRealtimeMessage(
         user: AuthUser,
         input: WsSendMessage
-    ): Promise<{ message: ChatMessageAck['message']; duplicate: boolean }> {
+    ): Promise<{ message: MessageResponse; duplicate: boolean }> {
         const existing = await this.findDedupedRealtimeMessage(user, input);
 
         if (existing) {

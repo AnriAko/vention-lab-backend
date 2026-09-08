@@ -1,25 +1,12 @@
 import { Controller } from '@nestjs/common';
-import {
-    Ctx,
-    EventPattern,
-    Payload,
-    RmqContext,
-    RmqRecordBuilder,
-} from '@nestjs/microservices';
-import { Inject } from '@nestjs/common';
-import type { ClientProxy } from '@nestjs/microservices';
-import { firstValueFrom } from 'rxjs';
+import { Ctx, EventPattern, Payload, RmqContext } from '@nestjs/microservices';
 import type { Channel, ConsumeMessage } from 'amqplib';
 
 import {
-    AI_DOCUMENT_DELETE_MAX_RETRIES,
     AI_DOCUMENT_DELETE_RETRY_HEADER,
     AI_DOCUMENT_DELETE_ROUTING_KEY,
-    AI_DOCUMENT_PROCESS_MAX_RETRIES,
     AI_DOCUMENT_PROCESS_RETRY_HEADER,
     AI_DOCUMENT_PROCESS_ROUTING_KEY,
-    AI_DOCUMENT_PROCESS_RESULTS_EXCHANGE,
-    AI_DOCUMENT_PROCESS_RESULTS_ROUTING_KEY,
 } from '@vention/rag-contract/constants';
 
 import type {
@@ -28,20 +15,18 @@ import type {
 } from '@vention/rag-contract/types';
 
 import { LoggerService } from '@vention/shared-logger';
-import { RabbitmqService } from '@vention/shared-rabbitmq';
+import { getRetryCount } from '@vention/shared-rabbitmq';
 
-import {
-    TransientAiDocumentError,
-    TransientDeleteError,
-} from './ai-document.errors';
+import { AiDocumentErrorHandler } from './ai-document.error-handler';
 import { AiDocumentService } from './ai-document.service';
+import { AiDocumentPublisher } from './ai-document.publisher';
 
 @Controller()
 export class AiDocumentController {
     constructor(
         private readonly aiDocumentService: AiDocumentService,
-        private readonly rabbitmq: RabbitmqService,
-        @Inject('RAG_RMQ_CLIENT') private readonly client: ClientProxy,
+        private readonly publisher: AiDocumentPublisher,
+        private readonly errorHandler: AiDocumentErrorHandler,
         private readonly logger: LoggerService
     ) {}
 
@@ -66,23 +51,20 @@ export class AiDocumentController {
             return;
         }
 
-        const retryCount = this.getRetryCount(
+        const retryCount = getRetryCount(
             message,
             AI_DOCUMENT_PROCESS_RETRY_HEADER
         );
 
-        const correlationId = this.getCorrelationId(message, job.fileId);
-
         try {
-            await this.publishProcessResult(
-                message,
+            await this.publisher.publishProcessResult(
                 this.aiDocumentService.processingResult(job),
-                correlationId
+                message
             );
 
             const result = await this.aiDocumentService.processJob(job);
 
-            await this.publishProcessResult(message, result, correlationId);
+            await this.publisher.publishProcessResult(result, message);
 
             this.logger.log(
                 `[AiDocumentController] process completed fileId=${job.fileId} status=${result.status}`
@@ -90,14 +72,13 @@ export class AiDocumentController {
 
             channel.ack(message);
         } catch (error) {
-            await this.handleProcessFailure(
+            await this.errorHandler.handleProcessFailure({
                 job,
                 message,
                 channel,
                 retryCount,
-                correlationId,
-                error
-            );
+                error,
+            });
         }
     }
 
@@ -122,7 +103,7 @@ export class AiDocumentController {
             return;
         }
 
-        const retryCount = this.getRetryCount(
+        const retryCount = getRetryCount(
             message,
             AI_DOCUMENT_DELETE_RETRY_HEADER
         );
@@ -136,205 +117,14 @@ export class AiDocumentController {
 
             channel.ack(message);
         } catch (error) {
-            await this.handleDeleteFailure(
+            await this.errorHandler.handleDeleteFailure({
                 job,
                 message,
                 channel,
                 retryCount,
-                error
-            );
-        }
-    }
-
-    private async handleProcessFailure(
-        job: AiDocumentProcessJobMessage,
-        message: ConsumeMessage,
-        channel: Channel,
-        retryCount: number,
-        correlationId: string,
-        error: unknown
-    ): Promise<void> {
-        const errorMessage =
-            error instanceof Error ? error.message : String(error);
-
-        if (this.aiDocumentService.isPermanentProcessError(error)) {
-            await this.publishProcessResult(
-                message,
-                this.aiDocumentService.failedResult(job, errorMessage),
-                correlationId
-            );
-
-            channel.ack(message);
-            return;
-        }
-
-        if (error instanceof TransientAiDocumentError) {
-            this.logger.warn(
-                `[AiDocumentController] transient process failure fileId=${job.fileId}: ${errorMessage}`
-            );
-        } else {
-            this.logger.error(
-                `[AiDocumentController] unexpected process error fileId=${job.fileId}: ${errorMessage}`
-            );
-        }
-
-        if (retryCount + 1 >= AI_DOCUMENT_PROCESS_MAX_RETRIES) {
-            this.logger.error(
-                `[AiDocumentController] process retry exhausted fileId=${job.fileId} retries=${retryCount}`
-            );
-
-            await this.publishProcessResult(
-                message,
-                this.aiDocumentService.failedResult(
-                    job,
-                    `Processing failed after retries: ${errorMessage}`
-                ),
-                correlationId
-            );
-
-            channel.nack(message, false, false);
-            return;
-        }
-
-        const nextRetry = retryCount + 1;
-
-        this.logger.warn(
-            `[AiDocumentController] transient process retry fileId=${job.fileId} retry=${nextRetry}`
-        );
-
-        await firstValueFrom(
-            this.client.emit(
-                AI_DOCUMENT_PROCESS_ROUTING_KEY,
-                new RmqRecordBuilder(job)
-                    .setOptions({
-                        type: AI_DOCUMENT_PROCESS_ROUTING_KEY,
-                        headers: {
-                            ...this.copyHeaders(message.properties.headers),
-                            [AI_DOCUMENT_PROCESS_RETRY_HEADER]:
-                                String(nextRetry),
-                        },
-                    })
-                    .build()
-            )
-        );
-
-        channel.ack(message);
-    }
-
-    private async handleDeleteFailure(
-        job: AiDocumentDeleteJobMessage,
-        message: ConsumeMessage,
-        channel: Channel,
-        retryCount: number,
-        error: unknown
-    ): Promise<void> {
-        const errorMessage =
-            error instanceof Error ? error.message : String(error);
-
-        if (this.aiDocumentService.isPermanentDeleteError(error)) {
-            this.logger.error(
-                `[AiDocumentController] permanent delete error fileId=${job.fileId}: ${errorMessage}`
-            );
-
-            channel.ack(message);
-            return;
-        }
-
-        if (!(error instanceof TransientDeleteError)) {
-            this.logger.error(
-                `[AiDocumentController] unexpected delete error fileId=${job.fileId}: ${errorMessage}`
-            );
-        }
-
-        if (retryCount + 1 >= AI_DOCUMENT_DELETE_MAX_RETRIES) {
-            this.logger.error(
-                `[AiDocumentController] delete retry exhausted fileId=${job.fileId} retries=${retryCount}`
-            );
-
-            channel.nack(message, false, false);
-            return;
-        }
-
-        const nextRetry = retryCount + 1;
-
-        this.logger.warn(
-            `[AiDocumentController] transient delete failure fileId=${job.fileId} retry=${nextRetry}`
-        );
-
-        await firstValueFrom(
-            this.client.emit(
-                AI_DOCUMENT_DELETE_ROUTING_KEY,
-                new RmqRecordBuilder(job)
-                    .setOptions({
-                        type: AI_DOCUMENT_DELETE_ROUTING_KEY,
-                        headers: {
-                            ...this.copyHeaders(message.properties.headers),
-                            [AI_DOCUMENT_DELETE_RETRY_HEADER]:
-                                String(nextRetry),
-                        },
-                    })
-                    .build()
-            )
-        );
-
-        channel.ack(message);
-    }
-
-    private async publishProcessResult(
-        message: ConsumeMessage,
-        payload: unknown,
-        correlationId: string
-    ): Promise<void> {
-        const replyTo = message.properties.replyTo as unknown;
-
-        if (typeof replyTo === 'string' && replyTo.length > 0) {
-            await this.rabbitmq.sendToQueue(replyTo, payload, {
-                correlationId,
-                type: AI_DOCUMENT_PROCESS_RESULTS_ROUTING_KEY,
+                error,
             });
-
-            return;
         }
-
-        await this.rabbitmq.publish(
-            AI_DOCUMENT_PROCESS_RESULTS_EXCHANGE,
-            AI_DOCUMENT_PROCESS_RESULTS_ROUTING_KEY,
-            payload,
-            {
-                correlationId,
-                type: AI_DOCUMENT_PROCESS_RESULTS_ROUTING_KEY,
-            }
-        );
-    }
-
-    private getCorrelationId(
-        message: ConsumeMessage,
-        fallback: string
-    ): string {
-        const correlationId = message.properties.correlationId as unknown;
-
-        return typeof correlationId === 'string' && correlationId.length > 0
-            ? correlationId
-            : fallback;
-    }
-
-    private copyHeaders(
-        headers: ConsumeMessage['properties']['headers']
-    ): Record<string, string> {
-        if (!headers) {
-            return {};
-        }
-
-        return Object.fromEntries(
-            Object.entries(headers).map(([key, value]) => [key, String(value)])
-        );
-    }
-
-    private getRetryCount(message: ConsumeMessage, header: string): number {
-        const raw = message.properties.headers?.[header] as unknown;
-        const value = typeof raw === 'number' ? raw : Number(raw);
-
-        return Number.isFinite(value) && value > 0 ? value : 0;
     }
 
     private isValidProcessJob(job: AiDocumentProcessJobMessage): boolean {

@@ -10,7 +10,12 @@ import {
 } from '@vention/file-process-contract/constants';
 import type { FileProcessJobMessage } from '@vention/file-process-contract/types';
 import { LoggerService } from '@vention/shared-logger';
-import { RabbitmqService } from '@vention/shared-rabbitmq';
+import {
+    RabbitmqService,
+    copyHeaders,
+    getCorrelationId,
+    getRetryCount,
+} from '@vention/shared-rabbitmq';
 
 import { TransientProcessingError } from './file-process.errors';
 import { FileProcessService } from './file-process.service';
@@ -41,7 +46,7 @@ export class FileProcessController {
             return;
         }
 
-        const retryCount = this.getRetryCount(message);
+        const retryCount = getRetryCount(message, FILE_PROCESS_RETRY_HEADER);
 
         try {
             await this.statusPublisher.publish(
@@ -114,10 +119,10 @@ export class FileProcessController {
             FILE_PROCESS_ROUTING_KEY,
             job,
             {
-                correlationId: this.getCorrelationId(message, job),
+                correlationId: getCorrelationId(message, job.fileId),
                 type: FILE_PROCESS_ROUTING_KEY,
                 headers: {
-                    ...this.copyHeaders(message.properties.headers),
+                    ...copyHeaders(message.properties.headers),
                     [FILE_PROCESS_RETRY_HEADER]: nextRetry,
                 },
             }
@@ -126,37 +131,9 @@ export class FileProcessController {
         channel.ack(message);
     }
 
-    private getCorrelationId(
-        message: ConsumeMessage,
-        job: FileProcessJobMessage
-    ): string {
-        const correlationId: unknown = message.properties.correlationId;
-        return typeof correlationId === 'string' && correlationId.length > 0
-            ? correlationId
-            : job.fileId;
-    }
-
-    private copyHeaders(
-        headers: ConsumeMessage['properties']['headers']
-    ): Record<string, unknown> {
-        if (!headers) {
-            return {};
-        }
-
-        return { ...(headers as Record<string, unknown>) };
-    }
-
     private isValidJob(job: FileProcessJobMessage): boolean {
         return Boolean(
             job?.fileId && job.storageKey && job.organizationId && job.ownerId
         );
-    }
-
-    private getRetryCount(message: ConsumeMessage): number {
-        const raw: unknown =
-            message.properties.headers?.[FILE_PROCESS_RETRY_HEADER];
-        const value = typeof raw === 'number' ? raw : Number(raw);
-
-        return Number.isFinite(value) && value > 0 ? value : 0;
     }
 }

@@ -10,6 +10,7 @@ import {
     type DocumentPoint,
 } from './document-point.model';
 import type { DocumentSearchResult } from './qdrant-documents.types';
+import { getPayloadString } from '~/infrastructure/qdrant/qdrant-documents.utils';
 
 const UPSERT_BATCH_SIZE = 100;
 
@@ -98,25 +99,11 @@ export class QdrantDocumentsService implements OnModuleInit {
             return {
                 id: result.id,
                 score: result.score ?? 0,
-                text: this.getPayloadString(payload, 'text'),
-                documentId: this.getPayloadString(payload, 'documentId'),
-                chunkId: this.getPayloadString(payload, 'chunkId'),
-                fileName: this.getPayloadString(payload, 'fileName'),
+                text: getPayloadString(payload, 'text'),
+                documentId: getPayloadString(payload, 'documentId'),
+                chunkId: getPayloadString(payload, 'chunkId'),
+                fileName: getPayloadString(payload, 'fileName'),
             };
         });
-    }
-
-    private getPayloadString(payload: unknown, key: string): string {
-        if (
-            typeof payload !== 'object' ||
-            payload === null ||
-            !(key in payload)
-        ) {
-            return '';
-        }
-
-        const value = (payload as Record<string, unknown>)[key];
-
-        return typeof value === 'string' ? value : '';
     }
 }

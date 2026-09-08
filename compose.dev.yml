@@ -203,7 +203,6 @@ services:
                 reservations:
                     cpus: '0.20'
                     memory: 256M
-
     rag:
         build:
             context: .
@@ -237,7 +236,6 @@ services:
                 reservations:
                     cpus: '0.20'
                     memory: 256M
-
 volumes:
     postgres-data:
     pgadmin-data:

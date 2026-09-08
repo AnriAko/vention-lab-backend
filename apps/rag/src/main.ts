@@ -7,12 +7,15 @@ import {
     AI_DOCUMENT_DELETE_DLQ_ROUTING_KEY,
     AI_DOCUMENT_DELETE_DLX,
     AI_DOCUMENT_DELETE_QUEUE,
+    AI_DOCUMENT_DELETE_ROUTING_KEY,
     AI_DOCUMENT_PROCESS_DLQ_ROUTING_KEY,
     AI_DOCUMENT_PROCESS_DLX,
     AI_DOCUMENT_PROCESS_QUEUE,
+    AI_DOCUMENT_PROCESS_ROUTING_KEY,
 } from '@vention/rag-contract/constants';
 
 import { AppModule } from './app.module';
+import { AiDocumentRmqDeserializer } from './modules/ai-document/ai-document.rmq-deserializer';
 
 const RAG_HEALTH_QUEUE = 'ai.document.health.queue';
 
@@ -30,6 +33,9 @@ async function bootstrap(): Promise<void> {
             queue: AI_DOCUMENT_PROCESS_QUEUE,
             noAck: false,
             prefetchCount: 1,
+            deserializer: new AiDocumentRmqDeserializer(
+                AI_DOCUMENT_PROCESS_ROUTING_KEY
+            ),
             queueOptions: {
                 durable: true,
                 arguments: {
@@ -61,6 +67,9 @@ async function bootstrap(): Promise<void> {
             queue: AI_DOCUMENT_DELETE_QUEUE,
             noAck: false,
             prefetchCount: 1,
+            deserializer: new AiDocumentRmqDeserializer(
+                AI_DOCUMENT_DELETE_ROUTING_KEY
+            ),
             queueOptions: {
                 durable: true,
                 arguments: {

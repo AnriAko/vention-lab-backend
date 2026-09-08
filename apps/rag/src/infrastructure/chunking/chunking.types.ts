@@ -1,6 +1,12 @@
 import type { ParsedDocument } from '../parsing/parsed-document.types';
 
-export type ChunkingStrategyName = 'fixed-size' | 'markdown';
+export const CHUNKING_STRATEGY = {
+    FIXED_SIZE: 'fixed-size',
+    MARKDOWN: 'markdown',
+} as const;
+
+export type ChunkingStrategyName =
+    (typeof CHUNKING_STRATEGY)[keyof typeof CHUNKING_STRATEGY];
 
 export type ChunkingOptions = {
     strategy: ChunkingStrategyName;

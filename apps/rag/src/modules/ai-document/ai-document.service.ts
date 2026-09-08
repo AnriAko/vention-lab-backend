@@ -1,13 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
 import type { ConfigType } from '@nestjs/config';
-import { promisify } from 'node:util';
-import { gunzip as zlibGunzip } from 'node:zlib';
-
 import { chunkingConfig } from '~/config/configuration/chunking.config';
 import { embeddingConfig } from '~/config/configuration/embedding.config';
 import { ChunkingService } from '~/infrastructure/chunking/chunking.service';
-import type { ChunkingStrategyName } from '~/infrastructure/chunking/chunking.types';
-import type { DocumentChunk } from '~/infrastructure/chunking/chunking.types';
 import {
     DocumentParserService,
     UnsupportedDocumentFormatError,
@@ -39,8 +34,12 @@ import {
     TransientDeleteError,
 } from './ai-document.errors';
 
-const gunzip = promisify(zlibGunzip);
+import {
+    type ChunkingStrategyName,
+    type DocumentChunk,
+} from '~/infrastructure/chunking/chunking.types';
 
+import { decompressIfNeeded, getFileExtension } from './ai-document.utils';
 @Injectable()
 export class AiDocumentService {
     constructor(
@@ -63,12 +62,11 @@ export class AiDocumentService {
             const storedBuffer = await this.fileStorage.getFileBuffer(
                 job.storageKey
             );
-            const buffer = await this.decompressIfNeeded(
+            const buffer = await decompressIfNeeded(
                 storedBuffer,
                 job.storageKey
             );
-            const extension = this.getExtension(job.storageKey);
-
+            const extension = getFileExtension(job.storageKey);
             if (!this.isSupportedExtension(extension)) {
                 throw new PermanentAiDocumentError(
                     `Unsupported file extension: .${extension}`
@@ -237,30 +235,6 @@ export class AiDocumentService {
 
     private isSupportedExtension(extension: string): boolean {
         return Object.values(AiDocumentExtensions).flat().includes(extension);
-    }
-
-    private getExtension(storageKey: string): string {
-        const withoutGzip = storageKey.endsWith('.gz')
-            ? storageKey.slice(0, -3)
-            : storageKey;
-        const extension = withoutGzip.split('.').pop()?.toLowerCase();
-
-        if (!extension) {
-            throw new PermanentAiDocumentError('File extension is missing');
-        }
-
-        return extension;
-    }
-
-    private async decompressIfNeeded(
-        buffer: Buffer,
-        storageKey: string
-    ): Promise<Buffer> {
-        if (!storageKey.endsWith('.gz')) {
-            return buffer;
-        }
-
-        return gunzip(buffer);
     }
 
     private buildResult(

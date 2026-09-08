@@ -20,7 +20,6 @@ import {
     type GenerationChunkPayload,
     type GenerationDonePayload,
     type GenerationErrorPayload,
-    type GenerationMessage,
     type GenerationStartPayload,
 } from '@vention/generation-contract';
 
@@ -33,13 +32,13 @@ import { GenerationChunkResponse } from '~/modules/ai/ai-generation/response/gen
 import { GenerationDoneResponse } from '~/modules/ai/ai-generation/response/generation-done.response';
 import { GenerationErrorResponse } from '~/modules/ai/ai-generation/response/generation-error.response';
 import { GenerationCancelledResponse } from '~/modules/ai/ai-generation/response/generation-cancelled.response';
-import { AiConversationMessageRole } from '~/generated/prisma/enums';
 import type { AuthUser } from '~/common/security/auth.types';
 import { WsRlsContext } from '~/common/security/ws-security/ws-rls-interceptor';
 
 import type { ConfigType } from '@nestjs/config';
 import { ragConfig } from '~/config/configuration/rag.config';
 import { LoggerService } from '@vention/shared-logger';
+import { toGenerationHistory } from '~/modules/ai/ai-generation/ai.generation.utils';
 
 type ClientGeneration = {
     client: AiGenerationSocket;
@@ -135,7 +134,7 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
             conversationId,
             query: payload.query,
             organizationId,
-            history: this.toGenerationHistory(history),
+            history: toGenerationHistory(history),
             options: payload.options,
         };
 
@@ -309,18 +308,6 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
             generation.conversationId,
             content
         );
-    }
-
-    private toGenerationHistory(
-        messages: Array<{
-            role: AiConversationMessageRole;
-            content: string;
-        }>
-    ): GenerationMessage[] {
-        return messages.map((message) => ({
-            role: message.role.toLowerCase() as GenerationMessage['role'],
-            content: message.content,
-        }));
     }
 
     private cleanupGeneration(generationId: string): void {

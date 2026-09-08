@@ -14,15 +14,13 @@ import {
     WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server } from 'socket.io';
-
 import { LoggerService } from '@vention/shared-logger';
-
 import { ROLES_KEY } from '~/common/security/constants';
 import { WsAuthGuard } from '~/common/security/ws-security/ws-auth.guard';
 import { WsOrganizationGuard } from '~/common/security/ws-security/ws-organization.guard';
 import { WsRolesGuard } from '~/common/security/ws-security/ws-roles.guard';
+import { WsRlsInterceptor } from '~/common/security/ws-security/ws-rls-interceptor';
 import { AppRole } from '~/common/security/permissions/app-role.enum';
-
 import { ChatWsExceptionFilter } from './chat-ws.exception-filter';
 import { CHAT_WS_NAMESPACE } from './chat.constants';
 import { ChatService } from './chat.service';
@@ -40,86 +38,55 @@ import type {
 } from './types/chat-ws.types';
 import { buildChatRoomName } from './utils/build-chat-room-name';
 import { parseInput } from './utils/parse-input';
-import { WsRlsInterceptor } from '../../common/security/ws-security/ws-rls-interceptor';
-
 @WebSocketGateway({
     namespace: CHAT_WS_NAMESPACE,
-    cors: {
-        origin: true,
-        credentials: true,
-    },
+    cors: { origin: true, credentials: true },
 })
 @UseFilters(ChatWsExceptionFilter)
 @SetMetadata(ROLES_KEY, [AppRole.USER])
 export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
-    @WebSocketServer()
-    server!: Server;
-
+    @WebSocketServer() server!: Server;
     constructor(
         private readonly chatService: ChatService,
         private readonly logger: LoggerService,
         private readonly wsAuthGuard: WsAuthGuard,
         private readonly wsOrganizationGuard: WsOrganizationGuard
     ) {}
-
     async handleConnection(client: ChatSocket): Promise<void> {
         try {
             await this.wsAuthGuard.authenticate(client);
             await this.wsOrganizationGuard.authorize(client);
-
             client.emit(CHAT_WS_EVENTS.READY, {
                 userId: client.data.user.userId,
             });
-
             this.logger.log(
                 `[ChatGateway] connected userId=${client.data.user.userId} ` +
                     `org=${client.data.user.organizationId} sid=${client.id}`
             );
         } catch (error) {
             this.logger.warn(
-                `[ChatGateway] auth failed: ${
-                    error instanceof Error ? error.message : String(error)
-                }`
+                `[ChatGateway] auth failed: ${error instanceof Error ? error.message : String(error)}`
             );
-
             client.disconnect(true);
         }
     }
-
     handleDisconnect(client: ChatSocket): void {
         this.logger.log(`[ChatGateway] disconnected sid=${client.id}`);
     }
-
     @SubscribeMessage(CHAT_WS_EVENTS.JOIN)
     @UseGuards(WsRolesGuard)
     async joinChat(
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
     ): Promise<ChatRoomJoinResult> {
-        try {
-            const { chatId } = parseInput(WsJoinChatSchema, body);
-            const room = buildChatRoomName(chatId);
-
-            if (!client.rooms.has(room)) {
-                await client.join(room);
-            }
-
-            client.emit(CHAT_WS_EVENTS.JOINED, { chatId });
-
-            return {
-                ok: true,
-                chatId,
-            };
-        } catch (error) {
-            this.emitError(client, error);
-
-            return {
-                ok: false,
-                chatId: '',
-            };
+        const { chatId } = parseInput(WsJoinChatSchema, body);
+        const room = buildChatRoomName(chatId);
+        if (!client.rooms.has(room)) {
+            await client.join(room);
         }
+        client.emit(CHAT_WS_EVENTS.JOINED, { chatId });
+        return { ok: true, chatId };
     }
-
     @SubscribeMessage(CHAT_WS_EVENTS.MESSAGE_SEND)
     @UseGuards(WsRolesGuard)
     @UseInterceptors(WsRlsInterceptor)
@@ -127,61 +94,34 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
     ): Promise<{ ok: boolean }> {
-        try {
-            const payload = parseInput(WsSendMessageSchema, body);
+        const payload = parseInput(WsSendMessageSchema, body);
+        const user = client.data.user;
+        const result = await this.chatService.sendRealtimeMessage(
+            user,
+            payload
+        );
 
-            const user = client.data.user;
-            const room = buildChatRoomName(payload.chatId);
+        client.emit(CHAT_WS_EVENTS.MESSAGE_ACK, {
+            chatId: payload.chatId,
+            clientMessageId: payload.clientMessageId,
+            duplicate: result.duplicate,
+            message: result.message,
+        } satisfies ChatMessageAck);
 
-            const existing = await this.chatService.findDedupedRealtimeMessage(
-                user,
-                payload
-            );
-
-            if (existing) {
-                client.emit(CHAT_WS_EVENTS.MESSAGE_ACK, {
-                    chatId: payload.chatId,
-                    clientMessageId: payload.clientMessageId,
-                    duplicate: true,
-                    message: existing,
-                } satisfies ChatMessageAck);
-
-                return { ok: true };
-            }
-
-            const message = await this.chatService.createMessageForUser({
-                chatId: payload.chatId,
-                content: payload.content,
-                senderId: user.userId,
-            });
-
-            await this.chatService.rememberRealtimeMessageDedupe(
-                user,
-                payload,
-                message
-            );
-
-            if (!client.rooms.has(room)) {
-                await client.join(room);
-            }
-
-            client.emit(CHAT_WS_EVENTS.MESSAGE_ACK, {
-                chatId: payload.chatId,
-                clientMessageId: payload.clientMessageId,
-                duplicate: false,
-                message,
-            } satisfies ChatMessageAck);
-
-            client.to(room).emit(CHAT_WS_EVENTS.MESSAGE, message);
-
+        if (result.duplicate) {
             return { ok: true };
-        } catch (error) {
-            this.emitError(client, error);
-
-            return { ok: false };
         }
-    }
 
+        const room = buildChatRoomName(payload.chatId);
+
+        if (!client.rooms.has(room)) {
+            await client.join(room);
+        }
+
+        client.to(room).emit(CHAT_WS_EVENTS.MESSAGE, result.message);
+
+        return { ok: true };
+    }
     @SubscribeMessage(CHAT_WS_EVENTS.MESSAGE_DELETE)
     @UseGuards(WsRolesGuard)
     @UseInterceptors(WsRlsInterceptor)
@@ -189,85 +129,43 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
     ): Promise<{ ok: boolean }> {
-        try {
-            const { messageId } = parseInput(WsDeleteMessageSchema, body);
-
-            const chatId =
-                await this.chatService.hardDeleteOwnedMessage(messageId);
-
-            const payload: ChatMessageDeletedPayload = {
-                chatId,
-                messageId,
-            };
-
-            client.emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
-
-            client
-                .to(buildChatRoomName(chatId))
-                .emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
-
-            return { ok: true };
-        } catch (error) {
-            this.emitError(client, error);
-
-            return { ok: false };
-        }
+        const { messageId } = parseInput(WsDeleteMessageSchema, body);
+        const chatId = await this.chatService.hardDeleteOwnedMessage(messageId);
+        const payload: ChatMessageDeletedPayload = { chatId, messageId };
+        client.emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
+        client
+            .to(buildChatRoomName(chatId))
+            .emit(CHAT_WS_EVENTS.MESSAGE_DELETED, payload);
+        return { ok: true };
     }
-
-    @SubscribeMessage(CHAT_WS_EVENTS.TYPING)
-    typing(
+    @SubscribeMessage(CHAT_WS_EVENTS.TYPING) typing(
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
     ): { ok: boolean } {
         return this.forwardTyping(CHAT_WS_EVENTS.TYPING, client, body);
     }
-
-    @SubscribeMessage(CHAT_WS_EVENTS.STOP_TYPING)
-    stopTyping(
+    @SubscribeMessage(CHAT_WS_EVENTS.STOP_TYPING) stopTyping(
         @ConnectedSocket() client: ChatSocket,
         @MessageBody() body: unknown
     ): { ok: boolean } {
         return this.forwardTyping(CHAT_WS_EVENTS.STOP_TYPING, client, body);
     }
-
     private forwardTyping(
         event: (typeof CHAT_WS_EVENTS)[keyof typeof CHAT_WS_EVENTS],
         client: ChatSocket,
         body: unknown
     ): { ok: boolean } {
-        try {
-            const payload = parseInput(WsTypingSchema, body);
-
-            const user = client.data.user;
-            const room = buildChatRoomName(payload.chatId);
-
-            if (!client.rooms.has(room)) {
-                throw new Error('You are not a member of this chat');
-            }
-
-            const typingPayload: ChatTypingPayload = {
-                chatId: payload.chatId,
-                userId: user.userId,
-            };
-
-            client.to(room).emit(event, typingPayload);
-
-            return { ok: true };
-        } catch (error) {
-            this.emitError(client, error);
-
-            return { ok: false };
+        const payload = parseInput(WsTypingSchema, body);
+        const user = client.data.user;
+        const room = buildChatRoomName(payload.chatId);
+        if (!client.rooms.has(room)) {
+            throw new Error('You are not a member of this chat');
         }
-    }
-
-    private emitError(client: ChatSocket, error: unknown): void {
-        const message =
-            error instanceof Error ? error.message : 'Unexpected error';
-
-        client.emit(CHAT_WS_EVENTS.ERROR, {
-            message,
-        });
-
-        this.logger.warn(`[ChatGateway] ${message}`);
+        const typingPayload: ChatTypingPayload = {
+            chatId: payload.chatId,
+            userId: user.userId,
+        };
+        client.to(room).emit(event, typingPayload);
+        return { ok: true };
     }
 }

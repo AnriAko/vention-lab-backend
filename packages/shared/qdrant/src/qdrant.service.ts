@@ -8,6 +8,7 @@ import {
     type QdrantPoint,
     type QdrantSearchHit,
 } from './qdrant.types';
+import { toDenseVector } from './qdrant.utils';
 
 @Injectable()
 export class QdrantService {
@@ -89,7 +90,7 @@ export class QdrantService {
     ): Promise<void> {
         await this.client.delete(collectionName, {
             wait,
-            filter: filter as never,
+            filter: filter,
         });
     }
 
@@ -104,7 +105,7 @@ export class QdrantService {
         const result = await this.client.query(collectionName, {
             query: vector,
             limit: options.limit,
-            filter: options.filter as never,
+            filter: options.filter,
             with_payload: true,
             with_vector: true,
         });
@@ -116,15 +117,4 @@ export class QdrantService {
             score: point.score,
         }));
     }
-}
-
-function toDenseVector(vector: unknown): number[] {
-    if (
-        Array.isArray(vector) &&
-        vector.every((value) => typeof value === 'number')
-    ) {
-        return vector as number[];
-    }
-
-    return [];
 }
