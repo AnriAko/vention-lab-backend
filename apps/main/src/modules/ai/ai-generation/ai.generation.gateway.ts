@@ -78,6 +78,9 @@ export class AiGenerationGateway
         try {
             await this.wsAuthGuard.authenticate(client);
             await this.wsOrganizationGuard.authorize(client);
+
+            this.aiGenerationService.handleConnect(client);
+
             console.info(
                 `${AI_WS_LOG_PREFIX} connected userId=${client.data.user.userId} socketId=${client.id}`
             );
@@ -99,6 +102,7 @@ export class AiGenerationGateway
         console.info(
             `${AI_WS_LOG_PREFIX} generation:start socketId=${client.id} generationId=${payload.generationId} conversationId=${payload.conversationId ?? 'new'}`
         );
+
         await this.aiGenerationService.start(client, payload);
     }
 

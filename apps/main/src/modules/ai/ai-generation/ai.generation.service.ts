@@ -1,9 +1,4 @@
-import {
-    Inject,
-    Injectable,
-    OnModuleDestroy,
-    OnModuleInit,
-} from '@nestjs/common';
+import { Inject, Injectable, OnModuleDestroy } from '@nestjs/common';
 
 import { io, type Socket as RagSocket } from 'socket.io-client';
 
@@ -23,21 +18,25 @@ import {
     type GenerationStartPayload,
 } from '@vention/generation-contract';
 
+import type { ConfigType } from '@nestjs/config';
+
 import { AiConversationService } from '~/modules/ai/ai-conversation/ai-conversation.service';
 import { AiConversationMessageService } from '~/modules/ai/ai-conversation-message/ai-conversation-message.service';
 
 import type { AiGenerationSocket } from './ai.generation.gateway';
 import type { GenerationStartRequest } from './requests/generation-start.request.dto';
+
 import { GenerationChunkResponse } from '~/modules/ai/ai-generation/response/generation-chunk.response';
 import { GenerationDoneResponse } from '~/modules/ai/ai-generation/response/generation-done.response';
 import { GenerationErrorResponse } from '~/modules/ai/ai-generation/response/generation-error.response';
 import { GenerationCancelledResponse } from '~/modules/ai/ai-generation/response/generation-cancelled.response';
+
 import type { AuthUser } from '~/common/security/auth.types';
 import { WsRlsContext } from '~/common/security/ws-security/ws-rls-interceptor';
 
-import type { ConfigType } from '@nestjs/config';
 import { ragConfig } from '~/config/configuration/rag.config';
 import { LoggerService } from '@vention/shared-logger';
+
 import { toGenerationHistory } from '~/modules/ai/ai-generation/ai.generation.utils';
 
 type ClientGeneration = {
@@ -49,8 +48,10 @@ type ClientGeneration = {
 };
 
 @Injectable()
-export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
+export class AiGenerationService implements OnModuleDestroy {
     private ragSocket?: RagSocket;
+
+    private readonly connectedClients = new Set<string>();
 
     private readonly generations = new Map<string, ClientGeneration>();
 
@@ -64,35 +65,34 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
         private readonly ragConf: ConfigType<typeof ragConfig>
     ) {}
 
-    onModuleInit(): void {
-        this.ragSocket = io(`${this.ragConf.wsUrl}${GENERATION_WS_NAMESPACE}`, {
-            transports: ['websocket'],
-            reconnection: true,
-        });
+    handleConnect(client: AiGenerationSocket): void {
+        this.connectedClients.add(client.id);
 
-        this.ragSocket.on('connect', () => {
-            this.logger.log(
-                `[AiGenerationService] connected to RAG websocket socketId=${this.ragSocket?.id}`
-            );
-        });
-        this.ragSocket.on('connect_error', (error: Error) => {
-            this.logger.error(
-                `[AiGenerationService] RAG websocket connection failed: ${error.message}`
-            );
-        });
-        this.ragSocket.on('disconnect', (reason) => {
-            this.logger.warn(
-                `[AiGenerationService] disconnected from RAG websocket reason=${reason}`
-            );
-        });
-
-        this.registerRagListeners();
+        this.ensureRagSocket();
     }
 
-    onModuleDestroy(): void {
-        this.ragSocket?.disconnect();
-        this.ragSocket = undefined;
-        this.generations.clear();
+    handleDisconnect(client: AiGenerationSocket): void {
+        const generationsToCancel: string[] = [];
+
+        for (const [generationId, generation] of this.generations) {
+            if (generation.client.id === client.id) {
+                generationsToCancel.push(generationId);
+            }
+        }
+
+        for (const generationId of generationsToCancel) {
+            this.ragSocket?.emit(GENERATION_WS_CANCEL_EVENT, {
+                generationId,
+            } satisfies GenerationCancelPayload);
+
+            this.generations.delete(generationId);
+        }
+
+        this.connectedClients.delete(client.id);
+
+        if (this.connectedClients.size === 0) {
+            this.disconnectRagSocket();
+        }
     }
 
     async start(
@@ -141,6 +141,7 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
         this.logger.log(
             `[AiGenerationService] sending generation:start to RAG generationId=${payload.generationId}`
         );
+
         this.getRagSocket().emit(GENERATION_WS_START_EVENT, ragPayload);
     }
 
@@ -160,27 +161,58 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
         } satisfies GenerationCancelPayload);
     }
 
-    handleDisconnect(client: AiGenerationSocket): void {
-        const generationsToCancel: string[] = [];
+    onModuleDestroy(): void {
+        this.disconnectRagSocket();
 
-        for (const [generationId, generation] of this.generations) {
-            if (generation.client.id === client.id) {
-                generationsToCancel.push(generationId);
-            }
-        }
-
-        for (const generationId of generationsToCancel) {
-            this.getRagSocket().emit(GENERATION_WS_CANCEL_EVENT, {
-                generationId,
-            } satisfies GenerationCancelPayload);
-
-            this.generations.delete(generationId);
-        }
+        this.generations.clear();
+        this.connectedClients.clear();
     }
 
-    private registerRagListeners(): void {
-        const socket = this.getRagSocket();
+    private ensureRagSocket(): RagSocket {
+        if (this.ragSocket) {
+            return this.ragSocket;
+        }
 
+        const socket = io(`${this.ragConf.wsUrl}${GENERATION_WS_NAMESPACE}`, {
+            transports: ['websocket'],
+            reconnection: true,
+        });
+
+        this.ragSocket = socket;
+
+        socket.on('connect', () => {
+            this.logger.log(
+                `[AiGenerationService] connected to RAG websocket socketId=${socket.id}`
+            );
+        });
+
+        socket.on('connect_error', (error: Error) => {
+            this.logger.error(
+                `[AiGenerationService] RAG websocket connection failed: ${error.message}`
+            );
+        });
+
+        socket.on('disconnect', (reason) => {
+            this.logger.warn(
+                `[AiGenerationService] disconnected from RAG websocket reason=${reason}`
+            );
+        });
+
+        this.registerRagListeners(socket);
+
+        return socket;
+    }
+
+    private disconnectRagSocket(): void {
+        if (!this.ragSocket) {
+            return;
+        }
+
+        this.ragSocket.disconnect();
+        this.ragSocket = undefined;
+    }
+
+    private registerRagListeners(socket: RagSocket): void {
         socket.on(
             GENERATION_WS_CHUNK_EVENT,
             (payload: GenerationChunkPayload) => {
@@ -223,7 +255,11 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
                     generation.client.emit(GENERATION_WS_DONE_EVENT, response);
                 } catch (error) {
                     this.logger.error(
-                        `[AiGenerationService] failed to save assistant message generationId=${payload.generationId}: ${error instanceof Error ? error.message : String(error)}`
+                        `[AiGenerationService] failed to save assistant message generationId=${payload.generationId}: ${
+                            error instanceof Error
+                                ? error.message
+                                : String(error)
+                        }`
                     );
 
                     generation.client.emit(GENERATION_WS_ERROR_EVENT, {
@@ -281,7 +317,11 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
                     );
                 } catch (error) {
                     this.logger.error(
-                        `[AiGenerationService] failed to save cancelled assistant message generationId=${payload.generationId}: ${error instanceof Error ? error.message : String(error)}`
+                        `[AiGenerationService] failed to save cancelled assistant message generationId=${payload.generationId}: ${
+                            error instanceof Error
+                                ? error.message
+                                : String(error)
+                        }`
                     );
 
                     generation.client.emit(GENERATION_WS_ERROR_EVENT, {
@@ -325,10 +365,6 @@ export class AiGenerationService implements OnModuleInit, OnModuleDestroy {
     }
 
     private getRagSocket(): RagSocket {
-        if (!this.ragSocket) {
-            throw new Error('RAG WebSocket is not initialized');
-        }
-
-        return this.ragSocket;
+        return this.ensureRagSocket();
     }
 }
