@@ -80,9 +80,11 @@ export class UserRepository {
         const organizationId = getActiveOrgId();
         const client = transaction ?? this.prisma;
 
+        const { organizationId: _, ...userData } = dto;
+
         return client.user.create({
             data: {
-                ...dto,
+                ...userData,
                 organizations: {
                     create: {
                         organizationId,
