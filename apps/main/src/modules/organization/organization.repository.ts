@@ -114,19 +114,51 @@ export class OrganizationsRepository {
         organizationId: string,
         userId: string
     ) {
-        await transaction.usersOrganizations.create({
+        await transaction.usersOrganizations.createMany({
             data: {
                 userId,
                 organizationId,
             },
+            skipDuplicates: true,
         });
 
-        await transaction.usersOrganizationsRoles.create({
+        await transaction.usersOrganizationsRoles.createMany({
             data: {
                 userId,
                 organizationId,
                 role: OrganizationRole.ADMIN,
             },
+            skipDuplicates: true,
+        });
+    }
+
+    private async attachOwnerToOrganization(
+        transaction: Prisma.TransactionClient,
+        organizationId: string
+    ) {
+        const owner = await transaction.owner.findFirst({
+            select: { userId: true },
+        });
+
+        if (!owner) {
+            return;
+        }
+
+        await transaction.usersOrganizations.createMany({
+            data: {
+                userId: owner.userId,
+                organizationId,
+            },
+            skipDuplicates: true,
+        });
+
+        await transaction.usersOrganizationsRoles.createMany({
+            data: {
+                userId: owner.userId,
+                organizationId,
+                role: OrganizationRole.ADMIN,
+            },
+            skipDuplicates: true,
         });
     }
 
@@ -139,6 +171,10 @@ export class OrganizationsRepository {
                 select: organizationSelectSafe,
             });
 
+            // Attach owner to organization as ADMIN
+            await this.attachOwnerToOrganization(transaction, organization.id);
+
+            // Attach the designated admin
             await this.attachAdmin(transaction, organization.id, dto.userId);
 
             return organization;
@@ -159,6 +195,9 @@ export class OrganizationsRepository {
                 },
                 select: organizationSelectSafe,
             });
+
+            // Attach owner to organization as ADMIN
+            await this.attachOwnerToOrganization(transaction, organization.id);
 
             const user = await createAdmin(transaction, organization.id);
 

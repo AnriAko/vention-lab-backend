@@ -77,7 +77,7 @@ export class UserRepository {
         transaction?: Prisma.TransactionClient,
         membershipRole: OrganizationRole = OrganizationRole.USER
     ): Promise<UserSafe> {
-        const organizationId = getActiveOrgId();
+        const organizationId = dto.organizationId || getActiveOrgId();
         const client = transaction ?? this.prisma;
 
         const { organizationId: _, ...userData } = dto;
@@ -86,14 +86,20 @@ export class UserRepository {
             data: {
                 ...userData,
                 organizations: {
-                    create: {
-                        organizationId,
+                    createMany: {
+                        data: {
+                            organizationId,
+                        },
+                        skipDuplicates: true,
                     },
                 },
                 organizationRoles: {
-                    create: {
-                        organizationId,
-                        role: membershipRole,
+                    createMany: {
+                        data: {
+                            organizationId,
+                            role: membershipRole,
+                        },
+                        skipDuplicates: true,
                     },
                 },
             },
