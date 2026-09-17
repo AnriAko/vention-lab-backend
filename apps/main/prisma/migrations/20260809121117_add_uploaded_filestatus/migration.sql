@@ -1,0 +1,5 @@
+-- AlterEnum
+ALTER TYPE "FileStatus" ADD VALUE 'UPLOADED';
+
+-- AlterTable
+ALTER TABLE "File" ALTER COLUMN "status" SET DEFAULT 'UPLOADED';

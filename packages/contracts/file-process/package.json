@@ -1,0 +1,38 @@
+{
+    "name": "@vention/file-process-contract",
+    "version": "0.0.0",
+    "private": true,
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "types": "./dist/index.d.ts",
+            "default": "./dist/index.js"
+        },
+        "./constants": {
+            "types": "./dist/constants.d.ts",
+            "default": "./dist/constants.js"
+        },
+        "./types": {
+            "types": "./dist/types.d.ts",
+            "default": "./dist/types.js"
+        },
+        "./excel-columns": {
+            "types": "./dist/excel-columns.d.ts",
+            "default": "./dist/excel-columns.js"
+        },
+        "./topology": {
+            "types": "./dist/topology.d.ts",
+            "default": "./dist/topology.js"
+        }
+    },
+    "files": [
+        "dist"
+    ],
+    "scripts": {
+        "build": "tsc -p tsconfig.json"
+    },
+    "dependencies": {
+        "@vention/shared-rabbitmq": "*"
+    }
+}

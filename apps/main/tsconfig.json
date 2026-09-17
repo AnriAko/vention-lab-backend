@@ -1,0 +1,20 @@
+{
+    "extends": "../../configs/typescript/nestjs.json",
+    "compilerOptions": {
+        "rootDir": ".",
+        "outDir": "./dist",
+        "baseUrl": ".",
+        "paths": {
+            "~/*": ["src/*"]
+        },
+        "types": ["node", "jest"]
+    },
+    "include": [
+        "src/**/*",
+        "scripts/**/*",
+        "prisma/**/*",
+        "test/**/*",
+        "../rag/src/infrastructure/messaging/rag/rag-rmq.client.ts"
+    ],
+    "exclude": ["node_modules", "dist"]
+}

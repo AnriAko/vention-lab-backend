@@ -1,0 +1,14 @@
+{
+    "extends": "../../configs/typescript/nestjs.json",
+    "compilerOptions": {
+        "rootDir": "./src",
+        "outDir": "./dist",
+        "baseUrl": "./src",
+        "paths": {
+            "~/*": ["*"]
+        },
+        "types": ["node", "jest"]
+    },
+    "include": ["src/**/*"],
+    "exclude": ["node_modules", "dist"]
+}

@@ -4,62 +4,53 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default tseslint.config(
+    // ---------------------------------------------------------
+    // Global ignores
+    // ---------------------------------------------------------
     {
-        ignores: ['dist', 'node_modules', 'eslint.config.mjs'],
+        ignores: [
+            '**/dist/**',
+            '**/node_modules/**',
+            '**/generated/**',
+            '**/coverage/**',
+            '**/jest.config.ts',
+            'eslint.config.mjs',
+            'apps/*/eslint.config.mjs',
+        ],
     },
 
+    // ---------------------------------------------------------
+    // Base ESLint rules
+    // ---------------------------------------------------------
     eslint.configs.recommended,
 
-    ...tseslint.configs.recommendedTypeChecked,
-
-    eslintPluginPrettierRecommended,
-
-    // -----------------------------
-    // BASE TS PROJECT (src)
-    // -----------------------------
+    // ---------------------------------------------------------
+    // TypeScript
+    // ---------------------------------------------------------
     {
-        files: ['src/**/*.ts'],
+        files: ['**/*.{ts,tsx}'],
+
+        extends: [...tseslint.configs.recommendedTypeChecked],
+
         languageOptions: {
             globals: {
                 ...globals.node,
             },
+
             sourceType: 'module',
+
             parserOptions: {
-                project: ['./tsconfig.json'],
+                projectService: true,
                 tsconfigRootDir: import.meta.dirname,
             },
         },
-    },
 
-    // -----------------------------
-    // TESTS (jest + spec + e2e)
-    // -----------------------------
-    {
-        files: ['test/**/*.ts', 'src/**/*.spec.ts', 'src/**/*.e2e-spec.ts'],
-        languageOptions: {
-            globals: {
-                ...globals.node,
-                ...globals.jest,
-            },
-            sourceType: 'module',
-            parserOptions: {
-                project: ['./tsconfig.spec.json'],
-                tsconfigRootDir: import.meta.dirname,
-            },
-        },
-    },
-
-    // -----------------------------
-    // RULES
-    // -----------------------------
-    {
         rules: {
             '@typescript-eslint/no-explicit-any': 'off',
 
             '@typescript-eslint/no-floating-promises': 'warn',
-            '@typescript-eslint/no-unsafe-argument': 'warn',
 
-            'prettier/prettier': ['error', { endOfLine: 'auto' }],
+            '@typescript-eslint/no-unsafe-argument': 'warn',
 
             '@typescript-eslint/no-unused-vars': [
                 'error',
@@ -75,6 +66,53 @@ export default tseslint.config(
                 {
                     prefer: 'type-imports',
                     fixStyle: 'separate-type-imports',
+                },
+            ],
+        },
+    },
+
+    // ---------------------------------------------------------
+    // JavaScript
+    // ---------------------------------------------------------
+    {
+        files: ['**/*.{js,jsx,mjs,cjs}'],
+
+        languageOptions: {
+            globals: {
+                ...globals.node,
+            },
+
+            sourceType: 'module',
+        },
+
+        extends: [tseslint.configs.disableTypeChecked],
+    },
+
+    // ---------------------------------------------------------
+    // Tests
+    // ---------------------------------------------------------
+    {
+        files: ['**/*.spec.ts', '**/*.test.ts', '**/test/**/*.ts'],
+
+        languageOptions: {
+            globals: {
+                ...globals.node,
+                ...globals.jest,
+            },
+        },
+    },
+
+    // ---------------------------------------------------------
+    // Prettier
+    // ---------------------------------------------------------
+    eslintPluginPrettierRecommended,
+
+    {
+        rules: {
+            'prettier/prettier': [
+                'error',
+                {
+                    endOfLine: 'auto',
                 },
             ],
         },

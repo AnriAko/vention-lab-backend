@@ -1,0 +1,86 @@
+FROM node:26-alpine AS dependencies
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY apps/main/package.json ./apps/main/
+COPY apps/file-process/package.json ./apps/file-process/
+COPY apps/rag/package.json ./apps/rag/
+COPY packages/shared/logger/package.json ./packages/shared/logger/
+COPY packages/shared/rabbitmq/package.json ./packages/shared/rabbitmq/
+COPY packages/shared/firebase/package.json ./packages/shared/firebase/
+COPY packages/shared/file-storage/package.json ./packages/shared/file-storage/
+COPY packages/shared/qdrant/package.json ./packages/shared/qdrant/
+COPY packages/contracts/file-process/package.json ./packages/contracts/file-process/
+COPY packages/contracts/health/package.json ./packages/contracts/health/
+COPY packages/contracts/rag/package.json ./packages/contracts/rag/
+COPY configs ./configs
+
+RUN --mount=type=cache,target=/root/.npm npm ci
+
+FROM dependencies AS build-packages
+
+ENV DATABASE_URL="postgresql://postgres:postgres@127.0.0.1:5432/app_db"
+
+COPY packages/contracts/file-process ./packages/contracts/file-process
+COPY packages/contracts/generation ./packages/contracts/generation
+COPY packages/contracts/health ./packages/contracts/health
+COPY packages/contracts/rag ./packages/contracts/rag
+COPY packages/shared/file-storage ./packages/shared/file-storage
+COPY packages/shared/firebase ./packages/shared/firebase
+COPY packages/shared/logger ./packages/shared/logger
+COPY packages/shared/rabbitmq ./packages/shared/rabbitmq
+COPY scripts ./scripts
+
+RUN npm run build:dependencies -- --workspace=@vention/main
+
+FROM build-packages AS builder
+
+COPY apps/main ./apps/main
+
+RUN npm run prisma:generate --workspace=@vention/main
+
+RUN npm run build --workspace=@vention/main
+
+FROM node:26-alpine AS production-dependencies
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+COPY apps/main/package.json ./apps/main/
+COPY apps/file-process/package.json ./apps/file-process/
+COPY apps/rag/package.json ./apps/rag/
+COPY packages/shared/logger/package.json ./packages/shared/logger/
+COPY packages/shared/rabbitmq/package.json ./packages/shared/rabbitmq/
+COPY packages/shared/firebase/package.json ./packages/shared/firebase/
+COPY packages/shared/file-storage/package.json ./packages/shared/file-storage/
+COPY packages/shared/qdrant/package.json ./packages/shared/qdrant/
+COPY packages/contracts/file-process/package.json ./packages/contracts/file-process/
+COPY packages/contracts/health/package.json ./packages/contracts/health/
+COPY packages/contracts/rag/package.json ./packages/contracts/rag/
+COPY packages/contracts/generation/package.json ./packages/contracts/generation/
+COPY configs ./configs
+
+RUN --mount=type=cache,target=/root/.npm \
+	npm prune --omit=dev --ignore-scripts
+
+FROM production-dependencies AS runner
+
+WORKDIR /app
+
+COPY --from=builder /app/packages/contracts/file-process ./packages/contracts/file-process
+COPY --from=builder /app/packages/contracts/generation ./packages/contracts/generation
+COPY --from=builder /app/packages/contracts/health ./packages/contracts/health
+COPY --from=builder /app/packages/contracts/rag ./packages/contracts/rag
+COPY --from=builder /app/packages/shared/file-storage ./packages/shared/file-storage
+COPY --from=builder /app/packages/shared/firebase ./packages/shared/firebase
+COPY --from=builder /app/packages/shared/logger ./packages/shared/logger
+COPY --from=builder /app/packages/shared/rabbitmq ./packages/shared/rabbitmq
+COPY --from=builder /app/apps/main/dist ./apps/main/dist
+COPY --from=builder /app/apps/main/prisma ./apps/main/prisma
+COPY --from=builder /app/apps/main/src/config ./apps/main/src/config
+COPY --from=builder /app/apps/main/src/generated ./apps/main/src/generated
+
+WORKDIR /app/apps/main
+
+CMD ["sh", "-c", "npx prisma migrate deploy --config src/config/prisma/prisma.config.ts && node dist/src/main"]

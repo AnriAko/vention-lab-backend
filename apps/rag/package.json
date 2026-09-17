@@ -1,0 +1,49 @@
+{
+    "name": "@vention/rag",
+    "version": "0.0.1",
+    "private": true,
+    "license": "UNLICENSED",
+    "scripts": {
+        "build": "nest build",
+        "start": "cross-env NODE_ENV=production node dist/main",
+        "dev": "cross-env NODE_ENV=development nest start --watch",
+        "start:dev": "cross-env NODE_ENV=development nest start --watch",
+        "start:prod": "cross-env NODE_ENV=production node dist/main",
+        "test": "jest",
+        "test:watch": "jest --watch",
+        "test:ollama": "cross-env OLLAMA_INTEGRATION_TEST=true jest --testPathPatterns=integration"
+    },
+    "dependencies": {
+        "@nestjs/common": "^11.1.27",
+        "@nestjs/config": "^4.0.4",
+        "@nestjs/core": "^11.1.27",
+        "@nestjs/microservices": "^11.1.28",
+        "@nestjs/platform-socket.io": "^11.1.29",
+        "@nestjs/websockets": "^11.1.29",
+        "@vention/generation-contract": "*",
+        "@vention/health-contract": "*",
+        "@vention/rag-contract": "*",
+        "@vention/shared-file-storage": "*",
+        "@vention/shared-firebase": "*",
+        "@vention/shared-logger": "*",
+        "@vention/shared-qdrant": "*",
+        "@vention/shared-rabbitmq": "*",
+        "cross-env": "^10.1.0",
+        "marked": "^15.0.12",
+        "ollama": "^0.6.3",
+        "pdf-parse": "^1.1.1",
+        "reflect-metadata": "^0.2.2",
+        "rxjs": "^7.8.1",
+        "zod": "^4.4.3"
+    },
+    "devDependencies": {
+        "@nestjs/cli": "^11.0.0",
+        "@nestjs/schematics": "^11.0.0",
+        "@types/jest": "^30.0.0",
+        "@types/node": "^24.13.3",
+        "@types/pdf-parse": "^1.1.4",
+        "jest": "^30.4.2",
+        "ts-jest": "^29.4.11",
+        "typescript": "^6.0.3"
+    }
+}
